@@ -28,4 +28,5 @@ License: GPLv2
 ?>
 <?php
 include("payswarm-admin.php");
+include("payswarm-article.php");
 ?>

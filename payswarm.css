@@ -1,0 +1,47 @@
+/*
+ * PaySwarm CSS styles.
+ */
+.row {
+text-align: right;
+}
+
+.money {
+color: #666;
+}
+
+.label {
+float: left;
+}
+
+.section h2 {
+padding: 8px;
+color: #fff;
+background-color: #333;
+}
+
+.purchase, .manage {
+margin: 20px 0;
+padding: 10px;
+font-family: Arial, sans-serif;
+border-top: 1px solid #bbb;
+border-bottom: 1px solid #bbb;
+}
+
+.purchase-button {
+padding: 2px 20px;
+font-size: 1em;
+font-weight: bold;
+color: #fff;
+/*text-shadow: #000 0 0 2px;*/
+background-color: #390;
+border: 1px solid #370;
+-moz-border-radius: 4px;
+border-radius: 4px;
+cursor: pointer;
+}
+
+.purchase-button img {
+padding: 2px 4px;
+vertical-align: middle;
+}
+
