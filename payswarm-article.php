@@ -2,7 +2,6 @@
 
 add_action('wp_print_styles', 'payswarm_add_stylesheets');
 add_filter('the_content', 'payswarm_filter_paid_content');
-add_filter('the_title', 'payswarm_filter_title');
 add_action('add_meta_boxes', 'payswarm_add_meta_boxes');
 add_action('save_post', 'payswarm_save_post_data');
 
@@ -18,40 +17,49 @@ function payswarm_add_stylesheets()
 
 function payswarm_filter_paid_content($content)
 {
+   global $post;
    $processed_content = $content;
    $article_purchased = false;
+   $amount = get_post_meta($post->ID, 'payswarm_price', true);
 
    if(!$article_purchased)
    {
       $temp = explode('<!--payswarm-->', $content, 2);
       $processed_content = $temp[0];
+      $paid_content_exists = (count($temp) > 1) and (strlen($temp[1] > 0));
 
       $currency = "USD";
       $currency_symbol = "$";
-      $amount = "0.01";
 
       $pslogo_url = WP_PLUGIN_URL . '/' .
          str_replace(basename( __FILE__), '', plugin_basename(__FILE__)) .
          '/images/payswarm-20.png';
 
-      $processed_content .= '<div class="purchase section">
-          <div class="money row"> 
-          <span class="label">' . __('Purchase the full article') . '</span> ' .
-          $currency . " " . $currency_symbol . $amount . 
-          '<button class="purchase-button"> 
-            <img src="' . $pslogo_url .
-          '">'. __('Purchase') .'</button>
-        </div></div>';
+      if($amount !== "" and $paid_content_exists)
+      {
+         $processed_content .= '<div class="purchase section">
+             <div class="money row"> 
+             <span class="label">' . __('Purchase the full article') . 
+             '</span> ' . $currency . " " . $currency_symbol . $amount . 
+             '<button class="purchase-button"> 
+               <img src="' . $pslogo_url .
+             '">'. __('Purchase') .'</button>
+           </div></div>';
+      }
+      else if($paid_content_exists)
+      {
+         $processed_content .= '<div class="purchase section">
+             <div class="money row"> 
+             <span class="label">' . 
+                __('The author has not set the price for the paid content.') .
+             '</span><button class="purchase-button"> 
+               <img src="' . $pslogo_url .
+             '">'. __('Cannot Purchase') .'</button>
+           </div></div>';
+      }
    }
 
    return $processed_content;
-}
-
-function payswarm_filter_title($content)
-{
-   $article_purchased = true;
-
-   return $content . __(" (Preview)");
 }
 
 function payswarm_add_meta_boxes()
@@ -108,7 +116,8 @@ function payswarm_save_post_data($post_id)
          $price = "";
       }
 
-      // Update the post metadata
+      // Delete the post metadata if the value is effectively zero or
+      // update the post metadata if the value is valid
       if($price == "" or $price == 0)
       {
          delete_post_meta($post_id, 'payswarm_price');
