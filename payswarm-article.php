@@ -3,6 +3,8 @@
 add_action('wp_print_styles', 'payswarm_add_stylesheets');
 add_filter('the_content', 'payswarm_filter_paid_content');
 add_filter('the_title', 'payswarm_filter_title');
+add_action('add_meta_boxes', 'payswarm_add_meta_boxes');
+add_action('save_post', 'payswarm_save_post_data');
 
 function payswarm_add_stylesheets()
 {
@@ -51,4 +53,73 @@ function payswarm_filter_title($content)
 
    return $content . __(" (Preview)");
 }
+
+function payswarm_add_meta_boxes()
+{
+   add_meta_box('payswarm_sectionid', __( 'PaySwarm Options'), 
+                'payswarm_create_meta_box', 'post', 'side', 0);
+}
+
+function payswarm_create_meta_box()
+{
+   // nonce is required for fields to prevent forgery attacks
+   wp_nonce_field(plugin_basename(__FILE__), 'payswarm_price_nonce');
+
+   // FIXME: Get the currency symbol from the database
+   global $post;
+   $price = get_post_meta($post->ID, 'payswarm_price', true);
+   $currency_symbol = "$";
+
+   echo '<div><strong><label for="payswarm_price_field">' .
+      __("Price") . 
+      ' </label></strong>';
+   echo $currency_symbol;
+   echo '<input type="text" id= "payswarm_price_field" ' .
+      'name="payswarm_price" value="'. $price . '" size="6" />' .
+      '<span>The price to charge for access to the non-free content.</span>' .
+      '</div>';
+}
+
+function payswarm_save_post_data($post_id)
+{
+   $rval = $post_id;
+
+   // check whether or not the nonce is valid, the post is being autosaved
+   // and whether or not editing is allowed
+   $valid_nonce = wp_verify_nonce($_POST['payswarm_price_nonce'],
+      plugin_basename(__FILE__));
+   $autosaving = defined('DOING_AUTOSAVE') && DOING_AUTOSAVE;
+   $edit_allowed = current_user_can('edit_post', $post_id);
+
+   // Only save the data if we're not autosaving, the nonce is valid and
+   // if the current user can perform edits
+   if(!$autosaving && $valid_nonce && $edit_allowed)
+   {
+      // Retrieve the price from the post data
+      $price = $_POST['payswarm_price'];
+
+      // converts the string value into a well-formed floating point value
+      if(is_numeric($price))
+      {
+         $price = (string)floatval($price);
+      }
+      else
+      {
+         $price = "";
+      }
+
+      // Update the post metadata
+      if($price == "" or $price == 0)
+      {
+         delete_post_meta($post_id, 'payswarm_price');
+      }
+      else if(!add_post_meta($post_id, 'payswarm_price', $price, true))
+      {
+         update_post_meta($post_id, 'payswarm_price', $price);
+      }
+   }
+
+   return $rval;
+}
+
 ?>
