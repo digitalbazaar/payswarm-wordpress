@@ -7,9 +7,9 @@ add_action('save_post', 'payswarm_save_post_data');
 
 function payswarm_add_stylesheets()
 {
-  $css_url = WP_PLUGIN_URL . '/' .
+  $css_url = site_url() . '/wp-content/plugins/' .
      str_replace(basename( __FILE__), '', plugin_basename(__FILE__)) .
-     '/payswarm.css';
+     'payswarm.css';
 
    wp_register_style('payswarm-style', $css_url);
    wp_enqueue_style( 'payswarm-style');
@@ -31,9 +31,9 @@ function payswarm_filter_paid_content($content)
       $currency = "USD";
       $currency_symbol = "$";
 
-      $pslogo_url = WP_PLUGIN_URL . '/' .
+      $pslogo_url = site_url() . '/wp-content/plugins/' .
          str_replace(basename( __FILE__), '', plugin_basename(__FILE__)) .
-         '/images/payswarm-20.png';
+         'images/payswarm-20.png';
 
       if($amount !== "" and $paid_content_exists)
       {
