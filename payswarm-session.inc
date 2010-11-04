@@ -1,6 +1,4 @@
 <?php
-// ensure that the PaySwarm session is being tracked
-add_action('sanitize_comment_cookies', 'payswarm_check_session');
 
 function payswarm_check_session()
 {
@@ -13,14 +11,13 @@ function payswarm_check_session()
    }
    else
    {
-      $timeVal = time();
-      $randomVal = rand(0, 100000);
-      $id = sha1('$timeVal$randomVal');
+      $time_value = time();
+      $random_value = rand(0, 100000);
+      $id = sha1("$time_value$random_value");
       $ptok = array(
          'id' => $id, 'state' => 'initializing', 
          'token' => '', 'secret' => '', 'amount' => '');
    }
-   setcookie('payswarm-session', $id, time() + 3600, '/', site_url(), true);
+   setcookie('payswarm-session', $id, time() + 3600, '/', '.sites.local', true);
 }
 ?>
-

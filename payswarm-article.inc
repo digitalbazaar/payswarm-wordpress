@@ -1,15 +1,9 @@
 <?php
 
-add_action('wp_print_styles', 'payswarm_add_stylesheets');
-add_filter('the_content', 'payswarm_filter_paid_content');
-add_action('add_meta_boxes', 'payswarm_add_meta_boxes');
-add_action('save_post', 'payswarm_save_post_data');
-
 function payswarm_add_stylesheets()
 {
-  $css_url = site_url() . '/wp-content/plugins/' .
-     str_replace(basename( __FILE__), '', plugin_basename(__FILE__)) .
-     'payswarm.css';
+   global $PAYSWARM_PLUGIN_URL;
+   $css_url = $PAYSWARM_PLUGIN_URL . 'payswarm.css';
 
    wp_register_style('payswarm-style', $css_url);
    wp_enqueue_style( 'payswarm-style');
@@ -24,6 +18,7 @@ function payswarm_filter_paid_content($content)
 
    if(!$article_purchased)
    {
+      global $PAYSWARM_PLUGIN_URL;
       $temp = explode('<!--payswarm-->', $content, 2);
       $processed_content = $temp[0];
       $paid_content_exists = (count($temp) > 1) and (strlen($temp[1] > 0));
@@ -31,9 +26,7 @@ function payswarm_filter_paid_content($content)
       $currency = "USD";
       $currency_symbol = "$";
 
-      $pslogo_url = site_url() . '/wp-content/plugins/' .
-         str_replace(basename( __FILE__), '', plugin_basename(__FILE__)) .
-         'images/payswarm-20.png';
+      $pslogo_url = $PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
 
       if($amount !== "" and $paid_content_exists)
       {
@@ -41,8 +34,9 @@ function payswarm_filter_paid_content($content)
              <div class="money row"> 
              <span class="label">' . __('Purchase the full article') . 
              '</span> ' . $currency . " " . $currency_symbol . $amount . 
-             '<button class="purchase-button"> 
-               <img src="' . $pslogo_url .
+             '<button class="purchase-button" ' . 
+             'onclick="payswarmAccessPost(' . $post->ID . ');">' .
+             '<img src="' . $pslogo_url .
              '">'. __('Purchase') .'</button>
            </div></div>';
       }

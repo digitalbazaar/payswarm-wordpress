@@ -4,16 +4,21 @@ $options_not_being_set = !isset($_POST['payswarm_consumer_key']) ||
    !isset($_POST['payswarm_consumer_secret']) ||
    !isset($_POST['payswarm_default_currency']);
 
-if(is_admin())
+function add_admin_pages()
 {
-   // admin actions
-   add_action('admin_menu', 'payswarm_create_menu');
-   add_action('admin_init', 'payswarm_register_settings');
+   global $options_not_being_set;
 
-   // create a warning if the proper settings are not being set.
-   if($options_not_being_set)
+   if(is_admin())
    {
-      payswarm_admin_warnings();
+      // admin actions
+      add_action('admin_init', 'payswarm_register_settings');
+      add_action('admin_menu', 'payswarm_create_menu');
+
+      // create a warning if the proper settings are not being set.
+      if($options_not_being_set)
+      {
+         payswarm_admin_warnings();
+      }
    }
 }
 

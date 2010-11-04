@@ -27,7 +27,33 @@ License: GPLv2
 */
 ?>
 <?php
-include("payswarm-admin.php");
-include("payswarm-article.php");
-include("payswarm-session.php");
+
+// setup the global variables
+$PAYSWARM_PLUGIN_URL = site_url() . '/wp-content/plugins/' .
+   str_replace(basename( __FILE__), '', plugin_basename(__FILE__));
+
+include("payswarm-database.inc");
+include("payswarm-admin.inc");
+include("payswarm-article.inc");
+include("payswarm-session.inc");
+
+// make sure to create the PaySwarm tokens database if it doesn't exist
+register_activation_hook(__FILE__, 'payswarm_install_database');
+
+// add admin pages if the administrator is running the plugin
+add_admin_pages();
+
+// add actions associated with the WordPress processing
+add_action('wp_print_styles', 'payswarm_add_stylesheets');
+add_action('add_meta_boxes', 'payswarm_add_meta_boxes');
+add_action('save_post', 'payswarm_save_post_data');
+
+// ensure that the PaySwarm session is being tracked
+add_action('sanitize_comment_cookies', 'payswarm_check_session');
+
+// add filters for text that the PaySwarm plugin will modify
+add_filter('the_content', 'payswarm_filter_paid_content');
+
+// add the javascript for the PaySwarm plugin
+wp_enqueue_script('payswarm', $PAYSWARM_PLUGIN_URL . 'payswarm.js');
 ?>
