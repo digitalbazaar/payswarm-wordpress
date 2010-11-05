@@ -2,7 +2,7 @@
 /*
 Plugin Name: PaySwarm
 Plugin URI: http://payswarm.com/
-Description: PaySwarm allows you to charge small amounts of money for access to your website. PaySwarm is an open, royalty-free, Internet standard that enables micropayments across many different websites. You can learn more at the <a href="http://payswarm.com/">PaySwarm standards website</a>.
+Description: PaySwarm allows you to charge small amounts of money for access to your website. PaySwarm is an open, royalty-free, Internet standard that enables micropayments across many different websites. You can learn more at the <a href='http://payswarm.com/'>PaySwarm standards website</a>.
 Version: 1.0
 Author: Digital Bazaar, Inc.
 Author URI: http://digitalbazaar.com/
@@ -37,10 +37,10 @@ License: GPLv2
 define('PAYSWARM_PLUGIN_URL', site_url() . '/wp-content/plugins/' .
    str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
 
-require_once("payswarm-database.inc");
-require_once("payswarm-admin.inc");
-require_once("payswarm-article.inc");
-require_once("payswarm-session.inc");
+require_once('payswarm-database.inc');
+require_once('payswarm-admin.inc');
+require_once('payswarm-article.inc');
+require_once('payswarm-session.inc');
 
 // make sure to create the PaySwarm tokens database if it doesn't exist
 register_activation_hook(__FILE__, 'payswarm_install_database');

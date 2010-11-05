@@ -52,16 +52,22 @@ function payswarm_filter_paid_content($content)
 
       if($amount !== "" and $paid_content_exists)
       {
+         // FIXME: This replacement isn't exactly safe, if the URL contains
+         // another 'http://' in it, but then again, can't think of any reason
+         // that it would
+         $access_url = preg_replace('/^http:\/\/(.*)$/', 'https://$1', 
+            PAYSWARM_PLUGIN_URL . 'payswarm-access.php') . "?p=" . $post->ID;
+
          // if the article has not been purchased, and a price is available,
          // display the price and a purchase button.
          $processed_content .= '<div class="purchase section">
              <div class="money row"> 
              <span class="label">' . __('Purchase the full article') . 
              '</span> ' . $currency . " " . $currency_symbol . $amount . 
-             '<button class="purchase-button" ' . 
-             'onclick="payswarmAccessPost(' . $post->ID . ');">' .
+             '<form class="money" action="' . $access_url . '" ' .
+             'method="POST"><button class="purchase-button">' .
              '<img src="' . $pslogo_url .
-             '">'. __('Purchase') .'</button>
+             '">'. __('Purchase') .'</button></form>
            </div></div>';
       }
       else if($paid_content_exists)

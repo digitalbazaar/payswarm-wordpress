@@ -63,11 +63,19 @@ function payswarm_install_database()
  * @return Array An associative array of all items associated with the given
  *    PaySwarm session or NULL if no session exists.
  */
-function payswarm_database_get_token($payswarm_session)
+function payswarm_database_get_token($payswarm_session, $create=false)
 {
    $rval = null;
    global $wpdb;
-   global $payswarm_table_name;
+
+   // create the token if it doesn't already exist in the database
+   if($create)
+   {
+      $wpdb->query($wpdb->prepare('INSERT IGNORE INTO ' . PAYSWARM_TABLE_NAME . 
+         '(session, state, token, secret, amount) ' .
+         'VALUES (%s, %s, %s, %s, %s)',
+         $payswarm_session, 'initializing', '', '', '0.0'));
+   }
 
    // retrieve all information associated with the session
    $rval = $wpdb->get_row($wpdb->prepare(
@@ -79,6 +87,45 @@ function payswarm_database_get_token($payswarm_session)
    if($wpdb->num_rows < 1)
    {
       $rval = null;
+   }
+
+   return $rval;
+}
+
+/**
+ * Updates a PaySwarm Payment Token given information associated with the token.
+ * 
+ * Updates all of the token information that is provided. The token contains 
+ * information such as session, state, the token identifier, token secret, 
+ * and the amount left on the token.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param Array $payswarm_token An associative array containing all of the 
+ *    values for a $payswarm_token that should be updated. 
+ * @return boolean true if the update was successful, false otherwise.
+ */
+function payswarm_database_update_token($payswarm_token)
+{
+   $rval = false;
+   global $wpdb;
+
+   // build the update data in WordPress database update format
+   $data = array();
+   foreach($payswarm_token as $key => $value)
+   {
+      $data[$key] = $value;
+   }
+
+   // retrieve all information associated with the session
+   $wpdb->update(PAYSWARM_TABLE_NAME, $data, 
+      array("session" => $payswarm_token["session"]));
+
+   // Set the return type to true if the object was updated correctly
+   if($wpdb->num_rows > 0)
+   {
+      $rval = true;
    }
 
    return $rval;
