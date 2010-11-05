@@ -1,22 +1,31 @@
 <?php
 
+/**
+ * Checks to ensure that a PaySwarm session is being tracked on the site.
+ * 
+ * Checks to see if a cookie called 'payswarm-session' exists in HTTPS mode,
+ * if it doesn't, one is created. This session is used to associate the visitor
+ * with a PaySwarm Payment Token if one is ever retrieved for the visitor.
+ *
+ * @package payswarm
+ * @since 1.0
+ */
 function payswarm_check_session()
 {
    global $_COOKIE;
    $id = 0;
 
+   // check to see if the payswarm-session cookie exists
    if(array_key_exists('payswarm-session', $_COOKIE))
    {
       $id = $_COOKIE['payswarm-session'];
    }
    else
    {
+      // generate a new random cookie if the cookie already exists
       $time_value = time();
       $random_value = rand(0, 100000);
       $id = sha1("$time_value$random_value");
-      $ptok = array(
-         'id' => $id, 'state' => 'initializing', 
-         'token' => '', 'secret' => '', 'amount' => '');
    }
    setcookie('payswarm-session', $id, time() + 3600, '/', '.sites.local', true);
 }

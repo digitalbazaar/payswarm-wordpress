@@ -1,20 +1,27 @@
 <?php
 
-$options_not_being_set = !isset($_POST['payswarm_consumer_key']) ||
-   !isset($_POST['payswarm_consumer_secret']) ||
-   !isset($_POST['payswarm_default_currency']);
-
+/**
+ * Adds the administrative pages to the UI if the administrator is logged in.
+ * 
+ * @package payswarm
+ * @since 1.0
+ */
 function add_admin_pages()
 {
-   global $options_not_being_set;
+   // check to see if the PaySwarm options are being set
+   $options_not_being_set = !isset($_POST['payswarm_consumer_key']) ||
+      !isset($_POST['payswarm_consumer_secret']) ||
+      !isset($_POST['payswarm_default_currency']);
 
+   // ensure that the administrator is logged in before adding the administrator
+   // menus
    if(is_admin())
    {
       // admin actions
       add_action('admin_init', 'payswarm_register_settings');
       add_action('admin_menu', 'payswarm_create_menu');
 
-      // create a warning if the proper settings are not being set.
+      // create a warning if the proper settings are not set.
       if($options_not_being_set)
       {
          payswarm_admin_warnings();
@@ -22,14 +29,26 @@ function add_admin_pages()
    }
 }
 
+/**
+ * Registers all of the PaySwarm options settings.
+ * 
+ * @package payswarm
+ * @since 1.0
+ */
 function payswarm_register_settings()
 {
-   // whitelist options
+   // whitelist the PaySwarm options
    register_setting('payswarm-option-group', 'payswarm_consumer_key');
    register_setting('payswarm-option-group', 'payswarm_consumer_secret');
    register_setting('payswarm-option-group', 'payswarm_default_currency');
 }
 
+/**
+ * Adds a plugin configuration page to the administration panel.
+ * 
+ * @package payswarm
+ * @since 1.0
+ */
 function payswarm_create_menu()
 {
    //create new top-level menu
@@ -37,6 +56,14 @@ function payswarm_create_menu()
       'administrator', 'payswarm', 'payswarm_settings_page');
 }
 
+/**
+ * Adds a warning to the administration page.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string $warning The warning to print to the administration page.
+ */
 function payswarm_admin_warning($warning) 
 {
    echo "
@@ -48,9 +75,17 @@ function payswarm_admin_warning($warning)
    </div>";
 }
 
+/**
+ * Generates any administration warnings dealing with PaySwarm configuration.
+ * 
+ * @package payswarm
+ * @since 1.0
+ */
 function payswarm_admin_warnings() 
 {
-   global $options_not_being_set;
+   $options_not_being_set = !isset($_POST['payswarm_consumer_key']) ||
+      !isset($_POST['payswarm_consumer_secret']) ||
+      !isset($_POST['payswarm_default_currency']);
    $options_nonexistant = !get_option('payswarm_consumer_key') ||
       !get_option('payswarm_consumer_secret') ||
       !get_option('payswarm_default_currency');
@@ -58,6 +93,7 @@ function payswarm_admin_warnings()
       strlen(get_option('payswarm_consumer_secret')) < 1 ||
       strlen(get_option('payswarm_default_currency')) < 1;
 
+   // output a warning if any part of the PaySwarm configuration is not set
    if(($options_nonexistant && $options_not_being_set) || $options_invalid)
    {
       function psaw_config()
@@ -69,9 +105,15 @@ function payswarm_admin_warnings()
    }
 }
 
+/**
+ * Displays the PaySwarm settings page to the administrator.
+ * 
+ * @package payswarm
+ * @since 1.0
+ */
 function payswarm_settings_page()
 {
-   // update the consumer key, secret and default currency
+   // update the consumer key, secret and default currency if they are set
    if(isset($_POST['payswarm_consumer_key']) &&
       isset($_POST['payswarm_consumer_secret']) &&
       isset($_POST['payswarm_default_currency']))

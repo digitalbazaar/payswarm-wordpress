@@ -1,14 +1,35 @@
 <?php
 
+/**
+ * Adds the required stylesheets for the PaySwarm plugin.
+ * 
+ * @package payswarm
+ * @since 1.0
+ */
 function payswarm_add_stylesheets()
 {
-   global $PAYSWARM_PLUGIN_URL;
-   $css_url = $PAYSWARM_PLUGIN_URL . 'payswarm.css';
+   $css_url = PAYSWARM_PLUGIN_URL . 'payswarm.css';
 
    wp_register_style('payswarm-style', $css_url);
    wp_enqueue_style( 'payswarm-style');
 }
 
+/**
+ * Filters the for-profit content for posts.
+ * 
+ * This filter is applied based on the value of the session and PaySwarm
+ * Payment Token. If the visitor has not been cleared to view an article, only
+ * the free content is displayed. If the visitor has paid for the content,
+ * the proper article content is shown. This is a filter that is applied to
+ * the 'the_content' WordPress filter.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string $content The article content as it is stored in the database.
+ * @return string The filtered article content after it has been modified by 
+ *    this filter.
+ */
 function payswarm_filter_paid_content($content)
 {
    global $post;
@@ -16,9 +37,10 @@ function payswarm_filter_paid_content($content)
    $article_purchased = false;
    $amount = get_post_meta($post->ID, 'payswarm_price', true);
 
+   // if the article has not been purchased, filter out all of the for-pay
+   // article content.
    if(!$article_purchased)
    {
-      global $PAYSWARM_PLUGIN_URL;
       $temp = explode('<!--payswarm-->', $content, 2);
       $processed_content = $temp[0];
       $paid_content_exists = (count($temp) > 1) and (strlen($temp[1] > 0));
@@ -26,10 +48,12 @@ function payswarm_filter_paid_content($content)
       $currency = "USD";
       $currency_symbol = "$";
 
-      $pslogo_url = $PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
+      $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
 
       if($amount !== "" and $paid_content_exists)
       {
+         // if the article has not been purchased, and a price is available,
+         // display the price and a purchase button.
          $processed_content .= '<div class="purchase section">
              <div class="money row"> 
              <span class="label">' . __('Purchase the full article') . 
@@ -42,6 +66,8 @@ function payswarm_filter_paid_content($content)
       }
       else if($paid_content_exists)
       {
+         // if the article has not been purchased, but a price is not available,
+         // tell the visitor that the article cannot be purchased.
          $processed_content .= '<div class="purchase section">
              <div class="money row"> 
              <span class="label">' . 
@@ -56,12 +82,26 @@ function payswarm_filter_paid_content($content)
    return $processed_content;
 }
 
+/**
+ * Adds the PaySwarm payment information metabox to a post editor box.
+ * 
+ * @package payswarm
+ * @since 1.0
+ */
 function payswarm_add_meta_boxes()
 {
    add_meta_box('payswarm_sectionid', __( 'PaySwarm Options'), 
                 'payswarm_create_meta_box', 'post', 'side', 0);
 }
 
+/**
+ * Generates the HTML for a PaySwarm post metadata editing box.
+ * 
+ * Echoes the price for a PaySwarm post metadata editing box. 
+ *
+ * @package payswarm
+ * @since 1.0
+ */
 function payswarm_create_meta_box()
 {
    // nonce is required for fields to prevent forgery attacks
@@ -72,6 +112,7 @@ function payswarm_create_meta_box()
    $price = get_post_meta($post->ID, 'payswarm_price', true);
    $currency_symbol = "$";
 
+   // dump the HTML contents
    echo '<div><strong><label for="payswarm_price_field">' .
       __("Price") . 
       ' </label></strong>';
@@ -82,6 +123,20 @@ function payswarm_create_meta_box()
       '</div>';
 }
 
+/**
+ * Saves the PaySwarm-specific meta-data that is associated with a post.
+ * 
+ * This method is called whenever a save is done for a post. It saves all of
+ * the information that is specified in the PaySwarm options box for the post.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param integer $post_id The post identifier as recorded in the WordPress 
+ *    database tables.
+ * @return integer The post identifier as recorded in the WordPress database
+ *    tables.
+ */
 function payswarm_save_post_data($post_id)
 {
    $rval = $post_id;

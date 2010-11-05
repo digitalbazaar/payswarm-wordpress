@@ -27,15 +27,20 @@ License: GPLv2
 */
 ?>
 <?php
+/**
+ * The current URL to the PaySwarm plugin base directory.
+ *
+ * @package payswarm
+ * @since 1.0
+ * @global string PAYSWARM_PLUGIN_URL
+ */
+define('PAYSWARM_PLUGIN_URL', site_url() . '/wp-content/plugins/' .
+   str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
 
-// setup the global variables
-$PAYSWARM_PLUGIN_URL = site_url() . '/wp-content/plugins/' .
-   str_replace(basename( __FILE__), '', plugin_basename(__FILE__));
-
-include("payswarm-database.inc");
-include("payswarm-admin.inc");
-include("payswarm-article.inc");
-include("payswarm-session.inc");
+require_once("payswarm-database.inc");
+require_once("payswarm-admin.inc");
+require_once("payswarm-article.inc");
+require_once("payswarm-session.inc");
 
 // make sure to create the PaySwarm tokens database if it doesn't exist
 register_activation_hook(__FILE__, 'payswarm_install_database');
@@ -55,5 +60,5 @@ add_action('sanitize_comment_cookies', 'payswarm_check_session');
 add_filter('the_content', 'payswarm_filter_paid_content');
 
 // add the javascript for the PaySwarm plugin
-wp_enqueue_script('payswarm', $PAYSWARM_PLUGIN_URL . 'payswarm.js');
+wp_enqueue_script('payswarm', PAYSWARM_PLUGIN_URL . 'payswarm.js');
 ?>
