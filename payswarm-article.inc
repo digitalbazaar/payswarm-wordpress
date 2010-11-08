@@ -34,18 +34,31 @@ function payswarm_filter_paid_content($content)
 {
    global $post;
    $processed_content = $content;
-   $article_purchased = false;
-   $amount = get_post_meta($post->ID, 'payswarm_price', true);
+   $post_purchased = false;
+
+   // check to see if the article has been purchased already
+   $post_id = '' . $post->ID;
+   $session = payswarm_check_session(false);
+   $ptoken = payswarm_database_get_token($session);
+   if($ptoken != null)
+   {
+      $authorized_posts = explode(' ', $ptoken['authorized_posts']);
+      if(in_array($post_id, $authorized_posts))
+      {
+         $post_purchased = true;
+      }
+   }
 
    // if the article has not been purchased, filter out all of the for-pay
    // article content.
-   if(!$article_purchased)
+   if(!$post_purchased)
    {
+      $amount = get_post_meta($post->ID, 'payswarm_price', true);
       $temp = explode('<!--payswarm-->', $content, 2);
       $processed_content = $temp[0];
       $paid_content_exists = (count($temp) > 1) and (strlen($temp[1] > 0));
 
-      $currency = "USD";
+      $currency = get_option('payswarm_default_currency');
       $currency_symbol = "$";
 
       $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
@@ -83,6 +96,10 @@ function payswarm_filter_paid_content($content)
              '">'. __('Cannot Purchase') .'</button>
            </div></div>';
       }
+   }
+   else
+   {
+      $processed_content = str_replace('<!--payswarm-->', '', $content);
    }
 
    return $processed_content;

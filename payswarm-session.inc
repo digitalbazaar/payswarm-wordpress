@@ -43,8 +43,11 @@ function payswarm_get_current_url()
  *
  * @package payswarm
  * @since 1.0
+ *
+ * @param boolean update if set to true, updates the cookie value.
+ * @return string the session ID for the active payswarm session.
  */
-function payswarm_check_session()
+function payswarm_check_session($update=true)
 {
    global $_COOKIE;
    $rval = 0;
@@ -61,7 +64,13 @@ function payswarm_check_session()
       $random_value = rand(0, 100000);
       $rval = sha1("$time_value$random_value");
    }
-   setcookie('payswarm-session', $rval, time() + 3600, '/', '.sites.local', true);
+
+   // update the cookie value if it needs to be updated
+   if($update)
+   {
+      setcookie('payswarm-session', $rval, time() + 3600, '/', 
+         '.sites.local', true);
+   }
 
    return $rval;
 }

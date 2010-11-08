@@ -31,12 +31,13 @@ function payswarm_install_database()
       // ensure that the formatting below is one field per line, dbDelta is
       // very picky when it comes to what it allows.
       $sql = 'CREATE TABLE ' . PAYSWARM_TABLE_NAME . ' (
-         session VARCHAR(255) NOT NULL, 
-         state TINYTEXT, 
+         session VARCHAR(255) NOT NULL,
+         state TINYTEXT,
          token TINYTEXT,
-         secret TINYTEXT, 
-         amount TINYTEXT, 
-         mtime TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
+         secret TINYTEXT,
+         amount TINYTEXT,
+         authorized_posts TEXT,
+         mtime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
          PRIMARY KEY (session)
          );';
 
@@ -72,14 +73,14 @@ function payswarm_database_get_token($payswarm_session, $create=false)
    if($create)
    {
       $wpdb->query($wpdb->prepare('INSERT IGNORE INTO ' . PAYSWARM_TABLE_NAME . 
-         '(session, state, token, secret, amount) ' .
-         'VALUES (%s, %s, %s, %s, %s)',
-         $payswarm_session, 'initializing', '', '', '0.0'));
+         '(session, state, token, secret, amount, authorized_posts) ' .
+         'VALUES (%s, %s, %s, %s, %s, %s)',
+         $payswarm_session, 'initializing', '', '', '0.0', ''));
    }
 
    // retrieve all information associated with the session
    $rval = $wpdb->get_row($wpdb->prepare(
-      'SELECT session, state, token, secret, amount FROM ' .
+      'SELECT session, state, token, secret, amount, authorized_posts FROM ' .
       PAYSWARM_TABLE_NAME . ' WHERE session=%s', $payswarm_session),
       ARRAY_A);
 

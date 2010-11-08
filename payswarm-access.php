@@ -84,7 +84,6 @@ try
          // save the access token and secret
          if(payswarm_database_update_token($tok))
          {
-            $post = $_GET['p'];
             $redir_url = payswarm_get_current_url();
             header("Location: $redir_url");
          }
@@ -101,13 +100,14 @@ try
       // State: authorized - we can just use the stored access token
       $oauth->setToken($ptoken['token'], $ptoken['secret']);
       $post = $_GET['p'];
+      $price = get_post_meta($post, 'payswarm_price', true);
       $params = array(
-         // FIXME: Generate the correct asset URL
-         'asset' => "http://sites.local/wordpress.payswarm.com/?p=$post",
+         'asset' => site_url() . '/?p=' . $post,
+         // FIXME: Generate the correct PaySwarm license
          'license' => 'http://example.org/licenses/personal-use',
          'license_hash' => '866f3f9540e572e8cc4467f470a869242db201ba',
-         'currency' => 'USD',
-         'amount' => '0.01');
+         'currency' => get_option('payswarm_default_currency'),
+         'amount' => $price);
 
       // catch any token revocations
       try
@@ -134,18 +134,23 @@ try
 
          if($authorized)
          {
-            $ptoken['state'] = "valid";
+            $posts = explode(' ', $ptoken['authorized_posts']);
+            array_push($posts, "$post");
+            $posts = array_unique($posts);
+
             $tok['session'] = $ptoken['session'];
             $tok['state'] = $ptoken['state'];
             $tok['token'] = $ptoken['token'];
             $tok['secret'] = $ptoken['secret'];
             $tok['amount'] = $balance;
+            $tok['authorized_posts'] = implode(' ', $posts);
+
             // Save the access token and secret
             if(payswarm_database_update_token($tok))
             {
                $post = $_GET['p'];
                // FIXME: Generate the proper post path
-               $redir_url = "http://sites.local/wordpress.payswarm.com/?p=$post";
+               $redir_url = site_url() . '/?p=' . $post;
                header("Location: $redir_url");
             }
          }
@@ -160,7 +165,7 @@ try
          if($invalidToken !== false)
          {
             setcookie(
-               "payswarm-session", $session, time() - 3600, "/$DEMO_PATH/", $WEBSITE, true);
+               "payswarm-session", $session, time() - 3600, "/", '.sites.local', true);
             $fh = fopen("articles/revoked.html", "r");
             print(fread($fh, 32768));
             fclose($fh);
