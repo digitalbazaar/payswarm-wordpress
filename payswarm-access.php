@@ -50,9 +50,10 @@ try
       $tok['state'] = 'authorizing';
       if(payswarm_database_update_token($tok))
       {
-         $authorize_url = get_option('payswarm_authorize_url');
          // Save the token and the secret, which will be used later
+         $authorize_url = get_option('payswarm_authorize_url');
          $oauth_token = $tok['token'];
+
          header("Location: $authorize_url?oauth_token=$oauth_token");
       }
       else
@@ -60,6 +61,7 @@ try
          // if something went wrong, clear the cookie and attempt the purchase
          // again
          global $_SERVER;
+
          setcookie('payswarm-session', $session, time() - 3600, '/', 
              $_SERVER['HTTP_HOST'], true);
          header('Location: ' . payswarm_get_current_url());
@@ -89,9 +91,9 @@ try
       }
       else
       {
-         $fh = fopen("articles/denied.html", "r");
-         print(fread($fh, 32768));
-         fclose($fh);
+         // if access was denied, print out an appropriate error
+         $post = $_GET['p'];
+         payswarm_access_denied($post);
       }
    }
    else if($ptoken['state'] === 'valid')
@@ -162,17 +164,16 @@ try
          // if there is an error, check to see that the token has been
          // revoked
          $error = $oauth->getLastResponse();
-         $invalidToken = strpos($error, "bitmunk.database.NotFound");
+         $invalidToken = strpos($error, 'bitmunk.database.NotFound');
 
+         // if the token is invalid, start the process over
          if($invalidToken !== false)
          {
             global $_SERVER;
             setcookie(
                'payswarm-session', $session, time() - 3600, '/',  
                $_SERVER['HTTP_HOST'], true);
-            $fh = fopen("articles/revoked.html", "r");
-            print(fread($fh, 32768));
-            fclose($fh);
+            header('Location: ' . payswarm_get_current_url());
          }
       }
    }
@@ -183,4 +184,29 @@ catch(OAuthException $E)
    print_r('<pre>' . $E . "\nError details: \n" . print_r($err, true) . '</pre>');
 }
 
+
+function payswarm_access_denied($post)
+{
+   // FIXME: Unfortunately, this generates a PHP Notice error for
+   // WP_Query::$is_paged not being defined. Need to figure out which file
+   // declares that variable.
+   get_header();
+
+   echo '
+<div class="category-uncategorized"> 
+  <h2 class="entry-title">Access Denied to PaySwarm Article</h2> 
+  <div class="entry-content"> 
+    <p>
+      Access to the article was denied because this website was not 
+      allowed to access your PaySwarm account. This usually happens because
+      you did not allow this website to access your PaySwarm provider information.
+    </p>
+
+    <p><a href="' . site_url() . "/?p=$post" . 
+      '">Go back to the article preview</a>.</p>
+  </div>
+</div>';
+   
+   get_footer();
+}
 ?>

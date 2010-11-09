@@ -75,12 +75,12 @@ function payswarm_filter_paid_content($content)
          // display the price and a purchase button.
          $processed_content .= '<div class="purchase section">
              <div class="money row"> 
-             <span class="label">' . __('Purchase the full article') . 
-             '</span> ' . $currency . " " . $currency_symbol . $amount . 
+             <span class="label">' . __('View the full article for ') . 
+             $currency_symbol . $amount . '</span>' .
              '<form class="money" action="' . $access_url . '" ' .
              'method="POST"><button class="purchase-button">' .
              '<img src="' . $pslogo_url .
-             '">'. __('Purchase') .'</button></form>
+             '">'. __('Access') .'</button></form>
            </div></div>';
       }
       else if($paid_content_exists)
