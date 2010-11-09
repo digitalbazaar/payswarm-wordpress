@@ -13,23 +13,18 @@ $ptoken = payswarm_database_get_token($session, true);
 
 // If we are authorizing, then there should be an oauth_token, if not, start
 // the process over.
-if($ptoken['state'] === "authorizing" && !isset($_GET['oauth_token']))
+if($ptoken['state'] === 'authorizing' && !isset($_GET['oauth_token']))
 {
-   $ptoken['state'] = "initializing";
+   $ptoken['state'] = 'initializing';
 }
 
 try
 {
-   $consumer_key = get_option('payswarm_consumer_key');
-   $consumer_secret = get_option('payswarm_consumer_secret');
-   $payswarm_authority = "dev.payswarm.com:19100";
-   $authorize_url = "https://$payswarm_authority/home/authorize";
-   $request_url = "https://$payswarm_authority/api/3.2/oauth1/tokens/request";
-   $access_url = "https://$payswarm_authority/api/3.2/oauth1/tokens";
-   $contracts_url = "https://$payswarm_authority/api/3.2/oauth1/contracts";
+   $client_id = get_option('payswarm_client_id');
+   $client_secret = get_option('payswarm_client_secret');
 
    $oauth = new OAuth(
-      $consumer_key, $consumer_secret, OAUTH_SIG_METHOD_HMACSHA1, 
+      $client_id, $client_secret, OAUTH_SIG_METHOD_HMACSHA1, 
       OAUTH_AUTH_TYPE_FORM);
 
    // enable debug output for OAuth and remove SSL checks
@@ -37,10 +32,11 @@ try
    $oauth->disableSSLChecks();
 
    // check the state of the payment token
-   if($ptoken['state'] === "initializing")
+   if($ptoken['state'] === 'initializing')
    {
       // Initializing state - Generate request token and redirect user to 
       // payswarm site to authorize
+      $request_url = get_option('payswarm_request_url');
       $post = $_GET['p'];
       $callback_url = payswarm_get_current_url() . "&session=$session";
       $request_token_info = 
@@ -50,10 +46,11 @@ try
       $tok['session'] = $session;
       $tok['token'] = $request_token_info['oauth_token'];
       $tok['secret'] = $request_token_info['oauth_token_secret'];
-      $tok['amount'] = "0.0";
-      $tok['state'] = "authorizing";
+      $tok['amount'] = '0.0';
+      $tok['state'] = 'authorizing';
       if(payswarm_database_update_token($tok))
       {
+         $authorize_url = get_option('payswarm_authorize_url');
          // Save the token and the secret, which will be used later
          $oauth_token = $tok['token'];
          header("Location: $authorize_url?oauth_token=$oauth_token");
@@ -62,25 +59,27 @@ try
       {
          // if something went wrong, clear the cookie and attempt the purchase
          // again
-         setcookie("payswarm-session", $session, time() - 3600, "/", 
-            ".sites.local", true);
-         header("Location: " . payswarm_get_current_url());
+         global $_SERVER;
+         setcookie('payswarm-session', $session, time() - 3600, '/', 
+             $_SERVER['HTTP_HOST'], true);
+         header('Location: ' . payswarm_get_current_url());
       }
    }
-   else if($ptoken['state'] === "authorizing")
+   else if($ptoken['state'] === 'authorizing')
    {
       // State 1 - Handle callback from payswarm 
-      if(array_key_exists("oauth_verifier", $_GET))
+      if(array_key_exists('oauth_verifier', $_GET))
       {
          // get and store an access token
+         $access_url = get_option('payswarm_access_url');
          $oauth->setToken($_GET['oauth_token'], $ptoken['secret']);
          $access_token_info = $oauth->getAccessToken($access_url);
          $tok['session'] = $session;
-         $tok['state'] = "valid";
+         $tok['state'] = 'valid';
          $tok['token'] = $access_token_info['oauth_token'];
          $tok['secret'] = $access_token_info['oauth_token_secret'];
          $tok['amount'] = '0.0';
-         
+
          // save the access token and secret
          if(payswarm_database_update_token($tok))
          {
@@ -95,9 +94,10 @@ try
          fclose($fh);
       }
    }
-   else if($ptoken['state'] === "valid")
+   else if($ptoken['state'] === 'valid')
    {
       // State: authorized - we can just use the stored access token
+      $contracts_url = get_option('payswarm_contracts_url');
       $oauth->setToken($ptoken['token'], $ptoken['secret']);
       $post = $_GET['p'];
       $price = get_post_meta($post, 'payswarm_price', true);
@@ -117,16 +117,16 @@ try
          // check to see if the purchase was approved and get the remaining
          // balance on the payment token
          $authorized = false;
-         $balance = "0.0";
-         $items = explode("&", $oauth->getLastResponse());
+         $balance = '0.0';
+         $items = explode('&', $oauth->getLastResponse());
          foreach($items as $item)
          {
-            $kv = explode("=", $item, 2);
-            if($kv[0] === "authorized" && $kv[1] === "true")
+            $kv = explode('=', $item, 2);
+            if($kv[0] === 'authorized' && $kv[1] === 'true')
             {
                $authorized = true;
             }
-            else if($kv[0] === "balance")
+            else if($kv[0] === 'balance')
             {
                $balance = $kv[1];
             }
@@ -134,6 +134,8 @@ try
 
          if($authorized)
          {
+            // append this post to the array of authorized posts associated
+            // with the payment token
             $posts = explode(' ', $ptoken['authorized_posts']);
             array_push($posts, "$post");
             $posts = array_unique($posts);
@@ -145,7 +147,7 @@ try
             $tok['amount'] = $balance;
             $tok['authorized_posts'] = implode(' ', $posts);
 
-            // Save the access token and secret
+            // Save the payment token and secret
             if(payswarm_database_update_token($tok))
             {
                $post = $_GET['p'];
@@ -164,8 +166,10 @@ try
 
          if($invalidToken !== false)
          {
+            global $_SERVER;
             setcookie(
-               "payswarm-session", $session, time() - 3600, "/", '.sites.local', true);
+               'payswarm-session', $session, time() - 3600, '/',  
+               $_SERVER['HTTP_HOST'], true);
             $fh = fopen("articles/revoked.html", "r");
             print(fread($fh, 32768));
             fclose($fh);

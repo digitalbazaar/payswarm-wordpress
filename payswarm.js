@@ -6,13 +6,22 @@
  */
 
 /**
- * Starts the process to see if a user has access to a given post, and if not, 
- * redirects them to the purchase process.
- *
- * @param postId the post identifier.
+ * Updates the PaySwarm Authority webservice URL fields in the administrative
+ * interface.
  */
-function payswarmAccessPost(postId)
+function updatePaySwarmServiceUrls()
 {
-   console.log("Check access for post #" + postId);
+   var payswarmAuthority = jQuery('#payswarm_authority').val();
+   console.log("Got PaySwarm Authority: " + payswarmAuthority);
+
+   // set the other fields that depend on the PaySwarm authoirity field
+   jQuery('#payswarm_authorize_url').val(
+      "https://" + payswarmAuthority + "/home/authorize");
+   jQuery('#payswarm_request_url').val(
+      "https://" + payswarmAuthority + "/api/3.2/oauth1/tokens/request");
+   jQuery('#payswarm_access_url').val(
+      "https://" + payswarmAuthority + "/api/3.2/oauth1/tokens");
+   jQuery('#payswarm_contracts_url').val(
+      "https://" + payswarmAuthority + "/api/3.2/oauth1/contracts");
 }
 

@@ -46,7 +46,7 @@ require_once('payswarm-session.inc');
 register_activation_hook(__FILE__, 'payswarm_install_database');
 
 // add admin pages if the administrator is running the plugin
-add_admin_pages();
+payswarm_add_admin_pages();
 
 // add actions associated with the WordPress processing
 add_action('wp_print_styles', 'payswarm_add_stylesheets');

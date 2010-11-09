@@ -68,8 +68,9 @@ function payswarm_check_session($update=true)
    // update the cookie value if it needs to be updated
    if($update)
    {
+      global $_SERVER;
       setcookie('payswarm-session', $rval, time() + 3600, '/', 
-         '.sites.local', true);
+         $_SERVER['HTTP_HOST'], true);
    }
 
    return $rval;
