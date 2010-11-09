@@ -144,6 +144,16 @@ function payswarm_create_meta_box()
       'name="payswarm_price" value="'. $price . '" size="6" />' .
       '<span>The price to charge for access to the non-free content.</span>' .
       '</div>';
+   echo '<div><strong><label for="payswarm_content_license_url_field">' .
+      __("Content License") . 
+      ' </label></strong>';
+   echo '<select id="payswarm_content_license_url_field" 
+      name="payswarm_content_license_url">
+            <option value="' . get_option('payswarm_default_license_url') . 
+      '">' . get_option('payswarm_default_license_url') . '</option>
+      </select>
+      <span>The license to associate with the content when it is sold.
+      </span></div>';
 }
 
 /**
@@ -177,6 +187,8 @@ function payswarm_save_post_data($post_id)
    {
       // Retrieve the price from the post data
       $price = $_POST['payswarm_price'];
+      // Retrieve the license URL from the post data
+      $license_url = $_POST['payswarm_content_license_url'];
 
       // converts the string value into a well-formed floating point value
       if(is_numeric($price))
@@ -194,10 +206,8 @@ function payswarm_save_post_data($post_id)
       {
          delete_post_meta($post_id, 'payswarm_price');
       }
-      else if(!add_post_meta($post_id, 'payswarm_price', $price, true))
-      {
-         update_post_meta($post_id, 'payswarm_price', $price);
-      }
+      update_post_meta($post_id, 'payswarm_price', $price);
+      update_post_meta($post_id, 'payswarm_content_license_url', $license_url);
    }
 
    return $rval;

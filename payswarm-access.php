@@ -20,15 +20,17 @@ if($ptoken['state'] === 'authorizing' && !isset($_GET['oauth_token']))
 
 try
 {
+   // setup the OAuth client
    $client_id = get_option('payswarm_client_id');
    $client_secret = get_option('payswarm_client_secret');
-
    $oauth = new OAuth(
       $client_id, $client_secret, OAUTH_SIG_METHOD_HMACSHA1, 
       OAUTH_AUTH_TYPE_FORM);
 
-   // enable debug output for OAuth and remove SSL checks
+   // FIXME: Disable debug output for OAuth for production software
    $oauth->enableDebug();
+
+   // FIXME: Enable SSL checks for production software
    $oauth->disableSSLChecks();
 
    // check the state of the payment token
@@ -39,6 +41,9 @@ try
       $request_url = get_option('payswarm_request_url');
       $post = $_GET['p'];
       $callback_url = payswarm_get_current_url() . "&session=$session";
+
+      // FIXME: Change currency when we support other currencies, change the
+      // suggested amount to be 10x the post sales price?
       $request_token_info = 
          $oauth->getRequestToken("$request_url?currency=USD&amount=1.00", 
          $callback_url);
@@ -69,7 +74,7 @@ try
    }
    else if($ptoken['state'] === 'authorizing')
    {
-      // State 1 - Handle callback from payswarm 
+      // State 1 - Handle callback from PaySwarm
       if(array_key_exists('oauth_verifier', $_GET))
       {
          // get and store an access token
@@ -103,11 +108,16 @@ try
       $oauth->setToken($ptoken['token'], $ptoken['secret']);
       $post = $_GET['p'];
       $price = get_post_meta($post, 'payswarm_price', true);
+      $content_license_url = 
+         get_post_meta($post, 'payswarm_content_license_url', true);
+      $content_license_hash = 
+         get_post_meta($post, 'payswarm_default_license_hash', true);
+
+      // create the asset 
       $params = array(
-         'asset' => site_url() . '/?p=' . $post,
-         // FIXME: Generate the correct PaySwarm license
-         'license' => 'http://example.org/licenses/personal-use',
-         'license_hash' => '866f3f9540e572e8cc4467f470a869242db201ba',
+         'asset' => get_permalink($post),
+         'license' => $content_license_url,
+         'license_hash' => $content_license_hash,
          'currency' => get_option('payswarm_default_currency'),
          'amount' => $price);
 
@@ -170,8 +180,7 @@ try
          if($invalidToken !== false)
          {
             global $_SERVER;
-            setcookie(
-               'payswarm-session', $session, time() - 3600, '/',  
+            setcookie('payswarm-session', $session, time() - 3600, '/',  
                $_SERVER['HTTP_HOST'], true);
             header('Location: ' . payswarm_get_current_url());
          }
@@ -181,9 +190,9 @@ try
 catch(OAuthException $E)
 {
    $err = json_decode($E->lastResponse);
-   print_r('<pre>' . $E . "\nError details: \n" . print_r($err, true) . '</pre>');
+   print_r('<pre>' . $E . "\nError details: \n" . 
+      print_r($err, true) . '</pre>');
 }
-
 
 function payswarm_access_denied($post)
 {
@@ -199,7 +208,8 @@ function payswarm_access_denied($post)
     <p>
       Access to the article was denied because this website was not 
       allowed to access your PaySwarm account. This usually happens because
-      you did not allow this website to access your PaySwarm provider information.
+      you did not allow this website to access your PaySwarm provider 
+      information.
     </p>
 
     <p><a href="' . site_url() . "/?p=$post" . 
