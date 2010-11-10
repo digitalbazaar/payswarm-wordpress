@@ -42,16 +42,17 @@ try
       $post = $_GET['p'];
       $callback_url = payswarm_get_current_url() . "&session=$session";
 
-      // FIXME: Change currency when we support other currencies, change the
-      // suggested amount to be 10x the post sales price?
+      // FIXME: Change currency when we support other currencies
+      $post = $_GET['p'];
+      $price = get_post_meta($post, 'payswarm_price', true);
       $request_token_info = 
-         $oauth->getRequestToken("$request_url?currency=USD&amount=1.00", 
+         $oauth->getRequestToken("$request_url?currency=USD&balance=$price", 
          $callback_url);
 
       $tok['session'] = $session;
       $tok['token'] = $request_token_info['oauth_token'];
       $tok['secret'] = $request_token_info['oauth_token_secret'];
-      $tok['amount'] = '0.0';
+      $tok['balance'] = '0.0';
       $tok['state'] = 'authorizing';
       if(payswarm_database_update_token($tok))
       {
@@ -85,7 +86,7 @@ try
          $tok['state'] = 'valid';
          $tok['token'] = $access_token_info['oauth_token'];
          $tok['secret'] = $access_token_info['oauth_token_secret'];
-         $tok['amount'] = '0.0';
+         $tok['balance'] = '0.0';
 
          // save the access token and secret
          if(payswarm_database_update_token($tok))
@@ -110,8 +111,10 @@ try
       $price = get_post_meta($post, 'payswarm_price', true);
       $content_license_url = 
          get_post_meta($post, 'payswarm_content_license_url', true);
+      // FIXME: We need to get the license hash by looking up the post_meta
+      // license URL in a database and getting the hash from that.
       $content_license_hash = 
-         get_post_meta($post, 'payswarm_default_license_hash', true);
+         get_option('payswarm_default_license_hash');
 
       // create the asset 
       $params = array(
@@ -156,7 +159,7 @@ try
             $tok['state'] = $ptoken['state'];
             $tok['token'] = $ptoken['token'];
             $tok['secret'] = $ptoken['secret'];
-            $tok['amount'] = $balance;
+            $tok['balance'] = $balance;
             $tok['authorized_posts'] = implode(' ', $posts);
 
             // Save the payment token and secret

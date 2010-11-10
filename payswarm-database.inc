@@ -35,7 +35,7 @@ function payswarm_install_database()
          state TINYTEXT,
          token TINYTEXT,
          secret TINYTEXT,
-         amount TINYTEXT,
+         balance TINYTEXT,
          authorized_posts TEXT,
          mtime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
          PRIMARY KEY (session)
@@ -73,14 +73,14 @@ function payswarm_database_get_token($payswarm_session, $create=false)
    if($create)
    {
       $wpdb->query($wpdb->prepare('INSERT IGNORE INTO ' . PAYSWARM_TABLE_NAME . 
-         '(session, state, token, secret, amount, authorized_posts) ' .
+         '(session, state, token, secret, balance, authorized_posts) ' .
          'VALUES (%s, %s, %s, %s, %s, %s)',
          $payswarm_session, 'initializing', '', '', '0.0', ''));
    }
 
    // retrieve all information associated with the session
    $rval = $wpdb->get_row($wpdb->prepare(
-      'SELECT session, state, token, secret, amount, authorized_posts FROM ' .
+      'SELECT session, state, token, secret, balance, authorized_posts FROM ' .
       PAYSWARM_TABLE_NAME . ' WHERE session=%s', $payswarm_session),
       ARRAY_A);
 

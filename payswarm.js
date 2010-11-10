@@ -12,11 +12,10 @@
 function updatePaySwarmServiceUrls()
 {
    var payswarmAuthority = jQuery('#payswarm_authority').val();
-   console.log("Got PaySwarm Authority: " + payswarmAuthority);
 
    // set the other fields that depend on the PaySwarm authoirity field
    jQuery('#payswarm_authorize_url').val(
-      "https://" + payswarmAuthority + "/home/authorize");
+      "https://" + payswarmAuthority + "/manage/authorize");
    jQuery('#payswarm_request_url').val(
       "https://" + payswarmAuthority + "/api/3.2/oauth1/tokens/request");
    jQuery('#payswarm_access_url').val(
