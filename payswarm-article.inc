@@ -78,10 +78,10 @@ function payswarm_filter_paid_content($content)
              <span class="label">' . __('View the full article for ') . 
              $currency_symbol . $amount . '</span>' .
              '<form class="money" action="' . $access_url . '" ' .
-             'method="POST"><button class="purchase-button">' .
-             '<img src="' . $pslogo_url .
-             '">'. __('Access') .'</button></form>
-           </div></div>';
+             'method="post"><button class="purchase-button">' .
+             '<img alt="'. __('Access') .'" src="' . $pslogo_url .
+             '" />'. __('Access') .'</button></form>
+           </div></div></p>';
       }
       else if($paid_content_exists)
       {
@@ -92,9 +92,9 @@ function payswarm_filter_paid_content($content)
              <span class="label">' . 
                 __('The author has not set the price for the paid content.') .
              '</span><button class="purchase-button"> 
-               <img src="' . $pslogo_url .
-             '">'. __('Cannot Purchase') .'</button>
-           </div></div>';
+               <img alt="'. __('Cannot Purchase') .'" src="' . $pslogo_url .
+             '" />'. __('Cannot Purchase') .'</button>
+           </div></div></p>';
       }
    }
    else
@@ -176,10 +176,16 @@ function payswarm_save_post_data($post_id)
 
    // check whether or not the nonce is valid, the post is being autosaved
    // and whether or not editing is allowed
-   $valid_nonce = wp_verify_nonce($_POST['payswarm_price_nonce'],
-      plugin_basename(__FILE__));
+   $valid_nonce = false;
    $autosaving = defined('DOING_AUTOSAVE') && DOING_AUTOSAVE;
    $edit_allowed = current_user_can('edit_post', $post_id);
+
+   // get the nonce value if it exists
+   if(isset($_POST['payswarm_price_nonce']))
+   {
+      $valid_nonce = wp_verify_nonce($_POST['payswarm_price_nonce'],
+         plugin_basename(__FILE__));
+   }
 
    // Only save the data if we're not autosaving, the nonce is valid and
    // if the current user can perform edits
