@@ -17,7 +17,9 @@ function payswarm_add_admin_pages()
       !isset($_POST['payswarm_authorize_url']) ||
       !isset($_POST['payswarm_request_url']) ||
       !isset($_POST['payswarm_access_url']) ||
-      !isset($_POST['payswarm_contracts_url']);
+      !isset($_POST['payswarm_contracts_url']) ||
+      !isset($_POST['payswarm_public_key']) ||
+      !isset($_POST['payswarm_private_key']);
 
    // ensure that the administrator is logged in before adding the administrator
    // menus
@@ -53,6 +55,8 @@ function payswarm_register_settings()
    register_setting('payswarm-option-group', 'payswarm_request_url');
    register_setting('payswarm-option-group', 'payswarm_access_url');
    register_setting('payswarm-option-group', 'payswarm_contracts_url');
+   register_setting('payswarm-option-group', 'payswarm_public_key');
+   register_setting('payswarm-option-group', 'payswarm_private_key');
 }
 
 /**
@@ -103,7 +107,9 @@ function payswarm_admin_warnings()
       !isset($_POST['payswarm_authorize_url']) ||
       !isset($_POST['payswarm_request_url']) ||
       !isset($_POST['payswarm_access_url']) ||
-      !isset($_POST['payswarm_contracts_url']);
+      !isset($_POST['payswarm_contracts_url']) ||
+      !isset($_POST['payswarm_public_key']) ||
+      !isset($_POST['payswarm_private_key']);
    $options_nonexistant = !get_option('payswarm_authority') ||
       !get_option('payswarm_client_id') ||
       !get_option('payswarm_client_secret') ||
@@ -112,7 +118,9 @@ function payswarm_admin_warnings()
       !get_option('payswarm_authorize_url') ||
       !get_option('payswarm_request_url') ||
       !get_option('payswarm_access_url') ||
-      !get_option('payswarm_contracts_url');
+      !get_option('payswarm_contracts_url') ||
+      !get_option('payswarm_public_key') ||
+      !get_option('payswarm_private_key');
    $options_invalid = strlen(get_option('payswarm_authority')) < 1 ||
       strlen(get_option('payswarm_client_id')) < 1 ||
       strlen(get_option('payswarm_client_secret')) < 1 ||
@@ -121,7 +129,9 @@ function payswarm_admin_warnings()
       strlen(get_option('payswarm_authorize_url')) < 1 ||
       strlen(get_option('payswarm_request_url')) < 1 ||
       strlen(get_option('payswarm_access_url')) < 1 ||
-      strlen(get_option('payswarm_contracts_url')) < 1;
+      strlen(get_option('payswarm_contracts_url')) < 1 ||
+      strlen(get_option('payswarm_public_key')) < 1 ||
+      strlen(get_option('payswarm_private_key')) < 1;
 
    // output a warning if any part of the PaySwarm configuration is not set
    if(($options_nonexistant && $options_not_being_set) || $options_invalid)
@@ -133,6 +143,38 @@ function payswarm_admin_warnings()
       }
       add_action('admin_notices', 'psaw_config');
    }
+}
+
+/**
+ * Generates a public-private X509 encoded keys.
+ * 
+ * @package payswarm
+ * @since 1.0
+ * 
+ * @return Array containing two keys 'public' and 'private' each with the
+ *    public and private keys encoded in X509 format.
+ */
+function payswarm_generate_keypair()
+{
+   $rval = array();
+
+   // Create the keypair
+   $keypair = openssl_pkey_new();
+
+   // Get private key
+   openssl_pkey_export($keypair, $privkey);
+
+   // Get public key
+   $pubkey = openssl_pkey_get_details($keypair);
+   $pubkey = $pubkey["key"];
+
+   // free the keypair
+   openssl_free_key($keypair);
+
+   $rval['public'] = $pubkey;
+   $rval['private'] = $privkey;
+   
+   return $rval;
 }
 
 /**
@@ -151,7 +193,10 @@ function payswarm_settings_page()
       isset($_POST['payswarm_authorize_url']) &&
       isset($_POST['payswarm_request_url']) &&
       isset($_POST['payswarm_access_url']) &&
-      isset($_POST['payswarm_contracts_url']);
+      isset($_POST['payswarm_contracts_url']) &&
+      isset($_POST['payswarm_public_key']) &&
+      isset($_POST['payswarm_private_key']);
+
    // update the consumer key, secret and default currency if they are set
    if($all_options_set)
    {
@@ -166,6 +211,8 @@ function payswarm_settings_page()
       $request_url = $_POST['payswarm_request_url'];
       $access_url = $_POST['payswarm_access_url'];
       $contracts_url = $_POST['payswarm_contracts_url'];
+      $public_key = $_POST['payswarm_public_key'];
+      $private_key = $_POST['payswarm_private_key'];
 
       // calculate the default license data hash
       $http = new WP_Http;
@@ -175,6 +222,8 @@ function payswarm_settings_page()
       {
          $default_license_hash = sha1($response['body']);
       }
+
+      // FIXME: Update the public key information at the PaySwarm Authority
 
       update_option('payswarm_authority', $authority);
       update_option('payswarm_client_id', $client_id);
@@ -186,6 +235,8 @@ function payswarm_settings_page()
       update_option('payswarm_request_url', $request_url);
       update_option('payswarm_access_url', $access_url);
       update_option('payswarm_contracts_url', $contracts_url);
+      update_option('payswarm_public_key', $public_key);
+      update_option('payswarm_private_key', $private_key);
    }
 
 ?>
@@ -221,7 +272,7 @@ activate PaySwarm on your site.
 
         <tr valign="top">
         <th scope="row"><?php _e('PaySwarm Authority') ?></th>
-        <td><input type="text" size=64 
+        <td><input type="text" size="64" 
           id="payswarm_authority" name="payswarm_authority" 
           onkeyup="javascript:updatePaySwarmServiceUrls();"
           onblur="javascript:updatePaySwarmServiceUrls();"
@@ -230,13 +281,13 @@ activate PaySwarm on your site.
 
         <tr valign="top">
         <th scope="row"><?php _e('PaySwarm Client ID') ?></th>
-        <td><input type="text" size=64 name="payswarm_client_id" 
+        <td><input type="text" size="64" name="payswarm_client_id" 
           value="<?php echo get_option('payswarm_client_id'); ?>" /></td>
         </tr>
 
         <tr valign="top">
         <th scope="row"><?php _e('PaySwarm Client Secret') ?></th>
-        <td><input type="text" size=64 name="payswarm_client_secret" 
+        <td><input type="text" size="64" name="payswarm_client_secret" 
           value="<?php echo get_option('payswarm_client_secret'); ?>" /></td>
         </tr>
 
@@ -263,7 +314,7 @@ activate PaySwarm on your site.
 
         <tr valign="top">
         <th scope="row"><?php _e('Default License') ?></th>
-        <td><input type="text" size=128 
+        <td><input type="text" size="128" 
           id="payswarm_default_license_url" name="payswarm_default_license_url" 
           value="<?php echo get_option('payswarm_default_license_url'); ?>" />
         <?php 
@@ -290,31 +341,78 @@ activate PaySwarm on your site.
 
         <tr valign="top">
         <th scope="row"><?php _e('Authorize Service') ?></th>
-        <td><input type="text" size=128 
+        <td><input type="text" size="128" 
           id="payswarm_authorize_url" name="payswarm_authorize_url" 
           value="<?php echo get_option('payswarm_authorize_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">
         <th scope="row"><?php _e('Request Service') ?></th>
-        <td><input type="text" size=128 
+        <td><input type="text" size="128" 
           id="payswarm_request_url" name="payswarm_request_url" 
           value="<?php echo get_option('payswarm_request_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">
         <th scope="row"><?php _e('Access Service') ?></th>
-        <td><input type="text" size=128 
+        <td><input type="text" size="128" 
           id="payswarm_access_url" name="payswarm_access_url" 
           value="<?php echo get_option('payswarm_access_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">
         <th scope="row"><?php _e('Contracts Service') ?></th>
-        <td><input type="text" size=128 
+        <td><input type="text" size="128" 
           id="payswarm_contracts_url" name="payswarm_contracts_url" 
           value="<?php echo get_option('payswarm_contracts_url'); ?>" /></td>
         </tr>
+
+        <tr valign="top">
+        <td scope="row" colspan="2">
+          <h3><?php _e('PaySwarm Digital Signature Information') ?></h3>
+          <p>PaySwarm uses 
+             <a href="http://en.wikipedia.org/wiki/Digital_signature"
+                >digital signatures</a> to ensure that posts that you
+             sell can be verified by PaySwarm Authorities. Your signature
+             keys are listed below. Do not change either of them unless you know
+             what you are doing.
+          </p>
+        </td>
+        </tr>
+
+<?php 
+   $new_keys = false;
+   $public_key = get_option('payswarm_public_key');
+   $private_key = get_option('payswarm_private_key');
+   if($public_key == '' or $private_key == '')
+   {
+      $keypair = payswarm_generate_keypair();
+      $public_key = $keypair['public'];
+      $private_key = $keypair['private'];
+      $new_keys = true;
+   }
+
+   echo "<tr valign=\"top\">
+        <th scope=\"row\">" . __('Public Key') . "</th>
+        <td><textarea cols=\"80\" rows=\"6\" 
+          id=\"payswarm_public_key\" name=\"payswarm_public_key\"
+          >$public_key</textarea></td>
+        </tr>
+
+        <tr valign=\"top\">
+        <th scope=\"row\">" . __('Private Key') . "</th>
+        <td><textarea cols=\"80\" rows=\"6\" 
+          id=\"payswarm_private_key\" name=\"payswarm_private_key\"
+          >$private_key</textarea></td>
+        </tr>";
+
+    if($new_keys)
+    {
+       echo '<tr><th></th><td>' . 
+          __('Note: New digital signature keys have been created for you, ' .
+             'please click <strong>Save Changes</strong>.') . '</td></tr>';
+    }
+?>
 
         <?php wp_nonce_field('payswarm-save-config', 'payswarm-nonce') ?>
     </table>

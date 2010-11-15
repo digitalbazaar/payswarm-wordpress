@@ -24,3 +24,11 @@ function updatePaySwarmServiceUrls()
       "https://" + payswarmAuthority + "/api/3.2/oauth1/contracts");
 }
 
+/**
+ * Expands the asset information when the title is clicked.
+ */
+function expandAssetInformation()
+{
+
+}
+

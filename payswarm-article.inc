@@ -15,6 +15,55 @@ function payswarm_add_stylesheets()
 }
 
 /**
+ * Generates the PaySwarm asset information HTML+RDFa markup, which can be 
+ * inserted into parts of the WordPress site.
+ * 
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string $post_id The post ID that is being expressed.
+ * @return string The HTML markup, surrounded by a DIV element, that contains
+ *         all of the necessary RDFa markup to express the asset information.
+ */
+function payswarm_asset_information_rdfa($post_id)
+{
+   $post_url = get_permalink($post_id);
+   $asset_provider = 'http://example.org/people#bob';
+   $payswarm_authority = 'https://' . get_option('payswarm_authority');
+   $now_iso8601 = date_format(date_create('now'), DateTime::ISO8601);
+   $one_day_from_now = date_add(date_create('now'), 
+      date_interval_create_from_date_string('P1D'));
+   $one_day_from_now_iso8601 = 
+      date_format($one_day_from_now, DateTime::ISO8601);
+
+   $rval = "
+      <div xmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\"
+           xmlns:foaf=\"http://purl.org/dc/terms/\"
+           xmlns:dcterms=\"http://purl.org/dc/terms/\"
+           xmlns:ps=\"http://purl.org/payswarm#\"
+           class=\"asset-info\"
+           about=\"$post_url#asset\" typeof=\"ps:Asset ps:WebPage\"
+           onclick=\"javascript:toggleAssetInformation();\">
+         <div><strong>Offer details...</strong></div>
+         <span property=\"dcterms:title\">The Title</span> by
+         <span property=\"dcterms:creator\">Author Name</span>.
+         <a rel=\"ps:contentUrl\" href=\"$post_url\">Permalink</a>. Offered by
+         <a rel=\"ps:assetProvider\" href=\"$asset_provider\"
+            ><span property=\"foaf:name\">Bob</span></a> at
+         <a rel=\"ps:authority\" 
+            href=\"$payswarm_authority\">PaySwarm Authority</a>.
+         <div>This offer is valid from 
+            <span property=\"ps:notValidBefore\"
+               content=\"$now_iso8601\" datatype=\"xsd:dateTime\">now</span>
+            until <span property=\"ps:notValidAfter\"
+               content=\"$one_day_from_now_iso8601\" 
+               datatype=\"xsd:dateTime\">tomorrow</span>.</div>
+      </div>";
+
+   return $rval;
+}
+
+/**
  * Filters the for-profit content for posts.
  * 
  * This filter is applied based on the value of the session and PaySwarm
@@ -74,8 +123,9 @@ function payswarm_filter_paid_content($content)
          // if the article has not been purchased, and a price is available,
          // display the price and a purchase button.
          $processed_content .= '<div class="purchase section">
-             <div class="money row"> 
-             <span class="label">' . __('View the full article for ') . 
+             <div class="money row">' .
+             payswarm_asset_information_rdfa($post_id) . 
+             '<span class="label">' . __('View the full article for ') . 
              $currency_symbol . $amount . '</span>' .
              '<form class="money" action="' . $access_url . '" ' .
              'method="post"><button class="purchase-button">' .
