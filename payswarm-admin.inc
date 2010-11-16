@@ -224,6 +224,8 @@ function payswarm_settings_page()
       }
 
       // FIXME: Update the public key information at the PaySwarm Authority
+      $webid_url = "http://example.org/people/bob#webid";
+      $public_key_url = "http://example.org/people/bob#key-5";
 
       update_option('payswarm_authority', $authority);
       update_option('payswarm_client_id', $client_id);
@@ -237,6 +239,8 @@ function payswarm_settings_page()
       update_option('payswarm_contracts_url', $contracts_url);
       update_option('payswarm_public_key', $public_key);
       update_option('payswarm_private_key', $private_key);
+      update_option('payswarm_webid_url', $webid_url);
+      update_option('payswarm_public_key_url', $public_key_url);
    }
 
 ?>

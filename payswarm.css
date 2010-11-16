@@ -10,7 +10,11 @@ color: #666;
 }
 
 .label {
-float: left;
+vertical-align: middle;
+}
+
+.hidden {
+display: none;
 }
 
 .section h2 {
@@ -48,3 +52,9 @@ vertical-align: middle;
 .asset-info {
 text-align: left;
 }
+
+.view-more:hover {
+cursor: pointer;
+text-decoration: underline;
+}
+

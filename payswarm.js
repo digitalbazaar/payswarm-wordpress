@@ -26,9 +26,22 @@ function updatePaySwarmServiceUrls()
 
 /**
  * Expands the asset information when the title is clicked.
+ *
+ * @param postId the identifier for the post
  */
-function expandAssetInformation()
+function toggleAssetInformation(postId)
 {
+   var assetInfo = document.getElementById("payswarm-asset-info-" + postId);
+   var className = assetInfo.getAttribute("class");
 
+   // toggle the hidden CSS state for the attribute
+   if(className == "hidden")
+   {
+      assetInfo.setAttribute("class", "");
+   }
+   else
+   {
+      assetInfo.setAttribute("class", "hidden");
+   }
 }
 

@@ -28,37 +28,89 @@ function payswarm_add_stylesheets()
 function payswarm_asset_information_rdfa($post_id)
 {
    $post_url = get_permalink($post_id);
-   $asset_provider = 'http://example.org/people#bob';
+   $post_title = get_the_title();
+   $post_author = get_the_author();
+   $asset_provider = get_option('payswarm_webid_url');
    $payswarm_authority = 'https://' . get_option('payswarm_authority');
+   $amount = get_post_meta($post_id, 'payswarm_price', true);
+   $currency = strtoupper(get_option('payswarm_default_currency'));
+   // FIXME: The symbol needs to match the default currency
+   $currency_symbol = "$";
+   // FIXME: This replacement isn't exactly safe, if the URL contains
+   // another 'http://' in it, but then again, can't think of any reason
+   // that it would
+   $access_url = preg_replace('/^http:\/\/(.*)$/', 'https://$1', 
+      PAYSWARM_PLUGIN_URL . 'payswarm-access.php') . "?p=$post_id";
+   $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
+
+   // determine the validity period
    $now_iso8601 = date_format(date_create('now'), DateTime::ISO8601);
-   $one_day_from_now = date_add(date_create('now'), 
-      date_interval_create_from_date_string('P1D'));
+   $one_day_from_now = date_create('now');
+   $one_day_from_now = date_add($one_day_from_now, 
+      date_interval_create_from_date_string('1 day'));
    $one_day_from_now_iso8601 = 
       date_format($one_day_from_now, DateTime::ISO8601);
 
+   // generate the asset signature
+   // FIXME: correctly build the JSON-LD object
+   $jsonld = "{\"@\":\"<$post_url>\"}";
+   $public_key_url = get_option('payswarm_public_key_url');
+   $private_key = get_option('payswarm_private_key');
+   openssl_sign($jsonld, $signature, $private_key, OPENSSL_ALGO_SHA1);
+   $signature = base64_encode($signature);
+
+   // FIXME: This text chunk needs to be internationalized
    $rval = "
       <div xmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\"
            xmlns:foaf=\"http://purl.org/dc/terms/\"
-           xmlns:dcterms=\"http://purl.org/dc/terms/\"
+           xmlns:dc=\"http://purl.org/dc/elements/1.1/\"
+           xmlns:gr=\"http://purl.org/goodrelations/v1#\"
            xmlns:ps=\"http://purl.org/payswarm#\"
-           class=\"asset-info\"
            about=\"$post_url#asset\" typeof=\"ps:Asset ps:WebPage\"
-           onclick=\"javascript:toggleAssetInformation();\">
-         <div><strong>Offer details...</strong></div>
-         <span property=\"dcterms:title\">The Title</span> by
-         <span property=\"dcterms:creator\">Author Name</span>.
-         <a rel=\"ps:contentUrl\" href=\"$post_url\">Permalink</a>. Offered by
-         <a rel=\"ps:assetProvider\" href=\"$asset_provider\"
-            ><span property=\"foaf:name\">Bob</span></a> at
-         <a rel=\"ps:authority\" 
-            href=\"$payswarm_authority\">PaySwarm Authority</a>.
-         <div>This offer is valid from 
-            <span property=\"ps:notValidBefore\"
-               content=\"$now_iso8601\" datatype=\"xsd:dateTime\">now</span>
-            until <span property=\"ps:notValidAfter\"
-               content=\"$one_day_from_now_iso8601\" 
-               datatype=\"xsd:dateTime\">tomorrow</span>.</div>
-      </div>";
+           class=\"asset-info\">
+        <div about=\"$post_url#listing\">
+          <span>" . __('View the full article for ') . "
+            <span property=\"com:currency\" 
+              content=\"$currency\">$currency_symbol</span><span
+              property=\"ps:rate\">$amount</span>
+          <span class=\"view-more\" 
+            onclick=\"javascript:toggleAssetInformation($post_id);\">
+              [show offer details]</span>
+        </div>
+        <div id=\"payswarm-asset-info-$post_id\" class=\"hidden\">
+          <a rel=\"ps:contentUrl\" href=\"$post_url\"
+             property=\"dc:title\">$post_title</a> by
+          <span property=\"dc:creator\">$post_author</span>.
+          Offered by
+          <a rel=\"ps:assetProvider\" href=\"$asset_provider\">this site</a> 
+          via our
+          <a rel=\"ps:authority\" 
+             href=\"$payswarm_authority\">PaySwarm provider</a>.
+          <span>This offer is valid from 
+            <abbr property=\"gr:validFrom\"
+                title=\"$now_iso8601\" 
+                content=\"$now_iso8601\" 
+                datatype=\"xsd:dateTime\">now</abbr>
+            until 
+            <abbr property=\"gr:validThrough\"
+              title=\"$one_day_from_now_iso8601\" 
+              content=\"$one_day_from_now_iso8601\" 
+              datatype=\"xsd:dateTime\">24 hours from now</abbr>.</span>
+          <span typeof=\"ps:AssetSignature\">
+            This <a rel=\"ps:signatureFor\" href=\"$post_url\">asset</a> 
+            was <abbr property=\"ps:signatureValue\" 
+            content=\"$signature\" title=\"$signature\">digitally signed</abbr> 
+            using <a rel=\"ps:signer\" href=\"$public_key_url\">this key</a>.
+          </span>
+       </div>
+       <div class=\"row\">
+        <form action=\"$access_url\" method=\"post\">
+          <button class=\"purchase-button\">
+            <img alt=\"". __('Access') ."\" src=\"$pslogo_url\" />" .
+            __('Access') . "</button>
+        </form>
+       </div>
+     </div>";
 
    return $rval;
 }
@@ -102,36 +154,20 @@ function payswarm_filter_paid_content($content)
    // article content.
    if(!$post_purchased)
    {
-      $amount = get_post_meta($post->ID, 'payswarm_price', true);
       $temp = explode('<!--payswarm-->', $content, 2);
       $processed_content = $temp[0];
       $paid_content_exists = (count($temp) > 1) and (strlen($temp[1] > 0));
-
-      $currency = get_option('payswarm_default_currency');
-      $currency_symbol = "$";
-
+      $amount = get_post_meta($post->ID, 'payswarm_price', true);
       $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
 
-      if($amount !== "" and $paid_content_exists)
+      if($amount !== '' and $paid_content_exists)
       {
-         // FIXME: This replacement isn't exactly safe, if the URL contains
-         // another 'http://' in it, but then again, can't think of any reason
-         // that it would
-         $access_url = preg_replace('/^http:\/\/(.*)$/', 'https://$1', 
-            PAYSWARM_PLUGIN_URL . 'payswarm-access.php') . "?p=" . $post->ID;
-
          // if the article has not been purchased, and a price is available,
          // display the price and a purchase button.
-         $processed_content .= '<div class="purchase section">
+         $processed_content .= '</p><div class="purchase section">
              <div class="money row">' .
              payswarm_asset_information_rdfa($post_id) . 
-             '<span class="label">' . __('View the full article for ') . 
-             $currency_symbol . $amount . '</span>' .
-             '<form class="money" action="' . $access_url . '" ' .
-             'method="post"><button class="purchase-button">' .
-             '<img alt="'. __('Access') .'" src="' . $pslogo_url .
-             '" />'. __('Access') .'</button></form>
-           </div></div></p>';
+             '</div>';
       }
       else if($paid_content_exists)
       {
@@ -144,7 +180,7 @@ function payswarm_filter_paid_content($content)
              '</span><button class="purchase-button"> 
                <img alt="'. __('Cannot Purchase') .'" src="' . $pslogo_url .
              '" />'. __('Cannot Purchase') .'</button>
-           </div></div></p>';
+           </div></div>';
       }
    }
    else
