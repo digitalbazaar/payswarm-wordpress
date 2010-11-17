@@ -79,15 +79,11 @@ function payswarm_asset_information_rdfa($post_id)
            class=\"asset-info\">
         <div about=\"$post_url#listing\" typeof=\"ps:Listing gr:Offering\">
           <span rel=\"ps:forAsset\" resource=\"$post_url#asset\"
-            >" . __('View the full article') . "</span>
-          <span rel=\"ps:payment\">" . __('for') . "
-            <span about=\"$post_url#listing-payment\" rel=\"ps:payee\"
-                  resource=\"$post_url#listing-payee\">
-              <span about=\"$post_url#listing-payee\" 
-                property=\"com:currency\" 
-                content=\"$currency\">$currency_symbol</span><span
-                property=\"com:rate\">$amount</span>
-            </span>
+            >" . __('View the full article for') . "</span>
+          <span rel=\"ps:payee\" resource=\"$post_url#listing-payee\">
+            <span property=\"com:currency\"  content=\"$currency\"
+              >$currency_symbol</span>
+            <span property=\"com:rate\">$amount</span>
           </span>
           <span class=\"view-more\" 
             onclick=\"javascript:toggleAssetInformation($post_id);\">
