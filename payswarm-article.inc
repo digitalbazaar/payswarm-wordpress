@@ -32,8 +32,13 @@ function payswarm_asset_information_rdfa($post_id)
    $post_author = get_the_author();
    $asset_provider = get_option('payswarm_webid_url');
    $payswarm_authority = 'https://' . get_option('payswarm_authority');
+   // FIXME: 'payswarm_destination_account' needs to be implemented
+   $destination_account = get_option('payswarm_destination_account');
    $amount = get_post_meta($post_id, 'payswarm_price', true);
    $currency = strtoupper(get_option('payswarm_default_currency'));
+   $license_url = get_option('payswarm_default_license_url');
+   $license_hash = get_option('payswarm_default_license_hash');
+
    // FIXME: The symbol needs to match the default currency
    $currency_symbol = "$";
    // FIXME: This replacement isn't exactly safe, if the URL contains
@@ -58,21 +63,32 @@ function payswarm_asset_information_rdfa($post_id)
    $private_key = get_option('payswarm_private_key');
    openssl_sign($jsonld, $signature, $private_key, OPENSSL_ALGO_SHA1);
    $signature = base64_encode($signature);
+   // FIXME: Generate the proper asset hash
+   $asset_hash = 'ffffffffffffffffffffffffffffffff';
 
    // FIXME: This text chunk needs to be internationalized
    $rval = "
       <div xmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\"
+           xmlns:rdfs=\"http://www.w3.org/2000/01/rdf-schema#\"
+           xmlns:com=\"http://purl.org/commerce#\"
            xmlns:foaf=\"http://purl.org/dc/terms/\"
            xmlns:dc=\"http://purl.org/dc/elements/1.1/\"
            xmlns:gr=\"http://purl.org/goodrelations/v1#\"
            xmlns:ps=\"http://purl.org/payswarm#\"
            about=\"$post_url#asset\" typeof=\"ps:Asset ps:WebPage\"
            class=\"asset-info\">
-        <div about=\"$post_url#listing\">
-          <span>" . __('View the full article for ') . "
-            <span property=\"com:currency\" 
-              content=\"$currency\">$currency_symbol</span><span
-              property=\"ps:rate\">$amount</span>
+        <div about=\"$post_url#listing\" typeof=\"ps:Listing gr:Offering\">
+          <span rel=\"ps:forAsset\" resource=\"$post_url#asset\"
+            >" . __('View the full article') . "</span>
+          <span rel=\"ps:payment\">" . __('for') . "
+            <span about=\"$post_url#listing-payment\" rel=\"ps:payee\"
+                  resource=\"$post_url#listing-payee\">
+              <span about=\"$post_url#listing-payee\" 
+                property=\"com:currency\" 
+                content=\"$currency\">$currency_symbol</span><span
+                property=\"com:rate\">$amount</span>
+            </span>
+          </span>
           <span class=\"view-more\" 
             onclick=\"javascript:toggleAssetInformation($post_id);\">
               [show offer details]</span>
@@ -82,11 +98,17 @@ function payswarm_asset_information_rdfa($post_id)
              property=\"dc:title\">$post_title</a> by
           <span property=\"dc:creator\">$post_author</span>.
           Offered by
-          <a rel=\"ps:assetProvider\" href=\"$asset_provider\">this site</a> 
+          <a rel=\"ps:assetProvider\" href=\"$asset_provider\">us</a> 
           via our
           <a rel=\"ps:authority\" 
              href=\"$payswarm_authority\">PaySwarm provider</a>.
-          <span>This offer is valid from 
+          <span about=\"$post_url#listing\">The offer to get access to this
+            <span property=\"ps:assetHash\" content=\"$asset_hash\">post</span>
+            under 
+            <a rel=\"ps:license\" href=\"$license_url\"
+               property=\"ps:licenseHash\" content=\"$license_hash\"
+              >this license</a>
+            is valid from 
             <abbr property=\"gr:validFrom\"
                 title=\"$now_iso8601\" 
                 content=\"$now_iso8601\" 
@@ -95,19 +117,32 @@ function payswarm_asset_information_rdfa($post_id)
             <abbr property=\"gr:validThrough\"
               title=\"$one_day_from_now_iso8601\" 
               content=\"$one_day_from_now_iso8601\" 
-              datatype=\"xsd:dateTime\">24 hours from now</abbr>.</span>
+              datatype=\"xsd:dateTime\">24 hours from now</abbr>.
+          </span>
           <span typeof=\"ps:AssetSignature\">
             This <a rel=\"ps:signatureFor\" href=\"$post_url\">asset</a> 
             was <abbr property=\"ps:signatureValue\" 
             content=\"$signature\" title=\"$signature\">digitally signed</abbr> 
             using <a rel=\"ps:signer\" href=\"$public_key_url\">this key</a>.
           </span>
+          <span about=\"$post_url#listing-payee\">
+            <a rel=\"com:rateType\" href=\"http://purl.org/payswarm#FlatRate\"
+              >Flat-rate payment</a> 
+            will be deposited into 
+            <a rel=\"com:destinationAccount\" 
+               href=\"$destination_account\">this account</a>.
+            The memo field for the payment will read: 
+            \"<span property=\"rdfs:comment\"
+              >Payment for $post_title by $post_author.</span>\"
+          </span>
        </div>
        <div class=\"row\">
         <form action=\"$access_url\" method=\"post\">
+          <div>
           <button class=\"purchase-button\">
             <img alt=\"". __('Access') ."\" src=\"$pslogo_url\" />" .
             __('Access') . "</button>
+          </div>
         </form>
        </div>
      </div>";
@@ -167,7 +202,7 @@ function payswarm_filter_paid_content($content)
          $processed_content .= '</p><div class="purchase section">
              <div class="money row">' .
              payswarm_asset_information_rdfa($post_id) . 
-             '</div>';
+             '</div></div>';
       }
       else if($paid_content_exists)
       {
