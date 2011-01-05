@@ -105,17 +105,17 @@ function payswarm_asset_information_rdfa($post_id)
                property=\"ps:licenseHash\" content=\"$license_hash\"
               >this license</a>
             is valid from 
-            <abbr property=\"gr:validFrom\"
+            <abbr property=\"ps:validFrom\"
                 title=\"$now_iso8601\" 
                 content=\"$now_iso8601\" 
                 datatype=\"xsd:dateTime\">now</abbr>
             until 
-            <abbr property=\"gr:validThrough\"
+            <abbr property=\"ps:validUntil\"
               title=\"$one_day_from_now_iso8601\" 
               content=\"$one_day_from_now_iso8601\" 
               datatype=\"xsd:dateTime\">24 hours from now</abbr>.
           </span>
-          <span typeof=\"ps:AssetSignature\">
+          <span typeof=\"ps:JsonldSignature\">
             This <a rel=\"ps:signatureFor\" href=\"$post_url\">asset</a> 
             was <abbr property=\"ps:signatureValue\" 
             content=\"$signature\" title=\"$signature\">digitally signed</abbr> 

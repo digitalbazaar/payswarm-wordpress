@@ -13,6 +13,7 @@ function payswarm_add_admin_pages()
       !isset($_POST['payswarm_client_id']) ||
       !isset($_POST['payswarm_client_secret']) ||
       !isset($_POST['payswarm_default_currency']) ||
+      !isset($_POST['payswarm_destination_account']) ||
       !isset($_POST['payswarm_default_license_url']) ||
       !isset($_POST['payswarm_authorize_url']) ||
       !isset($_POST['payswarm_request_url']) ||
@@ -50,6 +51,7 @@ function payswarm_register_settings()
    register_setting('payswarm-option-group', 'payswarm_client_id');
    register_setting('payswarm-option-group', 'payswarm_client_secret');
    register_setting('payswarm-option-group', 'payswarm_default_currency');
+   register_setting('payswarm-option-group', 'payswarm_destination_account');
    register_setting('payswarm-option-group', 'payswarm_default_license_url');
    register_setting('payswarm-option-group', 'payswarm_authorize_url');
    register_setting('payswarm-option-group', 'payswarm_request_url');
@@ -103,6 +105,7 @@ function payswarm_admin_warnings()
       !isset($_POST['payswarm_client_id']) ||
       !isset($_POST['payswarm_client_secret']) ||
       !isset($_POST['payswarm_default_currency']) ||
+      !isset($_POST['payswarm_destination_account']) ||
       !isset($_POST['payswarm_default_license_url']) ||
       !isset($_POST['payswarm_authorize_url']) ||
       !isset($_POST['payswarm_request_url']) ||
@@ -114,6 +117,7 @@ function payswarm_admin_warnings()
       !get_option('payswarm_client_id') ||
       !get_option('payswarm_client_secret') ||
       !get_option('payswarm_default_currency') ||
+      !get_option('payswarm_destination_account') ||
       !get_option('payswarm_default_license_url') ||
       !get_option('payswarm_authorize_url') ||
       !get_option('payswarm_request_url') ||
@@ -125,6 +129,7 @@ function payswarm_admin_warnings()
       strlen(get_option('payswarm_client_id')) < 1 ||
       strlen(get_option('payswarm_client_secret')) < 1 ||
       strlen(get_option('payswarm_default_currency')) < 1 ||
+      strlen(get_option('payswarm_destination_account')) < 1 ||
       strlen(get_option('payswarm_default_license_url')) < 1 ||
       strlen(get_option('payswarm_authorize_url')) < 1 ||
       strlen(get_option('payswarm_request_url')) < 1 ||
@@ -189,6 +194,7 @@ function payswarm_settings_page()
       isset($_POST['payswarm_client_id']) &&
       isset($_POST['payswarm_client_secret']) &&
       isset($_POST['payswarm_default_currency']) &&
+      isset($_POST['payswarm_destination_account']) &&
       isset($_POST['payswarm_default_license_url']) &&
       isset($_POST['payswarm_authorize_url']) &&
       isset($_POST['payswarm_request_url']) &&
@@ -205,6 +211,7 @@ function payswarm_settings_page()
       $client_id = $_POST['payswarm_client_id'];
       $client_secret = $_POST['payswarm_client_secret'];
       $default_currency = $_POST['payswarm_default_currency'];
+      $default_account = $_POST['payswarm_destination_account'];
       $default_license_url = $_POST['payswarm_default_license_url'];
       $default_license_hash = 'INVALID';
       $authorize_url = $_POST['payswarm_authorize_url'];
@@ -231,6 +238,7 @@ function payswarm_settings_page()
       update_option('payswarm_client_id', $client_id);
       update_option('payswarm_client_secret', $client_secret);
       update_option('payswarm_default_currency', $default_currency);
+      update_option('payswarm_destination_account', $default_account);
       update_option('payswarm_default_license_url', $default_license_url);
       update_option('payswarm_default_license_hash', $default_license_hash);
       update_option('payswarm_authorize_url', $authorize_url);
@@ -301,6 +309,14 @@ activate PaySwarm on your site.
           <select name="payswarm_default_currency">
             <option value="USD">$ - Dollars (USD)</option>
           </select>
+        </td>
+        </tr>
+
+        <tr valign="top">
+        <th scope="row"><?php _e('Default Financial Account') ?></th>
+        <td>
+          <input type="text" size="128" name="payswarm_destination_account" 
+            value="<?php echo get_option('payswarm_destination_account'); ?>" />
         </td>
         </tr>
 
