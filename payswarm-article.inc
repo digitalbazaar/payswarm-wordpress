@@ -15,6 +15,48 @@ function payswarm_add_stylesheets()
 }
 
 /**
+ * Generates an asset hash given all of the parameters that belong in the 
+ * asset description.
+ * 
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string $asset_url The URL that uniquely identifies the asset.
+ * @param string $post_title The title of the post.
+ * @param string $post_author The name of the author of the post.
+ * @param string $asset_provider The URL that uniquely identifies the entity
+ *    that is providing the asset for sale.
+ * @param string $payswarm_authority The authority that should provide all
+ *    transaction records.
+ * @param string $content_url The URL where the content resides for the asset.
+ */
+function payswarm_generate_asset_hash(
+   $asset_url, $post_title, $post_author, $asset_provider, $payswarm_authority, 
+   $content_url)
+{
+   // create the normalized JSON-LD
+   $asset = '{"{<http://purl.org/dc/terms/creator>":"' . 
+      $post_author . '",' .
+      '"<http://purl.org/dc/terms/title>":"' . 
+      $post_title . '",' .
+      '"<http://purl.org/payswarm#assetProvider>":"<' . 
+      $asset_provider .'>",' .
+      '"<http://purl.org/payswarm#authority>":"<' . 
+      $payswarm_authority . '>",' .
+      '"<http://purl.org/payswarm#contentUrl>":"<' . 
+      $content_url . '>"' .
+      '"<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>":' .
+      '["<http://purl.org/payswarm#Asset>",' .
+      '"<http://purl.org/payswarm#WebPage>"],' .
+      '"@":"<'. $asset_url .'>"}';
+
+   // the asset hash is a SHA-1 of the normalized JSON-LD
+   $asset_hash = sha1($asset);
+
+   return $asset_hash;
+}
+
+/**
  * Generates the PaySwarm asset information HTML+RDFa markup, which can be 
  * inserted into parts of the WordPress site.
  * 
@@ -28,6 +70,7 @@ function payswarm_add_stylesheets()
 function payswarm_asset_information_rdfa($post_id)
 {
    $post_url = get_permalink($post_id);
+   $asset_url = "$post_url#asset";
    $post_title = get_the_title();
    $post_author = get_the_author();
    $asset_provider = get_option('payswarm_webid_url');
@@ -64,7 +107,9 @@ function payswarm_asset_information_rdfa($post_id)
    openssl_sign($jsonld, $signature, $private_key, OPENSSL_ALGO_SHA1);
    $signature = base64_encode($signature);
    // FIXME: Generate the proper asset hash
-   $asset_hash = 'ffffffffffffffffffffffffffffffff';
+   $asset_hash = payswarm_generate_asset_hash(
+      $asset_url, $post_title, $post_author, $asset_provider, 
+      $payswarm_authority, $post_url);
 
    // FIXME: This text chunk needs to be internationalized
    $rval = "
@@ -75,7 +120,7 @@ function payswarm_asset_information_rdfa($post_id)
            xmlns:dc=\"http://purl.org/dc/elements/1.1/\"
            xmlns:gr=\"http://purl.org/goodrelations/v1#\"
            xmlns:ps=\"http://purl.org/payswarm#\"
-           about=\"$post_url#asset\" typeof=\"ps:Asset ps:WebPage\"
+           about=\"$asset_url\" typeof=\"ps:Asset ps:WebPage\"
            class=\"asset-info\">
         <div about=\"$post_url#listing\" typeof=\"ps:Listing gr:Offering\">
           <span rel=\"ps:forAsset\" resource=\"$post_url#asset\"
