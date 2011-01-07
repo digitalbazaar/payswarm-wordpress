@@ -9,8 +9,8 @@ require_once('payswarm-database.inc');
 $session = payswarm_check_session();
 
 // get the scope that is associated with this request
-$scope = 'payment-token';
-// FIXME: implement $scope = 'registration';
+$scope = 'payswarm-token';
+// FIXME: implement $scope = 'payswarm-registration';
 
 // retrieve the PaySwarm token, creating it if it doesn't already exist
 $ptoken = payswarm_database_get_token($session, $scope, true);
@@ -109,7 +109,7 @@ try
          payswarm_access_denied($post);
       }
    }
-   else if($ptoken['scope'] === 'payment-token' && 
+   else if($ptoken['scope'] === 'payswarm-token' && 
       $ptoken['state'] === 'valid')
    {
       // State: authorized - we can just use the stored access token

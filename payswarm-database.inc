@@ -67,7 +67,7 @@ function payswarm_install_database()
  *    PaySwarm session or NULL if no session exists.
  */
 function payswarm_database_get_token(
-   $payswarm_session, $scope='payment-token', $create=false)
+   $payswarm_session, $scope='payswarm-token', $create=false)
 {
    $rval = null;
    global $wpdb;
