@@ -113,13 +113,13 @@ function payswarm_asset_information_rdfa($post_id)
 
    // FIXME: This text chunk needs to be internationalized
    $rval = "
-      <div xmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\"
-           xmlns:rdfs=\"http://www.w3.org/2000/01/rdf-schema#\"
-           xmlns:com=\"http://purl.org/commerce#\"
-           xmlns:foaf=\"http://purl.org/dc/terms/\"
-           xmlns:dc=\"http://purl.org/dc/elements/1.1/\"
+      <div xmlns:com=\"http://purl.org/commerce#\"
+           xmlns:dc=\"http://purl.org/dc/terms/\"
+           xmlns:foaf=\"http://xmlns.com/foaf/0.1/\"
            xmlns:gr=\"http://purl.org/goodrelations/v1#\"
            xmlns:ps=\"http://purl.org/payswarm#\"
+           xmlns:rdfs=\"http://www.w3.org/2000/01/rdf-schema#\"
+           xmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\"
            about=\"$asset_url\" typeof=\"ps:Asset ps:WebPage\"
            class=\"asset-info\">
         <div about=\"$post_url#listing\" typeof=\"ps:Listing gr:Offering\">
