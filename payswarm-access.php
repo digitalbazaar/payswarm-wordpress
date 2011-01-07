@@ -8,8 +8,12 @@ require_once('payswarm-database.inc');
 // get the session ID that is associated with this request
 $session = payswarm_check_session();
 
+// get the scope that is associated with this request
+$scope = 'payment-token';
+// FIXME: implement $scope = 'registration';
+
 // retrieve the PaySwarm token, creating it if it doesn't already exist
-$ptoken = payswarm_database_get_token($session, true);
+$ptoken = payswarm_database_get_token($session, $scope, true);
 
 // If we are authorizing, then there should be an oauth_token, if not, start
 // the process over.
@@ -46,13 +50,15 @@ try
       $post = $_GET['p'];
       $price = get_post_meta($post, 'payswarm_price', true);
       $request_token_info = 
-         $oauth->getRequestToken("$request_url?currency=USD&balance=$price", 
+         $oauth->getRequestToken(
+            "$request_url?scope=$scope&currency=USD&balance=$price", 
          $callback_url);
 
       $tok['session'] = $session;
+      $tok['scope'] = $scope;
       $tok['token'] = $request_token_info['oauth_token'];
       $tok['secret'] = $request_token_info['oauth_token_secret'];
-      $tok['balance'] = '0.0';
+      $tok['details'] = '{"balance": "0.0", "authorized_posts": ""}';
       $tok['state'] = 'authorizing';
       if(payswarm_database_update_token($tok))
       {
@@ -83,11 +89,12 @@ try
          $oauth->setToken($_GET['oauth_token'], $ptoken['secret']);
          $access_token_info = $oauth->getAccessToken($access_url);
          $tok['session'] = $session;
+         $tok['scope'] = $ptoken['scope'];
          $tok['state'] = 'valid';
          $tok['token'] = $access_token_info['oauth_token'];
          $tok['secret'] = $access_token_info['oauth_token_secret'];
-         $tok['balance'] = '0.0';
-
+         $tok['details'] = '{"balance": 0.0, "authorized_posts": ""}';
+         
          // save the access token and secret
          if(payswarm_database_update_token($tok))
          {
@@ -102,7 +109,8 @@ try
          payswarm_access_denied($post);
       }
    }
-   else if($ptoken['state'] === 'valid')
+   else if($ptoken['scope'] === 'payment-token' && 
+      $ptoken['state'] === 'valid')
    {
       // State: authorized - we can just use the stored access token
       $contracts_url = get_option('payswarm_contracts_url');
@@ -151,16 +159,23 @@ try
          {
             // append this post to the array of authorized posts associated
             // with the payment token
-            $posts = explode(' ', $ptoken['authorized_posts']);
+            $details = json_decode($ptoken['details'], true);
+
+            // update the balance
+            $details['balance'] = $balance;
+
+            // update the list of authorized posts
+            $posts = explode(' ', $details['authorized_posts']);
             array_push($posts, "$post");
             $posts = array_unique($posts);
+            $details['authorized_posts'] = implode(' ', $posts);
 
             $tok['session'] = $ptoken['session'];
             $tok['state'] = $ptoken['state'];
             $tok['token'] = $ptoken['token'];
             $tok['secret'] = $ptoken['secret'];
             $tok['balance'] = $balance;
-            $tok['authorized_posts'] = implode(' ', $posts);
+            $tok['details'] = json_encode($details);
 
             // Save the payment token and secret
             if(payswarm_database_update_token($tok))

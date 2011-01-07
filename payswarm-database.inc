@@ -32,11 +32,11 @@ function payswarm_install_database()
       // very picky when it comes to what it allows.
       $sql = 'CREATE TABLE ' . PAYSWARM_TABLE_NAME . ' (
          session VARCHAR(255) NOT NULL,
+         scope TINYTEXT,
          state TINYTEXT,
          token TINYTEXT,
          secret TINYTEXT,
-         balance TINYTEXT,
-         authorized_posts TEXT,
+         details TEXT,
          mtime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
          PRIMARY KEY (session)
          );';
@@ -61,10 +61,13 @@ function payswarm_install_database()
  * @since 1.0
  *
  * @param string $payswarm_session the PaySwarm session identifier.
+ * @param string $scope the intended scope of the PaySwarm session identifier.
+ * @param string $create true if the token should be created
  * @return Array An associative array of all items associated with the given
  *    PaySwarm session or NULL if no session exists.
  */
-function payswarm_database_get_token($payswarm_session, $create=false)
+function payswarm_database_get_token(
+   $payswarm_session, $scope='payment-token', $create=false)
 {
    $rval = null;
    global $wpdb;
@@ -73,17 +76,18 @@ function payswarm_database_get_token($payswarm_session, $create=false)
    if($create)
    {
       $wpdb->query($wpdb->prepare('INSERT IGNORE INTO ' . PAYSWARM_TABLE_NAME . 
-         '(session, state, token, secret, balance, authorized_posts) ' .
+         '(session, scope, state, token, secret, details) ' .
          'VALUES (%s, %s, %s, %s, %s, %s)',
-         $payswarm_session, 'initializing', '', '', '0.0', ''));
+         $payswarm_session, $scope, 'initializing', '', '', 
+         '{"balance": "0.0", "authorized_posts": ""}'));
    }
 
    // retrieve all information associated with the session
    $rval = $wpdb->get_row($wpdb->prepare(
-      'SELECT session, state, token, secret, balance, authorized_posts FROM ' .
-      PAYSWARM_TABLE_NAME . ' WHERE session=%s', $payswarm_session),
-      ARRAY_A);
-
+      'SELECT session, scope, state, token, secret, details FROM ' . 
+      PAYSWARM_TABLE_NAME . ' WHERE session=%s AND scope=%s', 
+      $payswarm_session, $scope), ARRAY_A);
+      
    // set the return type to null if there was nothing in the database
    if($wpdb->num_rows < 1)
    {
@@ -119,9 +123,10 @@ function payswarm_database_update_token($payswarm_token)
       $data[$key] = $value;
    }
 
-   // retrieve all information associated with the session
+   // update all information associated with the session
    $wpdb->update(PAYSWARM_TABLE_NAME, $data, 
-      array("session" => $payswarm_token["session"]));
+      array('session' => $payswarm_token['session'], 
+         'scope' => $payswarm_token['scope']));
 
    // Set the return type to true if the object was updated correctly
    if($wpdb->num_rows > 0)
