@@ -275,7 +275,7 @@ activate PaySwarm on your site.
 
         <tr valign="top">
           <td scope="row" colspan="2">
-            <h3><?php _e('Basic PaySwarm Settings') ?></h3>
+            <h3><?php _e('Step 1: Basic PaySwarm Settings') ?></h3>
             <p>You must register with a PaySwarm Authority first. You must
             then generate a PaySwarm Client ID and a PaySwarm Client Secret
             on that PaySwarm Authority. Enter the information that you generate
@@ -285,7 +285,7 @@ activate PaySwarm on your site.
         </tr>
 
         <tr valign="top">
-        <th scope="row"><?php _e('PaySwarm Authority') ?></th>
+        <th scope="row"><?php _e('PaySwarm Config URL') ?></th>
         <td><input type="text" size="64" 
           id="payswarm_authority" name="payswarm_authority" 
           onkeyup="javascript:updatePaySwarmServiceUrls();"
@@ -306,53 +306,8 @@ activate PaySwarm on your site.
         </tr>
 
         <tr valign="top">
-        <th scope="row"><?php _e('Default Currency') ?></th>
-        <td>
-          <select name="payswarm_default_currency">
-            <option value="USD">$ - Dollars (USD)</option>
-          </select>
-        </td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Default Financial Account') ?></th>
-        <td>
-          <input type="text" size="128" name="payswarm_destination_account" 
-            value="<?php echo get_option('payswarm_destination_account'); ?>" />
-        </td>
-        </tr>
-
-        <tr valign="top">
         <td scope="row" colspan="2">
-          <h3><?php _e('Default Article License') ?></h3>
-          <p>The default article license is used to convey a set of license
-          rights to the people that purchase your articles. The URL listed
-          below should return a plain text file that outlines the permissions of 
-          the buyer of the article as well as the responsibilities of the seller 
-          of the article.
-          </p>
-        </td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Default License') ?></th>
-        <td><input type="text" size="128" 
-          id="payswarm_default_license_url" name="payswarm_default_license_url" 
-          value="<?php echo get_option('payswarm_default_license_url'); ?>" />
-        <?php 
-        if(get_option('payswarm_default_license_hash') !== false)
-        {
-           echo '<p>Default License ID: ' . 
-           get_option('payswarm_default_license_hash');
-        }
-        ?>
-        </p>
-        </td>
-        </tr>
-
-        <tr valign="top">
-        <td scope="row" colspan="2">
-          <h3><?php _e('PaySwarm Authority Web Services') ?></h3>
+          <h3><?php _e('Step 2: PaySwarm Authority Web Services') ?></h3>
           <p>You can specify different PaySwarm Authority Web Service URLs
           below. Warning: These are advanced settings and entering the wrong
           URLs will ensure that your customers will not be able to buy
@@ -391,7 +346,6 @@ activate PaySwarm on your site.
 
         <tr valign="top">
         <td scope="row" colspan="2">
-          <h3><?php _e('PaySwarm Digital Signature Information') ?></h3>
           <p>PaySwarm uses 
              <a href="http://en.wikipedia.org/wiki/Digital_signature"
                 >digital signatures</a> to ensure that posts that you
@@ -436,12 +390,79 @@ activate PaySwarm on your site.
     }
 ?>
 
+        <tr valign="top">
+        <td scope="row" colspan="2">
+          <form action="payswarm-access.php" method="post">
+              <input type="submit" class="button-primary"
+                value="<?php _e('Register this site') ?>" />
+          </form>
+        </td>
+        </tr>
+
+        <tr valign="top">
+        <td scope="row" colspan="2">
+          <h3><?php _e('Step 3: Financial Account and License Defaults') ?></h3>
+          <p>The default article license is used to convey a set of license
+          rights to the people that purchase your articles. The URL listed
+          below should return a plain text file that outlines the permissions of 
+          the buyer of the article as well as the responsibilities of the seller 
+          of the article.
+          </p>
+        </td>
+        </tr>
+
+        <tr valign="top">
+        <th scope="row"><?php _e('Default Currency') ?></th>
+        <td>
+          <select name="payswarm_default_currency">
+            <option value="USD">$ - Dollars (USD)</option>
+          </select>
+        </td>
+        </tr>
+
+        <tr valign="top">
+        <th scope="row"><?php _e('Default Financial Account') ?></th>
+        <td>
+          <input type="text" size="128" name="payswarm_destination_account" 
+            value="<?php echo get_option('payswarm_destination_account'); ?>" />
+        </td>
+
+        <tr valign="top">
+        <td scope="row" colspan="2">
+          <p>The default article license is used to convey a set of license
+          rights to the people that purchase your articles. The URL listed
+          below should return a plain text file that outlines the permissions of 
+          the buyer of the article as well as the responsibilities of the seller 
+          of the article.
+          </p>
+        </td>
+        </tr>
+
+        <tr valign="top">
+        <th scope="row"><?php _e('Default License') ?></th>
+        <td><input type="text" size="128" 
+          id="payswarm_default_license_url" name="payswarm_default_license_url" 
+          value="<?php echo get_option('payswarm_default_license_url'); ?>" />
+        <?php 
+        if(get_option('payswarm_default_license_hash') !== false)
+        {
+           echo '<p>Default License ID: ' . 
+           get_option('payswarm_default_license_hash');
+        }
+        ?>
+        </p>
+        </td>
+        </tr>
+
         <?php wp_nonce_field('payswarm-save-config', 'payswarm-nonce') ?>
+
     </table>
+
+
 
     <p class="submit">
     <input type="submit" class="button-primary" 
-      value="<?php _e('Save Changes') ?>" />
+      value="<?php _e('Save PaySwarm Configuration') ?>" />
     </p>
 
 </form>

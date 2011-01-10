@@ -2,6 +2,7 @@
 require_once('../../../wp-config.php');
 require_once('payswarm-session.inc');
 require_once('payswarm-database.inc');
+require_once('payswarm-oauth.inc');
 
 // FIXME: Check to ensure connection was made via SSL connection
 
@@ -40,44 +41,14 @@ try
    // check the state of the payment token
    if($ptoken['state'] === 'initializing')
    {
-      // Initializing state - Generate request token and redirect user to 
-      // payswarm site to authorize
-      $request_url = get_option('payswarm_request_url');
-      $post = $_GET['p'];
-      $callback_url = payswarm_get_current_url() . "&session=$session";
-
-      // FIXME: Change currency when we support other currencies
       $post = $_GET['p'];
       $price = get_post_meta($post, 'payswarm_price', true);
-      $request_token_info = 
-         $oauth->getRequestToken(
-            "$request_url?scope=$scope&currency=USD&balance=$price", 
-         $callback_url);
+      $request_url = get_option('payswarm_request_url') . 
+         "?scope=$scope&currency=USD&balance=$price";
+      $details = '{"balance": 0.0, "authorized_posts": ""}';
 
-      $tok['session'] = $session;
-      $tok['scope'] = $scope;
-      $tok['token'] = $request_token_info['oauth_token'];
-      $tok['secret'] = $request_token_info['oauth_token_secret'];
-      $tok['details'] = '{"balance": "0.0", "authorized_posts": ""}';
-      $tok['state'] = 'authorizing';
-      if(payswarm_database_update_token($tok))
-      {
-         // Save the token and the secret, which will be used later
-         $authorize_url = get_option('payswarm_authorize_url');
-         $oauth_token = $tok['token'];
-
-         header("Location: $authorize_url?oauth_token=$oauth_token");
-      }
-      else
-      {
-         // if something went wrong, clear the cookie and attempt the purchase
-         // again
-         global $_SERVER;
-
-         setcookie('payswarm-session', $session, time() - 3600, '/', 
-             $_SERVER['HTTP_HOST'], true);
-         header('Location: ' . payswarm_get_current_url());
-      }
+      payswarm_oauth1_initialize(
+         $oauth, $session, $scope, $request_url, $details);
    }
    else if($ptoken['state'] === 'authorizing')
    {
@@ -87,20 +58,10 @@ try
          // get and store an access token
          $access_url = get_option('payswarm_access_url');
          $oauth->setToken($_GET['oauth_token'], $ptoken['secret']);
-         $access_token_info = $oauth->getAccessToken($access_url);
-         $tok['session'] = $session;
-         $tok['scope'] = $ptoken['scope'];
-         $tok['state'] = 'valid';
-         $tok['token'] = $access_token_info['oauth_token'];
-         $tok['secret'] = $access_token_info['oauth_token_secret'];
-         $tok['details'] = '{"balance": 0.0, "authorized_posts": ""}';
-         
-         // save the access token and secret
-         if(payswarm_database_update_token($tok))
-         {
-            $redir_url = payswarm_get_current_url();
-            header("Location: $redir_url");
-         }
+         $details = '{"balance": 0.0, "authorized_posts": ""}';
+
+         payswarm_oauth1_authorize(
+            $oauth, $session, $scope, $access_url, $details);
       }
       else
       {
