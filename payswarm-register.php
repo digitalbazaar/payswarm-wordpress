@@ -6,8 +6,8 @@ require_once('payswarm-oauth.inc');
 
 // FIXME: Check to ensure connection was made via SSL connection
 
-// get the session ID that is associated with this request
-$session = payswarm_check_session();
+// the session ID that is associated with this request
+$session = 'payswarm-registration';
 
 // get the scope that is associated with this request
 $scope = 'payswarm-registration';
@@ -75,7 +75,9 @@ try
       $oauth->setToken($ptoken['token'], $ptoken['secret']);
 
       // FIXME: Re-direct to the administrative page
-      header("Location: $redir_url");
+      echo "DO REGISTRATION WITH:";
+      print_r($ptoken);
+      //header("Location: $redir_url");
    }
 }
 catch(OAuthException $E)

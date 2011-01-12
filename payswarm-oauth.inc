@@ -21,7 +21,7 @@ function payswarm_oauth1_initialize(
 {
    // Initializing state - Generate request token and redirect user to 
    // payswarm site to authorize
-   $callback_url = payswarm_get_current_url() . "&session=$session";
+   $callback_url = payswarm_get_current_url() . "?session=$session";
 
    // FIXME: Change currency when we support other currencies
    $request_token_info = 
