@@ -74,10 +74,15 @@ try
 
       $oauth->setToken($ptoken['token'], $ptoken['secret']);
 
-      // FIXME: Re-direct to the administrative page
-      echo "DO REGISTRATION WITH:";
+      // FIXME: Register the public key using the OAuth registration token
       print_r($ptoken);
-      //header("Location: $redir_url");
+      echo "REGISTER_PUBLIC_KEY";
+      
+      // FIXME: Get the default financial account and currency information
+      echo "GET DEFAULT FINANCIAL ACCOUNT";
+      
+      // FIXME: Get the default license and license hash
+      echo "Get DEFAULT LICENSE AND HASH";
    }
 }
 catch(OAuthException $E)

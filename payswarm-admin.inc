@@ -108,7 +108,7 @@ function payswarm_strip_jsonld_url($url)
    // respectively, and if it does, strip them from the return value
    if($rval[0] === '<' && $rval[$length - 1] === '>')
    {
-      $rval = substr($rval, 0, $length - 2);
+      $rval = substr($rval, 1, $length - 2);
    }
    
    return $rval;
