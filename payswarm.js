@@ -6,22 +6,68 @@
  */
 
 /**
- * Updates the PaySwarm Authority webservice URL fields in the administrative
- * interface.
+ * Converts a JSON-LD URL to a regular string for use in the interface.
+ * 
+ * @param url the JSON-LD formatted URL to convert to a regular string.
+ *    It is also safe to pass a raw URL to this method.
+ * @return The URL as a regular string value, not wrapped in '<' and '>'.
  */
-function updatePaySwarmServiceUrls()
+function JsonldUrlToString(url)
 {
-   var payswarmAuthority = jQuery('#payswarm_authority').val();
+   var rval = url;
+   
+   if(url[0] == '<' && url[url.length - 1] == '>')
+   {
+      rval = url.substr(1, url.length - 2);
+   }
+   
+   return rval;
+}
 
-   // set the other fields that depend on the PaySwarm authoirity field
-   jQuery('#payswarm_authorize_url').val(
-      "https://" + payswarmAuthority + "/manage/authorize");
-   jQuery('#payswarm_request_url').val(
-      "https://" + payswarmAuthority + "/api/3.2/oauth1/tokens/request");
-   jQuery('#payswarm_access_url').val(
-      "https://" + payswarmAuthority + "/api/3.2/oauth1/tokens");
-   jQuery('#payswarm_contracts_url').val(
-      "https://" + payswarmAuthority + "/api/3.2/oauth1/contracts");
+/**
+ * Updates the given PaySwarm authority configuration fields in the
+ * administration UI.
+ */
+function updateAuthorityConfig()
+{
+   // FIXME: Start loading spinner
+
+   jQuery.post(ajaxurl, 
+      {
+         action: "payswarm_get_authority_config",
+         config_url: jQuery("#payswarm_authority").val()
+      },
+      function(data, textStatus, xhr)
+      {
+         // convert data to JSON object
+         var cfg = JSON.parse(data);
+         if("<http://purl.org/payswarm/webservices#oAuthAuthorize>" in cfg &&
+            "<http://purl.org/payswarm/webservices#oAuthRequest>" in cfg &&
+            "<http://purl.org/payswarm/webservices#oAuthToken>" in cfg &&
+            "<http://purl.org/payswarm/webservices#oAuthContract>" in cfg)
+         {
+            // set the other fields that depend on the PaySwarm authoirity field
+            jQuery('#payswarm_authorize_url').val(
+               JsonldUrlToString(cfg[
+                  "<http://purl.org/payswarm/webservices#oAuthAuthorize>"]));
+            jQuery('#payswarm_request_url').val(
+               JsonldUrlToString(
+                  cfg["<http://purl.org/payswarm/webservices#oAuthRequest>"]));
+            jQuery('#payswarm_access_url').val(
+               JsonldUrlToString(
+                  cfg["<http://purl.org/payswarm/webservices#oAuthToken>"]));
+            jQuery('#payswarm_contracts_url').val(
+               JsonldUrlToString(
+                  cfg["<http://purl.org/payswarm/webservices#oAuthContract>"]));
+            
+            // FIXME: Stop loading spinner, show VALID message
+         }
+         else
+         {
+            // FIXME: Stop loading spinner, show INVALID message
+         }
+      }
+   );
 }
 
 /**

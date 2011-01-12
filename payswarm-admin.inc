@@ -9,18 +9,8 @@
 function payswarm_add_admin_pages()
 {
    // check to see if the PaySwarm options are being set
-   $options_not_being_set = !isset($_POST['payswarm_authority']) ||
-      !isset($_POST['payswarm_client_id']) ||
-      !isset($_POST['payswarm_client_secret']) ||
-      !isset($_POST['payswarm_default_currency']) ||
-      !isset($_POST['payswarm_destination_account']) ||
-      !isset($_POST['payswarm_default_license_url']) ||
-      !isset($_POST['payswarm_authorize_url']) ||
-      !isset($_POST['payswarm_request_url']) ||
-      !isset($_POST['payswarm_access_url']) ||
-      !isset($_POST['payswarm_contracts_url']) ||
-      !isset($_POST['payswarm_public_key']) ||
-      !isset($_POST['payswarm_private_key']);
+   $options_not_being_set = !isset($_POST['payswarm_register_button']) ||
+      !isset($_POST['payswarm_update_button']);
 
    // ensure that the administrator is logged in before adding the administrator
    // menus
@@ -28,7 +18,12 @@ function payswarm_add_admin_pages()
    {
       // admin actions
       add_action('admin_init', 'payswarm_register_settings');
+      add_action('admin_init', 'payswarm_redirect_registration');
       add_action('admin_menu', 'payswarm_create_menu');
+
+      // admin javascript callbacks
+      add_action('wp_ajax_payswarm_get_authority_config', 
+         'payswarm_get_authority_config');
 
       // create a warning if the proper settings are not set.
       if($options_not_being_set)
@@ -47,7 +42,7 @@ function payswarm_add_admin_pages()
 function payswarm_register_settings()
 {
    // whitelist the PaySwarm options
-   register_setting('payswarm-option-group', 'payswarm_authority');
+   register_setting('payswarm-option-group', 'payswarm_client_config');
    register_setting('payswarm-option-group', 'payswarm_client_id');
    register_setting('payswarm-option-group', 'payswarm_client_secret');
    register_setting('payswarm-option-group', 'payswarm_default_currency');
@@ -59,6 +54,187 @@ function payswarm_register_settings()
    register_setting('payswarm-option-group', 'payswarm_contracts_url');
    register_setting('payswarm-option-group', 'payswarm_public_key');
    register_setting('payswarm-option-group', 'payswarm_private_key');
+}
+
+/**
+ * Updates the given options that exist and are valid in the $_POST environment.
+ * 
+ * @package payswarm
+ * @since 1.0
+ * 
+ * @param array $options An array of strings that are the names of the option 
+ *    values that exist in the $_POST environment variable.
+ * @return true if setting all options was successful, false otherwise.
+ */
+function payswarm_update_options($options)
+{
+   $rval = true;
+   
+   // for each option in the list of options, check to see if it exists in
+   // the $_POST variable and that it's length is greater than 1
+   foreach($options as $option)
+   {
+      if(isset($_POST[$option]))
+      {
+         if(strlen($_POST[$option]) > 1)
+         {
+            update_option($option, $_POST[$option]);
+         }
+         else
+         {
+            $rval = false;
+         }
+      }
+      else
+      {
+         $rval = false;
+      }
+   }
+
+   return $rval;
+}
+
+/**
+ * Cleans the '<' and '>' off of a URL from a JSON-LD object.
+ * 
+ * @return a URL with the '<' and '>' stripped, if they existed.
+ */
+function payswarm_strip_jsonld_url($url)
+{
+   $rval = $url;
+   $length = strlen($rval);
+   
+   // check to see if the $url starts and ends with < and > characters, 
+   // respectively, and if it does, strip them from the return value
+   if($rval[0] === '<' && $rval[$length - 1] === '>')
+   {
+      $rval = substr($rval, 0, $length - 2);
+   }
+   
+   return $rval;
+}
+
+/**
+ * Updates the WordPress PaySwarm options given a PaySwarm client configuration
+ * retrieved from a PaySwarm authority, a URL-based property in the 
+ * configuration and the name of the option to use when saving the value.
+ * 
+ * @param array $config
+ * @param string $property
+ * @param string $option
+ */
+function payswarm_set_client_config_value($config, $property, $option)
+{
+   $rval = false;
+   
+   if(array_key_exists($property, $config))
+   {
+      $value = payswarm_strip_jsonld_url($config[$property]);
+      update_option($option, $value);
+      
+      $rval = true;
+   }
+   else
+   {
+      print_r("FAIL: " . $property . ' ' . $option);
+   }
+   
+   return $rval;
+}
+
+/**
+ * Updates the PaySwarm client configuration given a blob of JSON text.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string $json A blob of JSON text that is encoded in JSON-LD format,
+ *    usually returned by the PaySwarm Authority after hitting the client
+ *    configuration URL.
+ *
+ * @return true if the update was successful, false otherwise.
+ */
+function payswarm_update_client_config($json)
+{
+   $rval = true;
+   $client_config = json_decode($json, true);
+   
+   $authorize_ws = "<http://purl.org/payswarm/webservices#oAuthAuthorize>";
+   $request_ws = "<http://purl.org/payswarm/webservices#oAuthRequest>";
+   $token_ws = "<http://purl.org/payswarm/webservices#oAuthToken>";
+   $contract_ws = "<http://purl.org/payswarm/webservices#oAuthContract>";
+   $license_ws = "<http://purl.org/payswarm/webservices#oAuthLicense>";
+   $preferences_ws = "<http://purl.org/payswarm/webservices#oAuthPreference>";
+   
+   if($client_config != NULL)
+   {
+      $rval &= payswarm_set_client_config_value(
+         $client_config, $authorize_ws, 'payswarm_authorize_url');
+      $rval &= payswarm_set_client_config_value(
+         $client_config, $request_ws, 'payswarm_request_url');
+      $rval &= payswarm_set_client_config_value(
+         $client_config, $token_ws, 'payswarm_access_url');
+      $rval &= payswarm_set_client_config_value(
+         $client_config, $contract_ws, 'payswarm_contracts_url');
+      $rval &= payswarm_set_client_config_value(
+         $client_config, $license_ws, 'payswarm_licenses_url');
+      $rval &= payswarm_set_client_config_value(
+         $client_config, $preferences_ws, 'payswarm_preferences_url');
+   }
+   else
+   {
+      $rval = false;
+   }
+   
+   return $rval;
+}
+
+/**
+ * Performs a re-direct when a PaySwarm Authority registration attempt is 
+ * detected.
+ * 
+ * @package payswarm
+ * @since 1.0
+ */
+function payswarm_redirect_registration()
+{
+   if(isset($_POST['payswarm_register_button']))
+   {
+      // if the PaySwarm options are updated successfully, attempt to perform
+      // a registration
+      if(payswarm_update_options(array('payswarm_client_config', 
+         'payswarm_client_id', 'payswarm_client_secret')))
+      {
+         // Make the call to the PaySwarm Authority to get the config URL
+         $config_url = get_option('payswarm_client_config');
+
+         // FIXME: Ignore SSL - we will want to enable SSL verification
+         $response = wp_remote_get($config_url, array('sslverify' => false));
+
+         if(!is_wp_error($response))
+         {
+            if(payswarm_update_client_config($response['body']))
+            {
+               wp_redirect(plugins_url() . '/payswarm/payswarm-register.php');
+            }
+            else
+            {
+               payswarm_admin_warning(
+                  'There was an error reading the client configuration from ' . 
+                  'the PaySwarm Config URL. The PaySwarm Authority did not ' . 
+                  'provide all of the information that was required for ' . 
+                  'configuring this client.');
+            }
+         }
+         else
+         {
+            payswarm_admin_warning(
+               'There was an error when attempting to access the ' . 
+               'PaySwarm Config URL. You may want to check to make sure that ' .
+               'it is correct.');
+         }
+      }
+   }
 }
 
 /**
@@ -101,7 +277,7 @@ function payswarm_admin_warning($warning)
  */
 function payswarm_admin_warnings() 
 {
-   $options_not_being_set = !isset($_POST['payswarm_authority']) ||
+   $options_not_being_set = !isset($_POST['payswarm_client_config']) ||
       !isset($_POST['payswarm_client_id']) ||
       !isset($_POST['payswarm_client_secret']) ||
       !isset($_POST['payswarm_default_currency']) ||
@@ -113,7 +289,7 @@ function payswarm_admin_warnings()
       !isset($_POST['payswarm_contracts_url']) ||
       !isset($_POST['payswarm_public_key']) ||
       !isset($_POST['payswarm_private_key']);
-   $options_nonexistant = !get_option('payswarm_authority') ||
+   $options_nonexistant = !get_option('payswarm_client_config') ||
       !get_option('payswarm_client_id') ||
       !get_option('payswarm_client_secret') ||
       !get_option('payswarm_default_currency') ||
@@ -125,7 +301,7 @@ function payswarm_admin_warnings()
       !get_option('payswarm_contracts_url') ||
       !get_option('payswarm_public_key') ||
       !get_option('payswarm_private_key');
-   $options_invalid = strlen(get_option('payswarm_authority')) < 1 ||
+   $options_invalid = strlen(get_option('payswarm_client_config')) < 1 ||
       strlen(get_option('payswarm_client_id')) < 1 ||
       strlen(get_option('payswarm_client_secret')) < 1 ||
       strlen(get_option('payswarm_default_currency')) < 1 ||
@@ -190,7 +366,7 @@ function payswarm_generate_keypair()
  */
 function payswarm_settings_page()
 {
-   $all_options_set = isset($_POST['payswarm_authority']) &&
+   $all_options_set = isset($_POST['payswarm_client_config']) &&
       isset($_POST['payswarm_client_id']) &&
       isset($_POST['payswarm_client_secret']) &&
       isset($_POST['payswarm_default_currency']) &&
@@ -207,7 +383,7 @@ function payswarm_settings_page()
    if($all_options_set)
    {
       check_admin_referer('payswarm-save-config', 'payswarm-nonce');
-      $authority = $_POST['payswarm_authority'];
+      $authority = $_POST['payswarm_client_config'];
       $client_id = $_POST['payswarm_client_id'];
       $client_secret = $_POST['payswarm_client_secret'];
       $default_currency = $_POST['payswarm_default_currency'];
@@ -236,7 +412,7 @@ function payswarm_settings_page()
       $webid_url = "http://example.org/people/bob#webid";
       $public_key_url = "http://example.org/people/bob#key-5";
 
-      update_option('payswarm_authority', $authority);
+      update_option('payswarm_client_config', $authority);
       update_option('payswarm_client_id', $client_id);
       update_option('payswarm_client_secret', $client_secret);
       update_option('payswarm_default_currency', $default_currency);
@@ -275,7 +451,7 @@ activate PaySwarm on your site.
 
         <tr valign="top">
           <td scope="row" colspan="2">
-            <h3><?php _e('Step 1: Basic PaySwarm Settings') ?></h3>
+            <h3><?php _e('Basic PaySwarm Settings') ?></h3>
             <p>You must register with a PaySwarm Authority first. You must
             then generate a PaySwarm Client ID and a PaySwarm Client Secret
             on that PaySwarm Authority. Enter the information that you generate
@@ -287,10 +463,9 @@ activate PaySwarm on your site.
         <tr valign="top">
         <th scope="row"><?php _e('PaySwarm Config URL') ?></th>
         <td><input type="text" size="64" 
-          id="payswarm_authority" name="payswarm_authority" 
-          onkeyup="javascript:updatePaySwarmServiceUrls();"
-          onblur="javascript:updatePaySwarmServiceUrls();"
-          value="<?php echo get_option('payswarm_authority'); ?>" /></td>
+          id="payswarm_client_config" name="payswarm_client_config" 
+          onblur="javascript:updateAuthorityConfig();"
+          value="<?php echo get_option('payswarm_client_config'); ?>" /></td>
         </tr>
 
         <tr valign="top">
@@ -307,7 +482,15 @@ activate PaySwarm on your site.
 
         <tr valign="top">
         <td scope="row" colspan="2">
-          <h3><?php _e('Step 2: PaySwarm Authority Web Services') ?></h3>
+           <input type="submit" class="button-secondary"
+              name="payswarm_register_button"
+              value="<?php _e('Register this site') ?>" />
+        </td>
+        </tr>
+
+        <tr valign="top">
+        <td scope="row" colspan="2">
+          <h3><?php _e('Advanced: PaySwarm Authority Web Services') ?></h3>
           <p>You can specify different PaySwarm Authority Web Service URLs
           below. Warning: These are advanced settings and entering the wrong
           URLs will ensure that your customers will not be able to buy
@@ -335,6 +518,20 @@ activate PaySwarm on your site.
         <td><input type="text" size="128" 
           id="payswarm_access_url" name="payswarm_access_url" 
           value="<?php echo get_option('payswarm_access_url'); ?>" /></td>
+        </tr>
+
+        <tr valign="top">
+        <th scope="row"><?php _e('Preferences Service') ?></th>
+        <td><input type="text" size="128" 
+          id="payswarm_preferences_url" name="payswarm_preferences_url" 
+          value="<?php echo get_option('payswarm_preferences_url'); ?>" /></td>
+        </tr>
+
+        <tr valign="top">
+        <th scope="row"><?php _e('License Service') ?></th>
+        <td><input type="text" size="128" 
+          id="payswarm_licenses_url" name="payswarm_licenses_url" 
+          value="<?php echo get_option('payswarm_licenses_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">
@@ -389,15 +586,6 @@ activate PaySwarm on your site.
              'please click <strong>Save Changes</strong>.') . '</td></tr>';
     }
 ?>
-
-        <tr valign="top">
-        <td scope="row" colspan="2">
-          <form action="payswarm-access.php" method="post">
-              <input type="submit" class="button-primary"
-                value="<?php _e('Register this site') ?>" />
-          </form>
-        </td>
-        </tr>
 
         <tr valign="top">
         <td scope="row" colspan="2">
@@ -462,7 +650,8 @@ activate PaySwarm on your site.
 
     <p class="submit">
     <input type="submit" class="button-primary" 
-      value="<?php _e('Save PaySwarm Configuration') ?>" />
+       name="payswarm_update_button"
+       value="<?php _e('Save PaySwarm Configuration') ?>" />
     </p>
 
 </form>
