@@ -161,10 +161,11 @@ function payswarm_update_client_config($json)
    
    $authorize_ws = "<http://purl.org/payswarm/webservices#oAuthAuthorize>";
    $request_ws = "<http://purl.org/payswarm/webservices#oAuthRequest>";
-   $token_ws = "<http://purl.org/payswarm/webservices#oAuthToken>";
-   $contract_ws = "<http://purl.org/payswarm/webservices#oAuthContract>";
-   $license_ws = "<http://purl.org/payswarm/webservices#oAuthLicense>";
-   $preferences_ws = "<http://purl.org/payswarm/webservices#oAuthPreference>";
+   $token_ws = "<http://purl.org/payswarm/webservices#oAuthTokens>";
+   $contract_ws = "<http://purl.org/payswarm/webservices#oAuthContracts>";
+   $license_ws = "<http://purl.org/payswarm/webservices#oAuthLicenses>";
+   $keys_ws = "<http://purl.org/payswarm/webservices#oAuthKeys>";
+   $preferences_ws = "<http://purl.org/payswarm/webservices#oAuthPreferences>";
    
    if($client_config != NULL)
    {
@@ -178,6 +179,8 @@ function payswarm_update_client_config($json)
          $client_config, $contract_ws, 'payswarm_contracts_url');
       $rval &= payswarm_set_client_config_value(
          $client_config, $license_ws, 'payswarm_licenses_url');
+      $rval &= payswarm_set_client_config_value(
+         $client_config, $keys_ws, 'payswarm_keys_url');
       $rval &= payswarm_set_client_config_value(
          $client_config, $preferences_ws, 'payswarm_preferences_url');
    }
@@ -324,38 +327,6 @@ function payswarm_admin_warnings()
       }
       add_action('admin_notices', 'psaw_config');
    }
-}
-
-/**
- * Generates a public-private X509 encoded keys.
- * 
- * @package payswarm
- * @since 1.0
- * 
- * @return Array containing two keys 'public' and 'private' each with the
- *    public and private keys encoded in X509 format.
- */
-function payswarm_generate_keypair()
-{
-   $rval = array();
-
-   // Create the keypair
-   $keypair = openssl_pkey_new();
-
-   // Get private key
-   openssl_pkey_export($keypair, $privkey);
-
-   // Get public key
-   $pubkey = openssl_pkey_get_details($keypair);
-   $pubkey = $pubkey["key"];
-
-   // free the keypair
-   openssl_free_key($keypair);
-
-   $rval['public'] = $pubkey;
-   $rval['private'] = $privkey;
-   
-   return $rval;
 }
 
 /**
@@ -525,6 +496,13 @@ activate PaySwarm on your site.
         <td><input type="text" size="128" 
           id="payswarm_preferences_url" name="payswarm_preferences_url" 
           value="<?php echo get_option('payswarm_preferences_url'); ?>" /></td>
+        </tr>
+
+        <tr valign="top">
+        <th scope="row"><?php _e('Public Key Service') ?></th>
+        <td><input type="text" size="128" 
+          id="payswarm_keys_url" name="payswarm_keys_url" 
+          value="<?php echo get_option('payswarm_keys_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">

@@ -69,20 +69,72 @@ try
       $ptoken['state'] === 'valid')
    {
       // State: authorized - we can just use the stored access token
-      $key_registration_url = get_option('payswarm_key_registration_url');
+      $keys_url = get_option('payswarm_keys_url');
       $preferences_url = get_option('payswarm_preferences_url');
-
+      $licenses_url = get_option('payswarm_preferences_url');
+      
       $oauth->setToken($ptoken['token'], $ptoken['secret']);
 
       // FIXME: Register the public key using the OAuth registration token
-      print_r($ptoken);
-      echo "REGISTER_PUBLIC_KEY";
+      $keys = payswarm_generate_keypair();
+      
+      // FIXME: Signature error when registering public key
+      //$oauth->fetch($keys_url, 
+      //   array('publicKey' => $keys['public']), OAUTH_HTTP_METHOD_POST);
+      $items = explode('&', $oauth->getLastResponse());
+      $public_key_url = 'http://example.com/INVALID-KEY';
+      $webid_url = 'http://example.com/INVALID-WEBID';
+      foreach($items as $item)
+      {
+         $kv = explode('=', $item, 2);
+         if($kv[0] === 'public_key_url')
+         {
+            $public_key_url = $kv[1];
+         }
+         if($kv[0] === 'webid_url')
+         {
+            $webid_url = $kv[1];
+         }
+      }
+      update_option('payswarm_public_key', $keys['public']);
+      update_option('payswarm_private_key', $keys['private']);
+      update_option('payswarm_webid_url', $webid_url);
+      update_option('payswarm_public_key_url', $public_key_url);
       
       // FIXME: Get the default financial account and currency information
-      echo "GET DEFAULT FINANCIAL ACCOUNT";
+      // FIXME: OAuth error when using this call, defaults to POST?
+      //$oauth->fetch($preferences_url, NULL, OAUTH_HTTP_METHOD_GET);
+      $items = explode('&', $oauth->getLastResponse());
+      $default_currency = 'INVALID';
+      $default_account = 'http://example.com/INVALID-ACCOUNT';
+      $default_license = 'http://example.com/INVALID-LICENSE';
+      foreach($items as $item)
+      {
+         $kv = explode('=', $item, 2);
+         if($kv[0] === 'default_currency')
+         {
+            $default_currency = $kv[1];
+         }
+         if($kv[0] === 'default_destination_account')
+         {
+            $default_account = $kv[1];
+         }
+         if($kv[0] === 'default_license')
+         {
+            $default_license = $kv[1];
+         }
+      }
+      update_option('payswarm_default_license_url', $default_license);
+      update_option('payswarm_default_currency', $default_currency);
+      update_option('payswarm_destination_account', $default_account);
       
       // FIXME: Get the default license and license hash
-      echo "Get DEFAULT LICENSE AND HASH";
+      $default_license_hash = "INVALID-LICENSE-HASH";
+      // FIXME: Waiting for Lehn to finish implementing this call
+      //$oauth->fetch($licenses_url, NULL, OAUTH_HTTP_METHOD_GET);
+      update_option('payswarm_default_license_hash', $default_license_hash);
+      
+      header('Location: ' . admin_url() . 'plugins.php?page=payswarm');
    }
 }
 catch(OAuthException $E)
@@ -90,6 +142,38 @@ catch(OAuthException $E)
    $err = json_decode($E->lastResponse);
    print_r('<pre>' . $E . "\nError details: \n" . 
       print_r($err, true) . '</pre>');
+}
+
+/**
+ * Generates a public-private X509 encoded keys.
+ * 
+ * @package payswarm
+ * @since 1.0
+ * 
+ * @return Array containing two keys 'public' and 'private' each with the
+ *    public and private keys encoded in X509 format.
+ */
+function payswarm_generate_keypair()
+{
+   $rval = array();
+
+   // Create the keypair
+   $keypair = openssl_pkey_new();
+
+   // Get private key
+   openssl_pkey_export($keypair, $privkey);
+
+   // Get public key
+   $pubkey = openssl_pkey_get_details($keypair);
+   $pubkey = $pubkey["key"];
+
+   // free the keypair
+   openssl_free_key($keypair);
+
+   $rval['public'] = $pubkey;
+   $rval['private'] = $privkey;
+   
+   return $rval;
 }
 
 function payswarm_access_denied($post)
