@@ -92,8 +92,8 @@ function payswarm_asset_information_rdfa($post_id)
    $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
 
    // determine the validity period
-   $now_iso8601 = date_format(date_create('now'), DateTime::ISO8601);
-   $one_day_from_now = date_create('now');
+   $now_iso8601 = date_format(date_create('today'), DateTime::ISO8601);
+   $one_day_from_now = date_create('today');
    $one_day_from_now = date_add($one_day_from_now, 
       date_interval_create_from_date_string('1 day'));
    $one_day_from_now_iso8601 = 
