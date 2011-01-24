@@ -74,7 +74,7 @@ function payswarm_asset_information_rdfa($post_id)
    $post_title = get_the_title();
    $post_author = get_the_author();
    $asset_provider = get_option('payswarm_webid_url');
-   $payswarm_authority = 'https://' . get_option('payswarm_authority');
+   $payswarm_authority = get_option('payswarm_authority');
    // FIXME: 'payswarm_destination_account' needs to be implemented
    $destination_account = get_option('payswarm_destination_account');
    $amount = get_post_meta($post_id, 'payswarm_price', true);
