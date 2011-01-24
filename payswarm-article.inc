@@ -35,24 +35,40 @@ function payswarm_generate_asset_hash(
    $content_url)
 {
    // create the normalized JSON-LD
-   $asset = '{"{<http://purl.org/dc/terms/creator>":"' . 
-      $post_author . '",' .
-      '"<http://purl.org/dc/terms/title>":"' . 
-      $post_title . '",' .
-      '"<http://purl.org/payswarm#assetProvider>":"<' . 
-      $asset_provider .'>",' .
-      '"<http://purl.org/payswarm#authority>":"<' . 
-      $payswarm_authority . '>",' .
-      '"<http://purl.org/payswarm#contentUrl>":"<' . 
-      $content_url . '>"' .
-      '"<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>":' .
-      '["<http://purl.org/payswarm#Asset>",' .
-      '"<http://purl.org/payswarm#WebPage>"],' .
-      '"@":"<'. $asset_url .'>"}';
+   $asset = array
+   (
+      '<http://purl.org/dc/terms/creator>' =>
+         $post_author,
+      '<http://purl.org/dc/terms/title>' =>
+         $post_title,
+      '<http://purl.org/payswarm#assetProvider>' =>
+         '<' . $asset_provider .'>',
+      '<http://purl.org/payswarm#authority>' =>
+         '<' .  $payswarm_authority . '>',
+      '<http://purl.org/payswarm#contentUrl>' =>
+         '<' .  $content_url . '>',
+      '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>' => array(
+         '<http://purl.org/payswarm#Asset>',
+         '<http://purl.org/payswarm#WebPage>'
+      ),
+      '@' => '<' . $asset_url . '>'
+   );
+   
+   // Newer PHP has a flag to avoid escaped '/'
+   if(defined('JSON_UNESCAPED_SLASHES'))
+   {
+      $asset_json = json_encode($asset, JSON_UNESCAPED_SLASHES);
+   }
+   else
+   {
+      // Use a simple string replacement of '\/' to '/'.
+      // FIXME: does this need to be more complex?
+      $asset_json = str_replace('\\/', '/', json_encode($asset));
+   }
 
    // the asset hash is a SHA-1 of the normalized JSON-LD
-   $asset_hash = sha1($asset);
-
+   $asset_hash = sha1($asset_json);
+   
    return $asset_hash;
 }
 
