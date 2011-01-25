@@ -38,6 +38,7 @@ define('PAYSWARM_PLUGIN_URL', site_url() . '/wp-content/plugins/' .
    str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
 
 require_once('payswarm-database.inc');
+require_once('payswarm-config.inc');
 require_once('payswarm-admin.inc');
 require_once('payswarm-article.inc');
 require_once('payswarm-session.inc');

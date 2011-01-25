@@ -23,7 +23,6 @@ function payswarm_oauth1_initialize(
    // payswarm site to authorize
    $callback_url = payswarm_get_current_url() . "?session=$session";
 
-   // FIXME: Change currency when we support other currencies
    $request_token_info = 
       $oauth->getRequestToken($request_url, $callback_url);
 
@@ -85,6 +84,5 @@ function payswarm_oauth1_authorize(
       header("Location: $redir_url");
    }
 }
-
 
 ?>

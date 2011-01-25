@@ -27,8 +27,7 @@ try
    // setup the OAuth client
    $client_id = get_option('payswarm_client_id');
    $client_secret = get_option('payswarm_client_secret');
-   $oauth = new OAuth(
-      $client_id, $client_secret, OAUTH_SIG_METHOD_HMACSHA1, 
+   $oauth = new OAuth($client_id, $client_secret, OAUTH_SIG_METHOD_HMACSHA1, 
       OAUTH_AUTH_TYPE_FORM);
 
    // FIXME: Disable debug output for OAuth for production software
@@ -68,12 +67,26 @@ try
    else if($ptoken['scope'] === 'payswarm-registration' && 
       $ptoken['state'] === 'valid')
    {
+      $oauth = new OAuth($client_id, $client_secret, OAUTH_SIG_METHOD_HMACSHA1);
+      // FIXME: Disable debug output for OAuth for production software
+      // FIXME: Enable SSL checks for production software
+      $oauth->enableDebug();
+      $oauth->disableSSLChecks();
+
       // State: authorized - we can just use the stored access token
+      $oauth->setToken($ptoken['token'], $ptoken['secret']);
+
+      // Make the call to the PaySwarm Authority to get the complete
+      // PaySwarm endpoint information
+      $config_url = get_option('payswarm_client_config');
+      $oauth->fetch($config_url, array(), OAUTH_HTTP_METHOD_GET);
+      $response_info = $oauth->getLastResponseInfo();
+      $json = $oauth->getLastResponse();
+      payswarm_config_endpoints($json);
+
+      // Get the newly retrieved endpoint URLs
       $keys_url = get_option('payswarm_keys_url');
       $preferences_url = get_option('payswarm_preferences_url');
-      $licenses_url = get_option('payswarm_preferences_url');
-      
-      $oauth->setToken($ptoken['token'], $ptoken['secret']);
 
       // FIXME: Register the public key using the OAuth registration token
       $keys = payswarm_generate_keypair();
@@ -100,7 +113,8 @@ try
       update_option('payswarm_private_key', $keys['private']);
       update_option('payswarm_webid_url', $webid_url);
       update_option('payswarm_public_key_url', $public_key_url);
-      
+
+      // FIXME: Get the default license information
       // FIXME: Get the default financial account and currency information
       // FIXME: OAuth error when using this call, defaults to POST?
       //$oauth->fetch($preferences_url, NULL, OAUTH_HTTP_METHOD_GET);
