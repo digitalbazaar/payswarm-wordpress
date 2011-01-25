@@ -35,24 +35,40 @@ function payswarm_generate_asset_hash(
    $content_url)
 {
    // create the normalized JSON-LD
-   $asset = '{"{<http://purl.org/dc/terms/creator>":"' . 
-      $post_author . '",' .
-      '"<http://purl.org/dc/terms/title>":"' . 
-      $post_title . '",' .
-      '"<http://purl.org/payswarm#assetProvider>":"<' . 
-      $asset_provider .'>",' .
-      '"<http://purl.org/payswarm#authority>":"<' . 
-      $payswarm_authority . '>",' .
-      '"<http://purl.org/payswarm#contentUrl>":"<' . 
-      $content_url . '>"' .
-      '"<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>":' .
-      '["<http://purl.org/payswarm#Asset>",' .
-      '"<http://purl.org/payswarm#WebPage>"],' .
-      '"@":"<'. $asset_url .'>"}';
+   $asset = array
+   (
+      '<http://purl.org/dc/terms/creator>' =>
+         $post_author,
+      '<http://purl.org/dc/terms/title>' =>
+         $post_title,
+      '<http://purl.org/payswarm#assetProvider>' =>
+         '<' . $asset_provider .'>',
+      '<http://purl.org/payswarm#authority>' =>
+         '<' .  $payswarm_authority . '>',
+      '<http://purl.org/payswarm#contentUrl>' =>
+         '<' .  $content_url . '>',
+      '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>' => array(
+         '<http://purl.org/payswarm#Asset>',
+         '<http://purl.org/payswarm#WebPage>'
+      ),
+      '@' => '<' . $asset_url . '>'
+   );
+   
+   // Newer PHP has a flag to avoid escaped '/'
+   if(defined('JSON_UNESCAPED_SLASHES'))
+   {
+      $asset_json = json_encode($asset, JSON_UNESCAPED_SLASHES);
+   }
+   else
+   {
+      // Use a simple string replacement of '\/' to '/'.
+      // FIXME: does this need to be more complex?
+      $asset_json = str_replace('\\/', '/', json_encode($asset));
+   }
 
    // the asset hash is a SHA-1 of the normalized JSON-LD
-   $asset_hash = sha1($asset);
-
+   $asset_hash = sha1($asset_json);
+   
    return $asset_hash;
 }
 
@@ -74,7 +90,7 @@ function payswarm_asset_information_rdfa($post_id)
    $post_title = get_the_title();
    $post_author = get_the_author();
    $asset_provider = get_option('payswarm_webid_url');
-   $payswarm_authority = 'https://' . get_option('payswarm_authority');
+   $payswarm_authority = get_option('payswarm_authority');
    // FIXME: 'payswarm_destination_account' needs to be implemented
    $destination_account = get_option('payswarm_destination_account');
    $amount = get_post_meta($post_id, 'payswarm_price', true);
@@ -92,8 +108,8 @@ function payswarm_asset_information_rdfa($post_id)
    $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
 
    // determine the validity period
-   $now_iso8601 = date_format(date_create('now'), DateTime::ISO8601);
-   $one_day_from_now = date_create('now');
+   $now_iso8601 = date_format(date_create('today'), DateTime::ISO8601);
+   $one_day_from_now = date_create('today');
    $one_day_from_now = date_add($one_day_from_now, 
       date_interval_create_from_date_string('1 day'));
    $one_day_from_now_iso8601 = 
