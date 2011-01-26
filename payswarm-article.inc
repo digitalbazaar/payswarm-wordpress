@@ -183,10 +183,10 @@ function payswarm_asset_information_rdfa($post_id)
             using <a rel=\"ps:signer\" href=\"$public_key_url\">this key</a>.
           </span>
           <span about=\"$post_url#listing-payee\">
-            <a rel=\"com:rateType\" href=\"http://purl.org/payswarm#FlatRate\"
+            <a rel=\"com:rateType\" href=\"http://purl.org/commerce#FlatAmount\"
               >Flat-rate payment</a> 
             will be deposited into 
-            <a rel=\"com:destinationAccount\" 
+            <a rel=\"com:destination\" 
                href=\"$destination_account\">this account</a>.
             The memo field for the payment will read: 
             \"<span property=\"rdfs:comment\"
