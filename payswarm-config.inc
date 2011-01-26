@@ -128,16 +128,16 @@ function payswarm_config_oauth($json)
  * @package payswarm
  * @since 1.0
  *
- * @param string $json A blob of JSON text that is encoded in JSON-LD format,
+ * @param string $jsonld A blob of JSON text that is encoded in JSON-LD format,
  *    usually returned by the PaySwarm Authority after hitting the client
  *    configuration URL.
  *
  * @return true if the update was successful, false otherwise.
  */
-function payswarm_config_endpoints($json)
+function payswarm_config_endpoints($jsonld)
 {
    $rval = true;
-   $client_config = json_decode($json, true);
+   $client_config = json_decode($jsonld, true);
    
    $authorize_ws = "<http://purl.org/payswarm/webservices#oAuthAuthorize>";
    $request_ws = "<http://purl.org/payswarm/webservices#oAuthRequest>";
@@ -163,6 +163,45 @@ function payswarm_config_endpoints($json)
          $client_config, $keys_ws, 'payswarm_keys_url');
       $rval &= payswarm_config_set_value(
          $client_config, $preferences_ws, 'payswarm_preferences_url');
+   }
+   else
+   {
+      $rval = false;
+   }
+   
+   return $rval;
+}
+
+/**
+ * Updates the PaySwarm public/private key information associated with this
+ * installation of WordPress.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param array $keys The public/private keypair that was registered. The
+ *    associative array should have to keys in it - 'public' and 'private' for
+ *    the public key and the private key, respectively.
+ * @param array $jsonld The registration information for the public key, which
+ *    is a JSON-LD object that contains the public key URL and the WebID URL
+ *    that owns the key.
+ *
+ * @return true if the update was successful, false otherwise.
+ */
+function payswarm_config_keys($keys, $jsonld)
+{
+   $rval = true;
+   $public_key_registration = json_decode($jsonld, true);
+   $cert_identity = "<http://www.w3.org/ns/auth/cert#identity>";
+   
+   if($public_key_registration != NULL)
+   {
+      $rval &= payswarm_config_set_value(
+         $public_key_registration, '@', 'payswarm_public_key_url');
+      $rval &= payswarm_config_set_value(
+         $public_key_registration, $cert_identity, 'payswarm_webid_url');
+      update_option('payswarm_public_key', $keys['public']);
+      update_option('payswarm_private_key', $keys['private']);
    }
    else
    {

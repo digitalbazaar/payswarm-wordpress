@@ -92,27 +92,10 @@ try
       $keys = payswarm_generate_keypair();
       
       // FIXME: Signature error when registering public key
-      //$oauth->fetch($keys_url, 
-      //   array('publicKey' => $keys['public']), OAUTH_HTTP_METHOD_POST);
-      $items = explode('&', $oauth->getLastResponse());
-      $public_key_url = 'http://example.com/INVALID-KEY';
-      $webid_url = 'http://example.com/INVALID-WEBID';
-      foreach($items as $item)
-      {
-         $kv = explode('=', $item, 2);
-         if($kv[0] === 'public_key_url')
-         {
-            $public_key_url = $kv[1];
-         }
-         if($kv[0] === 'webid_url')
-         {
-            $webid_url = $kv[1];
-         }
-      }
-      update_option('payswarm_public_key', $keys['public']);
-      update_option('payswarm_private_key', $keys['private']);
-      update_option('payswarm_webid_url', $webid_url);
-      update_option('payswarm_public_key_url', $public_key_url);
+      $oauth->fetch($keys_url, array("public_key" => $keys['public']),
+         OAUTH_HTTP_METHOD_POST);
+      $key_registration_info = $oauth->getLastResponse();
+      payswarm_config_keys($keys, $key_registration_info);
 
       // FIXME: Get the default license information
       // FIXME: Get the default financial account and currency information
