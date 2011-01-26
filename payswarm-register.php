@@ -97,39 +97,13 @@ try
       $key_registration_info = $oauth->getLastResponse();
       payswarm_config_keys($keys, $key_registration_info);
 
-      // FIXME: Get the default license information
-      // FIXME: Get the default financial account and currency information
-      // FIXME: OAuth error when using this call, defaults to POST?
-      //$oauth->fetch($preferences_url, NULL, OAUTH_HTTP_METHOD_GET);
-      $items = explode('&', $oauth->getLastResponse());
-      $default_currency = 'INVALID';
-      $default_account = 'http://example.com/INVALID-ACCOUNT';
-      $default_license = 'http://example.com/INVALID-LICENSE';
-      foreach($items as $item)
-      {
-         $kv = explode('=', $item, 2);
-         if($kv[0] === 'default_currency')
-         {
-            $default_currency = $kv[1];
-         }
-         if($kv[0] === 'default_destination_account')
-         {
-            $default_account = $kv[1];
-         }
-         if($kv[0] === 'default_license')
-         {
-            $default_license = $kv[1];
-         }
-      }
-      update_option('payswarm_default_license_url', $default_license);
-      update_option('payswarm_default_currency', $default_currency);
-      update_option('payswarm_destination_account', $default_account);
-      
-      // FIXME: Get the default license and license hash
-      $default_license_hash = "INVALID-LICENSE-HASH";
-      // FIXME: Waiting for Lehn to finish implementing this call
-      //$oauth->fetch($licenses_url, NULL, OAUTH_HTTP_METHOD_GET);
-      update_option('payswarm_default_license_hash', $default_license_hash);
+      // FIXME: Signature error when retrieving preferences
+      $preferences_url = get_option('payswarm_preferences_url');
+      $oauth->fetch($preferences_url);
+      $preferences = $oauth->getLastResponse();
+      payswarm_config_preferences($preferences);
+      print_r(htmlentities($preferences));
+      die();
       
       header('Location: ' . admin_url() . 'plugins.php?page=payswarm');
    }

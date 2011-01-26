@@ -211,4 +211,44 @@ function payswarm_config_keys($keys, $jsonld)
    return $rval;
 }
 
+/**
+ * Updates the PaySwarm preferences associated with this WordPress installation.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param array $jsonld The preferences JSON-LD markup received from the 
+ *    PaySwarm preferences webservice.
+ *
+ * @return true if the update was successful, false otherwise.
+ */
+function payswarm_config_preferences($jsonld)
+{
+   $rval = true;
+   $preferences = json_decode($jsonld, true);
+   
+   $currency_url = '<http://purl.org/commerce#currency>';
+   $account_url = '<http://purl.org/payswarm#primaryAccount>';
+   $license_url = '<http://purl.org/payswarm#license>';
+   $license_hash_url = '<http://purl.org/payswarm#licenseHash>';
+   
+   if($preferences != NULL)
+   {
+      $rval &= payswarm_config_set_value($preferences[$license_url][0], 
+         '@', 'payswarm_default_license_url');
+      $rval &= payswarm_config_set_value($preferences[$license_url][0], 
+         $license_hash_url, 'payswarm_default_license_hash');
+      $rval &= payswarm_config_set_value(
+         $preferences, $currency_url, 'payswarm_default_currency');
+      $rval &= payswarm_config_set_value(
+         $preferences, $account_url, 'payswarm_destination_account');
+   }
+   else
+   {
+      $rval = false;
+   }
+   
+   return $rval;
+}
+
 ?>
