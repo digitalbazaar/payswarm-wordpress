@@ -228,7 +228,7 @@ function payswarm_config_preferences($jsonld)
    $preferences = json_decode($jsonld, true);
    
    $currency_url = '<http://purl.org/commerce#currency>';
-   $account_url = '<http://purl.org/payswarm#primaryAccount>';
+   $account_url = '<http://purl.org/commerce#primaryAccount>';
    $license_url = '<http://purl.org/payswarm#license>';
    $license_hash_url = '<http://purl.org/payswarm#licenseHash>';
    
