@@ -102,8 +102,6 @@ try
       $oauth->fetch($preferences_url);
       $preferences = $oauth->getLastResponse();
       payswarm_config_preferences($preferences);
-      print_r(htmlentities($preferences));
-      die();
       
       header('Location: ' . admin_url() . 'plugins.php?page=payswarm');
    }
