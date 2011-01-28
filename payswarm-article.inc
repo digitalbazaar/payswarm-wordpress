@@ -189,8 +189,11 @@ function payswarm_get_post_info($post_id, $gen_listing_hash = false)
    $rval['asset_url'] = $rval['post_url'] . '#asset';
    $rval['asset_hash'] = payswarm_generate_asset_hash($rval);
       
-   $rval['license_url'] = get_option('payswarm_default_license_url');
-   $rval['license_hash'] = get_option('payswarm_default_license_hash');
+   $rval['license_url'] =
+      get_post_meta($post_id, 'payswarm_content_license_url', true);
+   // FIXME: handle license hashes properly
+   $rval['license_hash'] =
+      get_post_meta($post_id, 'payswarm_content_license_hash', true);
    
    $rval['listing_url'] = $rval['post_url'] . '#listing';
    $rval['listing_payee'] = array
@@ -508,6 +511,9 @@ function payswarm_save_post_data($post_id)
       }
       update_post_meta($post_id, 'payswarm_price', $price);
       update_post_meta($post_id, 'payswarm_content_license_url', $license_url);
+      // FIXME: load cached hash value, fetch and calculate, or use a service
+      //update_post_meta(
+      //   $post_id, 'payswarm_content_license_hash', $license_hash);
    }
 
    return $rval;
