@@ -67,7 +67,7 @@ function payswarm_install_database()
  *    PaySwarm session or NULL if no session exists.
  */
 function payswarm_database_get_token(
-   $payswarm_session, $scope='payswarm-token', $create=false)
+   $payswarm_session, $scope, $create=false)
 {
    $rval = null;
    global $wpdb;
@@ -85,13 +85,18 @@ function payswarm_database_get_token(
    // retrieve all information associated with the session
    $rval = $wpdb->get_row($wpdb->prepare(
       'SELECT session, scope, state, token, secret, details FROM ' . 
-      PAYSWARM_TABLE_NAME . ' WHERE session=%s AND scope=%s', 
+      PAYSWARM_TABLE_NAME . ' WHERE session=%s AND scope=%s LIMIT 1', 
       $payswarm_session, $scope), ARRAY_A);
-      
+   
    // set the return type to null if there was nothing in the database
    if($wpdb->num_rows < 1)
    {
       $rval = null;
+   }
+   else
+   {
+      // decode details
+      $rval['details'] = json_decode($rval['details'], true);
    }
 
    return $rval;
@@ -113,9 +118,13 @@ function payswarm_database_get_token(
  */
 function payswarm_database_update_token($payswarm_token)
 {
+   // FIXME: _get_token and _update_token should be done inside a transaction
    $rval = false;
    global $wpdb;
 
+   // encode details
+   $payswarm_token['details'] = json_encode($payswarm_token['details']);
+      
    // build the update data in WordPress database update format
    $data = array();
    foreach($payswarm_token as $key => $value)

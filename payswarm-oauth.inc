@@ -10,7 +10,7 @@
  * @param object $oauth the OAuth object as created by the OAuth API.
  * @param string $session The session that should be associated with the
  *    OAuth credential.
- * @param string $scope the scope for the OAuth token - either payswarm-token
+ * @param string $scope the scope for the OAuth token - either payswarm-payment
  *    or payswarm-registration
  * @param string $request_url the full request URL for the OAuth token request.
  * @param string $details the details that should be stored along with the 
@@ -21,17 +21,18 @@ function payswarm_oauth1_initialize(
 {
    // Initializing state - Generate request token and redirect user to 
    // payswarm site to authorize
-   $callback_url = payswarm_get_current_url() . "?session=$session";
+   $callback_url =
+      add_query_arg('session', $session, payswarm_get_current_url());
 
    $request_token_info = 
       $oauth->getRequestToken($request_url, $callback_url);
 
    $tok['session'] = $session;
    $tok['scope'] = $scope;
+   $tok['state'] = 'authorizing';
    $tok['token'] = $request_token_info['oauth_token'];
    $tok['secret'] = $request_token_info['oauth_token_secret'];
    $tok['details'] = $details;
-   $tok['state'] = 'authorizing';
    if(payswarm_database_update_token($tok))
    {
       // Save the token and the secret, which will be used later
@@ -60,7 +61,7 @@ function payswarm_oauth1_initialize(
  * @param object $oauth the OAuth object as created by the OAuth API.
  * @param string $session The session that should be associated with the
  *    OAuth credential.
- * @param string $scope the scope for the OAuth token - either payswarm-token
+ * @param string $scope the scope for the OAuth token - either payswarm-payment
  *    or payswarm-registration
  * @param string $request_url the full request URL for the OAuth token request.
  * @param string $details the details that should be stored along with the 
