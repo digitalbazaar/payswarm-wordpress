@@ -79,31 +79,71 @@ try
       // Make the call to the PaySwarm Authority to get the complete
       // PaySwarm endpoint information
       $config_url = get_option('payswarm_client_config');
-      $oauth->fetch($config_url, array(), OAUTH_HTTP_METHOD_GET);
+      try
+      {
+         $oauth->fetch($config_url, array(), OAUTH_HTTP_METHOD_GET);
+      }
+      catch(OAuthException $E)
+      {
+         // if the OAuth request failed, then the PaySwarm token has
+         // expired. Remove the token and attempt the registration again.
+         payswarm_database_delete_token($ptoken);
+         wp_redirect(plugins_url() . '/payswarm/payswarm-register.php');
+      }
+
       $response_info = $oauth->getLastResponseInfo();
       $json = $oauth->getLastResponse();
-      payswarm_config_endpoints($json);
+      $success = payswarm_config_endpoints($json);
 
-      // Get the newly retrieved endpoint URLs
-      $keys_url = get_option('payswarm_keys_url');
-      $preferences_url = get_option('payswarm_preferences_url');
-
-      // FIXME: Register the public key using the OAuth registration token
-      $keys = payswarm_generate_keypair();
+      $key_registration_info = "{}";
+      if($success)
+      {
+         // Get the newly retrieved endpoint URLs
+         $keys_url = get_option('payswarm_keys_url');
+         $preferences_url = get_option('payswarm_preferences_url');
+   
+         // FIXME: Register the public key using the OAuth registration token
+         $keys = payswarm_generate_keypair();
+         
+         // FIXME: Signature error when registering public key
+         $oauth->fetch($keys_url, array("public_key" => $keys['public']),
+            OAUTH_HTTP_METHOD_POST);
+         $key_registration_info = $oauth->getLastResponse();
+         $success = payswarm_config_keys($keys, $key_registration_info);
+      }
+      else
+      {
+         die("Error: Failed to set configuration endpoints. " .
+            "Response received from PaySwarm Authority: " . 
+            htmlentities($json));
+      }
       
-      // FIXME: Signature error when registering public key
-      $oauth->fetch($keys_url, array("public_key" => $keys['public']),
-         OAUTH_HTTP_METHOD_POST);
-      $key_registration_info = $oauth->getLastResponse();
-      payswarm_config_keys($keys, $key_registration_info);
-
-      // FIXME: Signature error when retrieving preferences
-      $preferences_url = get_option('payswarm_preferences_url');
-      $oauth->fetch($preferences_url);
-      $preferences = $oauth->getLastResponse();
-      payswarm_config_preferences($preferences);
+      $preferences = "{}";
+      if($success)
+      {
+         // FIXME: Signature error when retrieving preferences
+         $preferences_url = get_option('payswarm_preferences_url');
+         $oauth->fetch($preferences_url);
+         $preferences = $oauth->getLastResponse();
+         $success = payswarm_config_preferences($preferences);
+      }
+      else
+      {
+         die("Error: Failed to set public/private key configuration. " .
+            "Response received from PaySwarm Authority: " .
+            htmlentities($key_registration_info));
+      }
       
-      header('Location: ' . admin_url() . 'plugins.php?page=payswarm');
+      if($success)
+      {
+          header('Location: ' . admin_url() . 'plugins.php?page=payswarm');
+      }
+      else
+      {
+         die("Error: Failed to set PaySwarm configuration preferences. " .
+            "Response received from PaySwarm Authority: " .
+            htmlentities($preferences));
+      }
    }
 }
 catch(OAuthException $E)

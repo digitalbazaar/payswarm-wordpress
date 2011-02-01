@@ -227,11 +227,11 @@ function payswarm_config_preferences($jsonld)
    $rval = true;
    $preferences = json_decode($jsonld, true);
    
-   $currency_url = '<http://purl.org/commerce#currency>';
-   $account_url = '<http://purl.org/commerce#primaryAccount>';
-   $license_url = '<http://purl.org/payswarm#license>';
+   $currency_url = '<http://purl.org/payswarm/preferences#currency>';
+   $account_url = '<http://purl.org/payswarm/preferences#primaryAccount>';
+   $license_url = '<http://purl.org/payswarm/preferences#license>';
    $license_hash_url = '<http://purl.org/payswarm#licenseHash>';
-   
+
    if($preferences != NULL)
    {
       $rval &= payswarm_config_set_value($preferences[$license_url][0], 

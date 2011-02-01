@@ -103,7 +103,7 @@ function payswarm_database_get_token(
 }
 
 /**
- * Updates a PaySwarm Payment Token given information associated with the token.
+ * Updates a PaySwarm Token given information associated with the token.
  * 
  * Updates all of the token information that is provided. The token contains 
  * information such as session, state, the token identifier, token secret, 
@@ -145,4 +145,43 @@ function payswarm_database_update_token($payswarm_token)
 
    return $rval;
 }
+
+/**
+ * Deletes a PaySwarm Token given information associated with the token.
+ * 
+ * The information given must at least contain the session and scope associated
+ * with the token.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param Array $payswarm_token An associative array containing at least 
+ *    the session and scope for the token that should be deleted. 
+ * @return boolean true if the delete was successful, false otherwise.
+ */
+function payswarm_database_delete_token($payswarm_token)
+{
+   $rval = false;
+   global $wpdb;
+
+   // delete all information associated with the session
+   $dstatement = "DELETE FROM " . PAYSWARM_TABLE_NAME . 
+      " WHERE session='%s' AND scope = '%s'";
+   $wpdb->query($wpdb->prepare($dstatement, 
+        $payswarm_token['session'], $payswarm_token['scope']));
+   
+   // Set the return type to true if one or more objects were deleted
+   if($wpdb->num_rows > 0)
+   {
+      $rval = true;
+   }
+   else
+   {
+      print_r($payswarm_token);
+      die("DELETING FAILED");
+   }
+
+   return $rval;
+}
+
 ?>
