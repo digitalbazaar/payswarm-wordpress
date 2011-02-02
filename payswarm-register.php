@@ -76,7 +76,8 @@ try
       $oauth->enableDebug();
       $oauth->disableSSLChecks();
 
-      // State: authorized - we can just use the stored access token
+      // setup the PaySwarm token and secret in preparation for making OAuth
+      // calls
       $oauth->setToken($ptoken['token'], $ptoken['secret']);
 
       // Make the call to the PaySwarm Authority to get the complete
@@ -94,6 +95,7 @@ try
          wp_redirect(plugins_url() . '/payswarm/payswarm-register.php');
       }
 
+      // store the PaySwarm endpoints
       $response_info = $oauth->getLastResponseInfo();
       $json = $oauth->getLastResponse();
       $success = payswarm_config_endpoints($json);
@@ -101,14 +103,12 @@ try
       $key_registration_info = "{}";
       if($success)
       {
-         // Get the newly retrieved endpoint URLs
+         // Register the public/private keypair
          $keys_url = get_option('payswarm_keys_url');
          $preferences_url = get_option('payswarm_preferences_url');
    
-         // FIXME: Register the public key using the OAuth registration token
          $keys = payswarm_generate_keypair();
          
-         // FIXME: Signature error when registering public key
          $oauth->fetch($keys_url, array("public_key" => $keys['public']),
             OAUTH_HTTP_METHOD_POST);
          $key_registration_info = $oauth->getLastResponse();
@@ -124,7 +124,7 @@ try
       $preferences = "{}";
       if($success)
       {
-         // FIXME: Signature error when retrieving preferences
+         // Retrieve the individualized PaySwarm preferences
          $preferences_url = get_option('payswarm_preferences_url');
          $oauth->fetch($preferences_url);
          $preferences = $oauth->getLastResponse();
