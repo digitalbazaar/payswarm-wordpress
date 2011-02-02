@@ -34,6 +34,8 @@ License: GPLv2
  * @since 1.0
  * @global string PAYSWARM_PLUGIN_URL
  */
+require_once('payswarm-utils.inc');
+
 define('PAYSWARM_PLUGIN_URL', site_url() . '/wp-content/plugins/' .
    str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
 

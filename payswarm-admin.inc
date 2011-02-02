@@ -1,9 +1,5 @@
 <?php
 
-// Force registration to happen through SSL 
-define('FORCE_SSL_LOGIN', true);
-define('FORCE_SSL_ADMIN', true);
-
 /**
  * Adds the administrative pages to the UI if the administrator is logged in.
  * 
@@ -20,6 +16,9 @@ function payswarm_add_admin_pages()
    // menus
    if(is_admin())
    {
+      // Force management to happen through SSL 
+      payswarm_force_ssl();
+      
       // admin actions
       add_action('admin_init', 'payswarm_register_settings');
       add_action('admin_init', 'payswarm_redirect_registration');

@@ -1,40 +1,6 @@
 <?php
 
 /**
- * Retrieves the current URL being served.
- *
- * @package payswarm
- * @since 1.0
- *
- * @return string The current URL that is being served.
- */
-function payswarm_get_current_url() 
-{
-   $rval = 'http';
-
-   // check whether we're in HTTP or HTTPS mode
-   if($_SERVER["HTTPS"] == "on")
-   {
-      $rval .= "s";
-   }
-
-   $rval .= "://";
-
-   // add the server name, port (if non-standard), and the request URI
-   if($_SERVER["SERVER_PORT"] != "80")
-   {
-      $rval .= $_SERVER["SERVER_NAME"] . ":" . $_SERVER["SERVER_PORT"] .
-         $_SERVER["REQUEST_URI"];
-   } 
-   else 
-   {
-      $rval .= $_SERVER["SERVER_NAME"] . $_SERVER["REQUEST_URI"];
-   }
-
-   return $rval;
-}
-
-/**
  * Checks to ensure that a PaySwarm session is being tracked on the site.
  * 
  * Checks to see if a cookie called 'payswarm-session' exists in HTTPS mode,

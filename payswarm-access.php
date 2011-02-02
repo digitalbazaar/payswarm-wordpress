@@ -1,9 +1,9 @@
 <?php
 require_once('../../../wp-config.php');
+require_once('payswarm-utils.inc');
 
-// Force registration to happen through SSL 
-define('FORCE_SSL_LOGIN', true);
-define('FORCE_SSL_ADMIN', true);
+// Force access to happen through SSL 
+payswarm_force_ssl();
 
 require_once('payswarm-article.inc');
 require_once('payswarm-session.inc');
