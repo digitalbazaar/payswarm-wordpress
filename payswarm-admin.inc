@@ -1,5 +1,9 @@
 <?php
 
+// Force registration to happen through SSL 
+define('FORCE_SSL_LOGIN', true);
+define('FORCE_SSL_ADMIN', true);
+
 /**
  * Adds the administrative pages to the UI if the administrator is logged in.
  * 

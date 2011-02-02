@@ -1,11 +1,14 @@
 <?php
 require_once('../../../wp-config.php');
+
+// Force registration to happen through SSL 
+define('FORCE_SSL_LOGIN', true);
+define('FORCE_SSL_ADMIN', true);
+
 require_once('payswarm-article.inc');
 require_once('payswarm-session.inc');
 require_once('payswarm-database.inc');
 require_once('payswarm-oauth.inc');
-
-// FIXME: Check to ensure connection was made via SSL connection
 
 // get the session ID that is associated with this request
 $session = payswarm_check_session();
