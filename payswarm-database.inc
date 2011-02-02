@@ -46,7 +46,7 @@ function payswarm_install_database()
       update_option("payswarm_schema_version", PAYSWARM_SCHEMA_VERSION);
    }
 
-   // FIXME: We need to put in code to upgrade the schema if we ever change
+   // NOTE: We need to put in code here to upgrade the schema if we ever change
    // the database schema
 }
 
@@ -118,7 +118,6 @@ function payswarm_database_get_token(
  */
 function payswarm_database_update_token($payswarm_token)
 {
-   // FIXME: _get_token and _update_token should be done inside a transaction
    $rval = false;
    global $wpdb;
 
@@ -174,11 +173,6 @@ function payswarm_database_delete_token($payswarm_token)
    if($wpdb->num_rows > 0)
    {
       $rval = true;
-   }
-   else
-   {
-      print_r($payswarm_token);
-      die("DELETING FAILED");
    }
 
    return $rval;
