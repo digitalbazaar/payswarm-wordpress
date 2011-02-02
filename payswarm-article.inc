@@ -261,7 +261,7 @@ function payswarm_asset_information_rdfa($post_id)
          <div about=\"" . $info['post_url'] . "#listing\" typeof=\"ps:Listing gr:Offering\">
             <span rel=\"ps:forAsset\" resource=\"" . $info['asset_url'] . "\">" .
                __('View the full article for') . "</span>
-            <span rel=\"ps:payee\" resource=\"" . $info['listing_payee']['id'] . "\">
+            <span rel=\"com:payee\" resource=\"" . $info['listing_payee']['id'] . "\">
                <span property=\"com:currency\"  content=\"" . $info['listing_payee']['com:currency'] . "\">" .
                   $info['currency_symbol'] . "</span>
                <span property=\"com:rate\">" . $info['listing_payee']['com:rate'] . "</span>
