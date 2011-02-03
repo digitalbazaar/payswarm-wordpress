@@ -94,9 +94,32 @@ try
             'listing' => $info['listing_url'],
             'listing_hash' => $info['listing_hash']
          );
-         
-         $oauth->fetch($contracts_url, $params);
-         
+
+         try
+         {
+            // attempt to perform the purchase
+            $oauth->fetch($contracts_url, $params);
+         }
+         catch(OAuthException $E)
+         {
+            // check to see if we got an insufficient funds exception
+            $err = json_decode($oauth->getLastResponse());
+            if(array_key_exists('type', $err) && 
+               $err->type === 'payswarm.oauth1.InsufficientFunds')
+            {
+               // Attempt to recharge the already authorized OAuth token
+               $price = get_post_meta($post_id, 'payswarm_price', true);
+               $authorize_url = get_option('payswarm_authorize_url');
+               $oauth_token = $ptoken['token'];
+               $redir_url = urlencode(payswarm_get_current_url());
+               $authorize_url = "$authorize_url?oauth_token=$oauth_token" .
+                  "&balance=$price&redirect=$redir_url";
+
+               payswarm_recharge_token($authorize_url);
+               exit(0);
+            }
+         }
+
          // check to see if the purchase was approved and get the remaining
          // balance on the payment token
          $authorized = false;
@@ -196,6 +219,33 @@ function payswarm_access_denied($post_id)
 
     <p><a href="' . get_permalink($post_id) .
       '">Go back to the article preview</a>.</p>
+  </div>
+</div>';
+   
+   get_footer();
+}
+
+function payswarm_recharge_token($payswarm_url)
+{
+   // FIXME: Unfortunately, this generates a PHP Notice error for
+   // WP_Query::$is_paged not being defined. Need to figure out which file
+   // declares that variable.
+   get_header();
+
+   echo '
+<div class="category-uncategorized"> 
+  <h2 class="entry-title">Insufficient Funds for PaySwarm Token</h2> 
+  <div class="entry-content"> 
+    <p>
+      The PaySwarm Token that you assigned to this website does not contain
+      enough funds to perform the purchase you requested. You can place
+      more funds onto the token by going to your PaySwarm Authority and
+      placing more money onto the token. A recharge link has been
+      provided below:
+    </p>
+
+    <p><a href="' . $payswarm_url .
+      '">Recharge the PaySwarm Token assigned to this website</a>.</p>
   </div>
 </div>';
    

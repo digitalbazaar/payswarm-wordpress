@@ -179,8 +179,7 @@ function payswarm_database_update_token($payswarm_token)
    if(isset($payswarm_token['details']['authorized_posts']))
    {
       $authorized_posts = $payswarm_token['details']['authorized_posts'];
-      $payswarm_token['details'] = array_diff(
-         $payswarm_token['details'], array('authorized_posts'));
+      unset($payswarm_token['details']['authorized_posts']);
    }
    $payswarm_token['details'] = json_encode($payswarm_token['details']);
 
@@ -207,7 +206,7 @@ function payswarm_database_update_token($payswarm_token)
    {
       $wpdb->query($wpdb->prepare(
          'INSERT IGNORE INTO ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' ' . 
-         '(session, post) VALUES (%s, %s)', $payswarm_session, $post));
+         '(session, post) VALUES (%s, %s)', $payswarm_token['session'], $post));
    }
    
    return $rval;
@@ -236,8 +235,8 @@ function payswarm_database_delete_token($payswarm_token)
       " WHERE session='%s' AND scope = '%s'";
    $dposts= 'DELETE FROM ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . 
       " WHERE session='%s'";
-   $wpdb->query($wpdb->prepare($dtoken, 
-        $payswarm_token['session'], $payswarm_token['scope']));
+   $wpdb->query($wpdb->prepare(
+      $dtoken, $payswarm_token['session'], $payswarm_token['scope']));
 
    // Set the return type to true if one or more objects were deleted
    if($wpdb->num_rows > 0)

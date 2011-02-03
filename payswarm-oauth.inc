@@ -43,9 +43,6 @@ function payswarm_oauth1_initialize(
    }
    else
    {
-      
-      print_r($tok);
-      die("ERROR");
       // if something went wrong, clear the cookie and try again
       global $_SERVER;
 
