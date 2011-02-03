@@ -10,9 +10,17 @@ define('PAYSWARM_SCHEMA_VERSION', '1.0');
 /**
  * The name of the table where PaySwarm stores session/token information.
  * @since 1.0
- * @global string PAYSWARM_TABLE_NAME
+ * @global string PAYSWARM_TOKENS_TABLE_NAME
  */
-define('PAYSWARM_TABLE_NAME', $wpdb->prefix . 'payswarm_tokens');
+define('PAYSWARM_TOKENS_TABLE_NAME', $wpdb->prefix . 'payswarm_tokens');
+
+/**
+ * The name of the table where PaySwarm stores article information.
+ * @since 1.0
+ * @global string PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME
+ */
+define('PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME', 
+   $wpdb->prefix . 'payswarm_authorized_posts');
 
 /**
  * Installs/upgrades the PaySwarm database into a WordPress installation.
@@ -24,25 +32,36 @@ function payswarm_install_database()
 {
    global $wpdb;
 
-   // check to see if the payswarm table exists
-   if($wpdb->get_var('SHOW TABLES LIKE \''. PAYSWARM_TABLE_NAME .'\'') != 
-      PAYSWARM_TABLE_NAME)
-   {
+   // check to see if the payswarm tokens and authorized posts tables exist
+   if(($wpdb->get_var(
+         'SHOW TABLES LIKE \''. PAYSWARM_TOKENS_TABLE_NAME .'\'') != 
+         PAYSWARM_TOKENS_TABLE_NAME) &&
+      ($wpdb->get_var(
+         'SHOW TABLES LIKE \''. PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME .'\'') != 
+         PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME))
+         {
       // ensure that the formatting below is one field per line, dbDelta is
       // very picky when it comes to what it allows.
-      $sql = 'CREATE TABLE ' . PAYSWARM_TABLE_NAME . ' (
+      $tokens_sql = 'CREATE TABLE ' . PAYSWARM_TOKENS_TABLE_NAME . ' (
          session VARCHAR(255) NOT NULL,
          scope TINYTEXT,
          state TINYTEXT,
          token TINYTEXT,
          secret TINYTEXT,
          details TEXT,
-         mtime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+         mtime TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
          PRIMARY KEY (session)
          );';
 
+      $posts_sql = 'CREATE TABLE ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' (
+         session VARCHAR(255) NOT NULL,
+         post INTEGER,
+         INDEX(session)
+         );';
+
       require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-      dbDelta($sql);
+      dbDelta($tokens_sql);
+      dbDelta($posts_sql);
       update_option("payswarm_schema_version", PAYSWARM_SCHEMA_VERSION);
    }
 
@@ -75,19 +94,20 @@ function payswarm_database_get_token(
    // create the token if it doesn't already exist in the database
    if($create)
    {
-      $wpdb->query($wpdb->prepare('INSERT IGNORE INTO ' . PAYSWARM_TABLE_NAME . 
+      $wpdb->query($wpdb->prepare(
+         'INSERT IGNORE INTO ' . PAYSWARM_TOKENS_TABLE_NAME . 
          '(session, scope, state, token, secret, details) ' .
          'VALUES (%s, %s, %s, %s, %s, %s)',
          $payswarm_session, $scope, 'initializing', '', '', 
-         '{"balance": "0.0", "authorized_posts": ""}'));
+         '{"balance": "0.0"}'));
    }
 
    // retrieve all information associated with the session
    $rval = $wpdb->get_row($wpdb->prepare(
-      'SELECT session, scope, state, token, secret, details FROM ' . 
-      PAYSWARM_TABLE_NAME . ' WHERE session=%s AND scope=%s LIMIT 1', 
+      'SELECT session, scope, state, token, secret, details, mtime FROM ' . 
+      PAYSWARM_TOKENS_TABLE_NAME . ' WHERE session=%s AND scope=%s LIMIT 1', 
       $payswarm_session, $scope), ARRAY_A);
-   
+
    // set the return type to null if there was nothing in the database
    if($wpdb->num_rows < 1)
    {
@@ -97,6 +117,26 @@ function payswarm_database_get_token(
    {
       // decode details
       $rval['details'] = json_decode($rval['details'], true);
+   }
+      
+   // iterate through each article associated with the session and collect
+   // the list of articles into the details object
+   if($rval)
+   {
+      $posts = array();
+      $post_rows = $wpdb->get_row($wpdb->prepare(
+         'SELECT post FROM ' . 
+         PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' WHERE session=%s', 
+         $payswarm_session), ARRAY_A);
+
+      if($wpdb->num_rows > 0)
+      {
+         foreach($post_rows as $row)
+         {
+            array_push($posts, $row['post']);
+         }
+      }
+      $rval['details']['authorized_posts'] = $posts;
    }
 
    return $rval;
@@ -121,9 +161,28 @@ function payswarm_database_update_token($payswarm_token)
    $rval = false;
    global $wpdb;
 
-   // encode details
+   // NOTE: There is a race condition here where a person, using the exact
+   // same browser can open two separate tabs, perform two purchases from
+   // each tab at the exact same time on the same site and the allowed articles
+   // information or the token price update will be inaccurate. This is because
+   // the OAuth calls go out to the Web and may be delayed anywhere from 1ms
+   // to 120000ms+. When this race condition occurs, it may result in the 
+   // article purchase occuring at the PaySwarm authority, but the article 
+   // purchase not being recorded correctly at the local WordPress installation.
+   // In an attempt to lessen the effect of this race condition, the balance and 
+   // authorized_posts are always re-read and merged before the update is
+   // performed.
+
+   // remove the authorized posts from the details and encode details
+   $authorized_posts = array();
+   if(isset($payswarm_token['details']['authorized_posts']))
+   {
+      $authorized_posts = $payswarm_token['details']['authorized_posts'];
+      $payswarm_token['details'] = array_diff(
+         $payswarm_token['details'], array('authorized_posts'));
+   }
    $payswarm_token['details'] = json_encode($payswarm_token['details']);
-      
+
    // build the update data in WordPress database update format
    $data = array();
    foreach($payswarm_token as $key => $value)
@@ -132,16 +191,24 @@ function payswarm_database_update_token($payswarm_token)
    }
 
    // update all information associated with the session
-   $wpdb->update(PAYSWARM_TABLE_NAME, $data, 
+   $rval = $wpdb->update(PAYSWARM_TOKENS_TABLE_NAME, $data, 
       array('session' => $payswarm_token['session'], 
          'scope' => $payswarm_token['scope']));
 
    // Set the return type to true if the object was updated correctly
-   if($wpdb->num_rows > 0)
+   if($rval !== false)
    {
       $rval = true;
    }
 
+   // Update all of the authorized post information
+   foreach($authorized_posts as $post)
+   {
+      $wpdb->query($wpdb->prepare(
+         'INSERT IGNORE INTO ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' ' . 
+         '(session, post) VALUES (%s, %s)', $payswarm_session, $post));
+   }
+   
    return $rval;
 }
 
@@ -164,17 +231,25 @@ function payswarm_database_delete_token($payswarm_token)
    global $wpdb;
 
    // delete all information associated with the session
-   $dstatement = "DELETE FROM " . PAYSWARM_TABLE_NAME . 
+   $dtoken= 'DELETE FROM ' . PAYSWARM_TOKENS_TABLE_NAME . 
       " WHERE session='%s' AND scope = '%s'";
-   $wpdb->query($wpdb->prepare($dstatement, 
+   $dposts= 'DELETE FROM ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . 
+      " WHERE session='%s'";
+   $wpdb->query($wpdb->prepare($dtoken, 
         $payswarm_token['session'], $payswarm_token['scope']));
-   
+
    // Set the return type to true if one or more objects were deleted
    if($wpdb->num_rows > 0)
    {
       $rval = true;
    }
 
+   // Remove all article information associated with the session
+   if($rval)
+   {
+      $wpdb->query($wpdb->prepare($dposts, $payswarm_token['session']));
+   }
+   
    return $rval;
 }
 

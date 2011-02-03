@@ -38,9 +38,8 @@ try
       OAUTH_AUTH_TYPE_FORM);
 
    // FIXME: Disable debug output for OAuth for production software
-   $oauth->enableDebug();
-
    // FIXME: Enable SSL checks for production software
+   $oauth->enableDebug();
    $oauth->disableSSLChecks();
 
    // check the state of the payment token
@@ -51,8 +50,7 @@ try
          "?scope=$scope&currency=USD&balance=$price";
       $details = array
       (
-         'balance' => '0.0',
-         'authorized_posts' => ''
+         'balance' => '0.0'
       );
 
       payswarm_oauth1_initialize(
@@ -69,7 +67,6 @@ try
          $details = array
          (
             'balance' => '0.0',
-            'authorized_posts' => ''
          );
          
          payswarm_oauth1_authorize(
@@ -130,10 +127,9 @@ try
             $details['balance'] = $balance;
 
             // update the list of authorized posts
-            $posts = explode(' ', $details['authorized_posts']);
-            array_push($posts, "$post_id");
-            $posts = array_unique($posts);
-            $details['authorized_posts'] = implode(' ', $posts);
+            array_push($details['authorized_posts'], $post_id);
+            $details['authorized_posts'] = 
+               array_unique($details['authorized_posts']);
 
             $tok['session'] = $ptoken['session'];
             $tok['scope'] = $ptoken['scope'];

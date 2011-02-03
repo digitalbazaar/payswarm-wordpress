@@ -38,6 +38,8 @@ function payswarm_generate_json_hash($data)
       $json = str_replace('\\/', '/', json_encode($data));
    }
 
+   //print_r($json);
+   //print("\n\nSHA1: " . sha1($json . "\n\n"));
    // The SHA-1 hash of the JSON
    return sha1($json);
 }
@@ -112,6 +114,8 @@ function payswarm_generate_listing_hash($info)
          ),
          array
          (
+            '<http://purl.org/commerce#payee>' =>
+               '<' . $info['listing_payee']['id'] . '>',
             '<http://purl.org/payswarm#assetHash>' =>
                $info['asset_hash'],
             '<http://purl.org/payswarm#forAsset>' =>
@@ -120,8 +124,6 @@ function payswarm_generate_listing_hash($info)
                '<' . $info['license_url'] . '>',
             '<http://purl.org/payswarm#licenseHash>' =>
                $info['license_hash'],
-            '<http://purl.org/payswarm#payee>' =>
-               '<' . $info['listing_payee']['id'] . '>',
             '<http://purl.org/payswarm#validFrom>' =>
                $info['now_iso8601'] .
                '^^<http://www.w3.org/2001/XMLSchema#dateTime>',
@@ -234,7 +236,7 @@ function payswarm_asset_information_rdfa($post_id)
    // FIXME: This replacement isn't exactly safe, if the URL contains
    // another 'http://' in it, but then again, can't think of any reason
    // that it would
-   $access_url = preg_replace('/^http:\/\/(.*)$/', 'https://$1', 
+   $access_url = preg_replace('/^http:\/\/(.*)$/', 'https://$1',
       PAYSWARM_PLUGIN_URL . 'payswarm-access.php');
    $access_url = add_query_arg('p', $post_id, $access_url);
    $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
@@ -349,12 +351,12 @@ function payswarm_filter_paid_content($content)
    $post_purchased = false;
 
    // check to see if the article has been purchased already
-   $post_id = '' . $post->ID;
+   $post_id = $post->ID;
    $session = payswarm_check_session(false);
    $ptoken = payswarm_database_get_token($session, 'payswarm-payment');
    if($ptoken != null)
    {
-      $authorized_posts = explode(' ', $ptoken['details']['authorized_posts']);
+      $authorized_posts = $ptoken['details']['authorized_posts'];
       if(in_array($post_id, $authorized_posts))
       {
          $post_purchased = true;

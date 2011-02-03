@@ -43,10 +43,12 @@ try
    if($ptoken['state'] === 'initializing')
    {
       $request_url = get_option('payswarm_request_url') . "?scope=$scope";
-      $details = '{}';
+      $details = array('balance' => '0.0');
 
+      //die("INITIAL");
       payswarm_oauth1_initialize(
          $oauth, $session, $scope, $request_url, $details);
+      die("INITIAL 2");
    }
    else if($ptoken['state'] === 'authorizing')
    {
@@ -56,7 +58,7 @@ try
          // get and store an access token
          $access_url = get_option('payswarm_access_url');
          $oauth->setToken($_GET['oauth_token'], $ptoken['secret']);
-         $details = '{}';
+         $details = array('balance' => '0.0');
 
          payswarm_oauth1_authorize(
             $oauth, $session, $scope, $access_url, $details);
