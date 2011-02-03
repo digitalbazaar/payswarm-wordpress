@@ -127,7 +127,7 @@ try
             $details['balance'] = $balance;
 
             // update the list of authorized posts
-            array_push($details['authorized_posts'], $post_id);
+            $details['authorized_posts'][] = $post_id;
             $details['authorized_posts'] = 
                array_unique($details['authorized_posts']);
 

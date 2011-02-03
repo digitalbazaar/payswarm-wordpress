@@ -99,7 +99,7 @@ function payswarm_database_get_token(
          '(session, scope, state, token, secret, details) ' .
          'VALUES (%s, %s, %s, %s, %s, %s)',
          $payswarm_session, $scope, 'initializing', '', '', 
-         '{"balance": "0.0"}'));
+         '{"balance":"0.0"}'));
    }
 
    // retrieve all information associated with the session
@@ -133,7 +133,7 @@ function payswarm_database_get_token(
       {
          foreach($post_rows as $row)
          {
-            array_push($posts, $row['post']);
+            $posts[] = $row['post'];
          }
       }
       $rval['details']['authorized_posts'] = $posts;
@@ -169,9 +169,10 @@ function payswarm_database_update_token($payswarm_token)
    // to 120000ms+. When this race condition occurs, it may result in the 
    // article purchase occuring at the PaySwarm authority, but the article 
    // purchase not being recorded correctly at the local WordPress installation.
-   // In an attempt to lessen the effect of this race condition, the balance and 
-   // authorized_posts are always re-read and merged before the update is
-   // performed.
+   // In an attempt to reduce the effect of this race condition, the balance 
+   // and authorized_posts are always re-read and merged before the update is
+   // performed. Also note that even if this race condition occurs, the
+   // article will not be accidentally purchased twice. 
 
    // remove the authorized posts from the details and encode details
    $authorized_posts = array();
