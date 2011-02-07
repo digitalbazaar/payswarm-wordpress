@@ -114,8 +114,7 @@ try
                $redir_url = urlencode(payswarm_get_current_url());
                $authorize_url = "$authorize_url?oauth_token=$oauth_token" .
                   "&oauth_callback=$redir_url&balance=$price";
-
-               payswarm_recharge_token($authorize_url);
+               header("Location: $authorize_url");
                exit(0);
             }
             else
@@ -224,33 +223,6 @@ function payswarm_access_denied($post_id)
 
     <p><a href="' . get_permalink($post_id) .
       '">Go back to the article preview</a>.</p>
-  </div>
-</div>';
-   
-   get_footer();
-}
-
-function payswarm_recharge_token($payswarm_url)
-{
-   // FIXME: Unfortunately, this generates a PHP Notice error for
-   // WP_Query::$is_paged not being defined. Need to figure out which file
-   // declares that variable.
-   get_header();
-
-   echo '
-<div class="category-uncategorized"> 
-  <h2 class="entry-title">Insufficient Funds for PaySwarm Token</h2> 
-  <div class="entry-content"> 
-    <p>
-      The PaySwarm Token that you assigned to this website does not contain
-      enough funds to perform the purchase you requested. You can place
-      more funds onto the token by going to your PaySwarm Authority and
-      placing more money onto the token. A recharge link has been
-      provided below:
-    </p>
-
-    <p><a href="' . $payswarm_url .
-      '">Recharge the PaySwarm Token assigned to this website</a>.</p>
   </div>
 </div>';
    
