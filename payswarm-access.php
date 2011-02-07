@@ -113,7 +113,7 @@ try
                $oauth_token = $ptoken['token'];
                $redir_url = urlencode(payswarm_get_current_url());
                $authorize_url = "$authorize_url?oauth_token=$oauth_token" .
-                  "&balance=$price&redirect=$redir_url";
+                  "&oauth_callback=$redir_url&balance=$price";
 
                payswarm_recharge_token($authorize_url);
                exit(0);
