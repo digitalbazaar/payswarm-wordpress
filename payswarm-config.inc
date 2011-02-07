@@ -105,7 +105,7 @@ function payswarm_config_oauth($json)
    $request_ws = "<http://purl.org/payswarm/webservices#oAuthRequest>";
    $token_ws = "<http://purl.org/payswarm/webservices#oAuthTokens>";
    
-   if($client_config != NULL)
+   if($client_config !== NULL)
    {
       $rval &= payswarm_config_set_value(
          $client_config, $authorize_ws, 'payswarm_authorize_url');
@@ -147,7 +147,7 @@ function payswarm_config_endpoints($jsonld)
    $keys_ws = "<http://purl.org/payswarm/webservices#oAuthKeys>";
    $preferences_ws = "<http://purl.org/payswarm/webservices#oAuthPreferences>";
    
-   if($client_config != NULL)
+   if($client_config !== NULL)
    {
       $rval &= payswarm_config_set_value(
          $client_config, $authorize_ws, 'payswarm_authorize_url');
@@ -194,7 +194,7 @@ function payswarm_config_keys($keys, $jsonld)
    $public_key_registration = json_decode($jsonld, true);
    $cert_identity = "<http://www.w3.org/ns/auth/cert#identity>";
    
-   if($public_key_registration != NULL)
+   if($public_key_registration !== NULL)
    {
       $rval &= payswarm_config_set_value(
          $public_key_registration, '@', 'payswarm_public_key_url');
@@ -232,7 +232,7 @@ function payswarm_config_preferences($jsonld)
    $license_url = '<http://purl.org/payswarm/preferences#license>';
    $license_hash_url = '<http://purl.org/payswarm#licenseHash>';
 
-   if($preferences != NULL)
+   if($preferences !== NULL)
    {
       $rval &= payswarm_config_set_value($preferences[$license_url][0], 
          '@', 'payswarm_default_license_url');

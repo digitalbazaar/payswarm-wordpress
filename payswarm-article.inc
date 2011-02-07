@@ -354,7 +354,7 @@ function payswarm_filter_paid_content($content)
    $post_id = $post->ID;
    $session = payswarm_check_session(false);
    $ptoken = payswarm_database_get_token($session, 'payswarm-payment');
-   if($ptoken != null)
+   if($ptoken !== NULL)
    {
       $authorized_posts = $ptoken['details']['authorized_posts'];
       if(in_array($post_id, $authorized_posts))
@@ -507,7 +507,7 @@ function payswarm_save_post_data($post_id)
 
       // Delete the post metadata if the value is effectively zero or
       // update the post metadata if the value is valid
-      if($price == "" or $price == 0)
+      if($price === "" or $price === 0)
       {
          delete_post_meta($post_id, 'payswarm_price');
       }

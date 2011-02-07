@@ -15,7 +15,7 @@ function payswarm_get_current_url($force_https = false)
    $rval = 'http';
 
    // check whether we're in HTTP or HTTPS mode
-   if((array_key_exists("HTTPS", $_SERVER) && $_SERVER["HTTPS"] == "on") || 
+   if((array_key_exists("HTTPS", $_SERVER) && $_SERVER["HTTPS"] === "on") || 
       $force_https)
    {
       $rval .= "s";
@@ -24,7 +24,7 @@ function payswarm_get_current_url($force_https = false)
    $rval .= "://";
 
    // add the server name, port (if non-standard), and the request URI
-   if($_SERVER["SERVER_PORT"] != "80")
+   if($_SERVER["SERVER_PORT"] !== "80")
    {
       $rval .= $_SERVER["SERVER_NAME"] . ":" . $_SERVER["SERVER_PORT"] .
          $_SERVER["REQUEST_URI"];
@@ -45,7 +45,7 @@ function payswarm_get_current_url($force_https = false)
  */
 function payswarm_force_ssl()
 {
-   if(!array_key_exists("HTTPS", $_SERVER) || $_SERVER["HTTPS"] != "on")
+   if(!array_key_exists("HTTPS", $_SERVER) || $_SERVER["HTTPS"] !== "on")
    {
       header('Location: ' . payswarm_get_current_url(true));
       exit();

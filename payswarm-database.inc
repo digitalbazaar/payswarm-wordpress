@@ -34,10 +34,10 @@ function payswarm_install_database()
 
    // check to see if the payswarm tokens and authorized posts tables exist
    if(($wpdb->get_var(
-         'SHOW TABLES LIKE \''. PAYSWARM_TOKENS_TABLE_NAME .'\'') != 
+         'SHOW TABLES LIKE \''. PAYSWARM_TOKENS_TABLE_NAME .'\'') !== 
          PAYSWARM_TOKENS_TABLE_NAME) &&
       ($wpdb->get_var(
-         'SHOW TABLES LIKE \''. PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME .'\'') != 
+         'SHOW TABLES LIKE \''. PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME .'\'') !== 
          PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME))
          {
       // ensure that the formatting below is one field per line, dbDelta is
@@ -123,19 +123,11 @@ function payswarm_database_get_token(
    // the list of articles into the details object
    if($rval)
    {
-      $posts = array();
-      $post_rows = $wpdb->get_row($wpdb->prepare(
+      $posts = $wpdb->get_col($wpdb->prepare(
          'SELECT post FROM ' . 
          PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' WHERE session=%s', 
-         $payswarm_session), ARRAY_A);
+         $payswarm_session));
 
-      if($wpdb->num_rows > 0)
-      {
-         foreach($post_rows as $row)
-         {
-            $posts[] = $row['post'];
-         }
-      }
       $rval['details']['authorized_posts'] = $posts;
    }
 

@@ -104,7 +104,7 @@ try
          {
             // check to see if we got an insufficient funds exception
             $err = json_decode($oauth->getLastResponse());
-            if(array_key_exists('type', $err) && 
+            if($err !== NULL && array_key_exists('type', $err) && 
                $err->type === 'payswarm.oauth1.InsufficientFunds')
             {
                // Attempt to recharge the already authorized OAuth token
@@ -117,6 +117,11 @@ try
 
                payswarm_recharge_token($authorize_url);
                exit(0);
+            }
+            else
+            {
+               // if no insufficient funds exception, re-throw the exception
+               throw $E;
             }
          }
 
