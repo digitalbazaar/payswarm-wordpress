@@ -404,7 +404,7 @@ activate PaySwarm on your site.
         <?php 
         if(get_option('payswarm_default_license_hash') !== false)
         {
-           echo '<p>Default License ID: ' . 
+           echo '<p>Default License Hash: ' . 
            get_option('payswarm_default_license_hash');
         }
         ?>
