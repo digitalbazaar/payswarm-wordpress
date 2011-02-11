@@ -228,20 +228,24 @@ function payswarm_config_preferences($jsonld)
    $preferences = json_decode($jsonld, true);
    
    $currency_url = '<http://purl.org/payswarm/preferences#currency>';
-   $account_url = '<http://purl.org/payswarm/preferences#primaryAccount>';
+   $account_url = '<http://purl.org/payswarm/#account>';
    $license_url = '<http://purl.org/payswarm/preferences#license>';
    $license_hash_url = '<http://purl.org/payswarm#licenseHash>';
 
    if($preferences !== NULL)
    {
-      $rval &= payswarm_config_set_value($preferences[$license_url][0], 
-         '@', 'payswarm_default_license_url');
-      $rval &= payswarm_config_set_value($preferences[$license_url][0], 
-         $license_hash_url, 'payswarm_default_license_hash');
-      $rval &= payswarm_config_set_value(
-         $preferences, $currency_url, 'payswarm_default_currency');
-      $rval &= payswarm_config_set_value(
-         $preferences, $account_url, 'payswarm_destination_account');
+      $rval = 
+         payswarm_config_set_value(
+            $preferences[$license_url][0], 
+            '@', 'payswarm_default_license_url') &&
+         payswarm_config_set_value(
+            $preferences[$license_url][0], 
+            $license_hash_url, 'payswarm_default_license_hash') &&
+         payswarm_config_set_value(
+            $preferences, $currency_url, 'payswarm_default_currency') &&
+         payswarm_config_set_value(
+            $preferences[$account_url][0],
+            '@', 'payswarm_destination_account');
    }
    else
    {

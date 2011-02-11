@@ -105,12 +105,11 @@ try
       $key_registration_info = "{}";
       if($success)
       {
-         // Register the public/private keypair
-         $keys_url = get_option('payswarm_keys_url');
-         $preferences_url = get_option('payswarm_preferences_url');
-   
+         // generate a key pair to send to payswarm authority
          $keys = payswarm_generate_keypair();
          
+         // register the public/private keypair
+         $keys_url = get_option('payswarm_keys_url');
          $oauth->fetch($keys_url, array("public_key" => $keys['public']),
             OAUTH_HTTP_METHOD_POST);
          $key_registration_info = $oauth->getLastResponse();
