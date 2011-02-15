@@ -395,14 +395,14 @@ function payswarm_asset_information_rdfa($post_id)
                title=\"" . $info['one_day_from_now_iso8601'] . "\" 
                content=\"" . $info['one_day_from_now_iso8601'] . "\" 
                datatype=\"xsd:dateTime\">24 hours from now</abbr>.
-          </span>
-          <span typeof=\"ps:JsonldSignature\">
+            </span>
+            <span typeof=\"ps:JsonldSignature\">
              This <a href=\"" . $info['asset_url'] . "\">asset</a> 
              was <abbr property=\"ps:signatureValue\"
              content=\"$asset_signature\" title=\"$asset_signature\">digitally signed</abbr> 
              using <a rel=\"dc:creator\" href=\"$public_key_url\">this key</a>.
-          </span>
-          <span about=\"" . $info['listing_payee']['id'] . "\" typeof=\"com:Payee\">
+            </span>
+            <span about=\"" . $info['listing_payee']['id'] . "\" typeof=\"com:Payee\">
              <a rel=\"com:rateType\" href=\"" . $info['listing_payee']['com:rateType'] . "\"
              >Flat-rate payment</a> 
              will be deposited into 
@@ -410,7 +410,7 @@ function payswarm_asset_information_rdfa($post_id)
              href=\"" . $info['listing_payee']['com:destination'] . "\">this account</a>.
              The memo field for the payment will read: 
              \"<span property=\"rdfs:comment\">" . $info['listing_payee']['rdfs:comment'] . "</span>\"
-          </span>
+            </span>
          </div>
          <div class=\"row\">
             <form action=\"$access_url\" method=\"post\">
