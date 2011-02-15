@@ -363,11 +363,13 @@ function payswarm_asset_information_rdfa($post_id)
             <span class=\"view-more\" 
             onclick=\"javascript:toggleAssetInformation($post_id);\">
               [show offer details]</span>
-            <span typeof=\"ps:JsonldSignature\">
-               This <a href=\"" . $info['post_url'] . "#listing\">listing</a> was
-               <abbr property=\"ps:signatureValue\"
-               content=\"$listing_signature\" title=\"$listing_signature\">digitally signed</abbr>
-               using <a rel=\"dc:creator\" href=\"$public_key_url\">this key</a>.
+            <span rel=\"ps:signature\">
+               <span typeof=\"ps:JsonldSignature\">
+                  This <a href=\"" . $info['post_url'] . "#listing\">listing</a> was
+                  <abbr property=\"ps:signatureValue\"
+                  content=\"$listing_signature\" title=\"$listing_signature\">digitally signed</abbr>
+                  using <a rel=\"dc:creator\" href=\"$public_key_url\">this key</a>.
+               </span>
             </span>
          </div>
          <div id=\"payswarm-asset-info-$post_id\" class=\"hidden\">
@@ -396,11 +398,13 @@ function payswarm_asset_information_rdfa($post_id)
                content=\"" . $info['one_day_from_now_iso8601'] . "\" 
                datatype=\"xsd:dateTime\">24 hours from now</abbr>.
             </span>
-            <span typeof=\"ps:JsonldSignature\">
-             This <a href=\"" . $info['asset_url'] . "\">asset</a> 
-             was <abbr property=\"ps:signatureValue\"
-             content=\"$asset_signature\" title=\"$asset_signature\">digitally signed</abbr> 
-             using <a rel=\"dc:creator\" href=\"$public_key_url\">this key</a>.
+            <span rel=\"ps:signature\">
+               <span typeof=\"ps:JsonldSignature\">
+                  This <a href=\"" . $info['asset_url'] . "\">asset</a> 
+                  was <abbr property=\"ps:signatureValue\"
+                  content=\"$asset_signature\" title=\"$asset_signature\">digitally signed</abbr> 
+                  using <a rel=\"dc:creator\" href=\"$public_key_url\">this key</a>.
+               </span>
             </span>
             <span about=\"" . $info['listing_payee']['id'] . "\" typeof=\"com:Payee\">
              <a rel=\"com:rateType\" href=\"" . $info['listing_payee']['com:rateType'] . "\"
