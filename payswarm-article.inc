@@ -350,6 +350,10 @@ function payswarm_get_post_info($post_id, $resign = false)
    $valid_until = get_post_meta($post_id, 'payswarm_listing_valid_until', true);
    $sig_created = get_post_meta($post_id, 'payswarm_signature_created', true);
 
+   // TODO: add global flag that can be set to a date that will be checked
+   // here ... if signature date is before NOW, set $resign to true
+   // (this is used when keys are revoked, etc.)
+
    // if resigning or new validity period required
    if($resign ||
       $valid_from === '' || $valid_until === '' || $sig_created === '' ||
