@@ -89,7 +89,7 @@ try
       {
          // setup service endpoint and parameters
          $contracts_url = get_option('payswarm_contracts_url');
-         $info = payswarm_get_post_info($post_id, true);
+         $info = payswarm_get_post_info($post_id);
          $params = array(
             'listing' => $info['listing_url'],
             'listing_hash' => $info['listing_hash']
