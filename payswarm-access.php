@@ -2,7 +2,7 @@
 require_once('../../../wp-config.php');
 require_once('payswarm-utils.inc');
 
-// Force access to happen through SSL 
+// Force access to happen through SSL
 payswarm_force_ssl();
 
 require_once('payswarm-article.inc');
@@ -34,7 +34,7 @@ try
    $client_id = get_option('payswarm_client_id');
    $client_secret = get_option('payswarm_client_secret');
    $oauth = new OAuth(
-      $client_id, $client_secret, OAUTH_SIG_METHOD_HMACSHA1, 
+      $client_id, $client_secret, OAUTH_SIG_METHOD_HMACSHA1,
       OAUTH_AUTH_TYPE_FORM);
 
    // FIXME: Disable debug output for OAuth for production software
@@ -46,7 +46,7 @@ try
    if($ptoken['state'] === 'initializing')
    {
       $price = get_post_meta($post_id, 'payswarm_price', true);
-      $request_url = get_option('payswarm_request_url') . 
+      $request_url = get_option('payswarm_request_url') .
          "?scope=$scope&currency=USD&balance=$price";
       $details = array
       (
@@ -68,7 +68,7 @@ try
          (
             'balance' => '0.0',
          );
-         
+
          payswarm_oauth1_authorize(
             $oauth, $session, $scope, $access_url, $details);
       }
@@ -78,51 +78,66 @@ try
          payswarm_access_denied($post_id);
       }
    }
-   else if($ptoken['scope'] === 'payswarm-payment' && 
+   else if($ptoken['scope'] === 'payswarm-payment' &&
       $ptoken['state'] === 'valid')
    {
       // State: authorized - we can use the stored access token
       $oauth->setToken($ptoken['token'], $ptoken['secret']);
-      
+
       // catch any token revocations
       try
       {
          // setup service endpoint and parameters
          $contracts_url = get_option('payswarm_contracts_url');
-         $info = payswarm_get_post_info($post_id);
-         $params = array(
-            'listing' => $info['listing_url'],
-            'listing_hash' => $info['listing_hash']
-         );
 
-         try
+         // use loop to allow retry of purchase if validity period rolled over
+         $retry = -1;
+         do
          {
-            // attempt to perform the purchase
-            $oauth->fetch($contracts_url, $params);
-         }
-         catch(OAuthException $E)
-         {
-            // check to see if we got an insufficient funds exception
-            $err = json_decode($oauth->getLastResponse());
-            if($err !== NULL && array_key_exists('type', $err) && 
-               $err->type === 'payswarm.oauth1.InsufficientFunds')
+            $info = payswarm_get_post_info($post_id);
+            $params = array(
+               'listing' => $info['listing_url'],
+               'listing_hash' => $info['listing_hash']
+            );
+
+            try
             {
-               // Attempt to recharge the already authorized OAuth token
-               $price = get_post_meta($post_id, 'payswarm_price', true);
-               $authorize_url = get_option('payswarm_authorize_url');
-               $oauth_token = $ptoken['token'];
-               $redir_url = urlencode(payswarm_get_current_url());
-               $authorize_url = "$authorize_url?oauth_token=$oauth_token" .
-                  "&oauth_callback=$redir_url&balance=$price";
-               header("Location: $authorize_url");
-               exit(0);
+               // attempt to perform the purchase
+               $oauth->fetch($contracts_url, $params);
             }
-            else
+            catch(OAuthException $E)
             {
-               // if no insufficient funds exception, re-throw the exception
-               throw $E;
+               // check to see if we got an insufficient funds exception
+               $err = json_decode($oauth->getLastResponse());
+               if($err !== NULL && array_key_exists('type', $err) &&
+                  $err->type === 'payswarm.oauth1.InsufficientFunds')
+               {
+                  // Attempt to recharge the already authorized OAuth token
+                  $price = get_post_meta($post_id, 'payswarm_price', true);
+                  $authorize_url = get_option('payswarm_authorize_url');
+                  $oauth_token = $ptoken['token'];
+                  $redir_url = urlencode(payswarm_get_current_url());
+                  $authorize_url = "$authorize_url?oauth_token=$oauth_token" .
+                     "&oauth_callback=$redir_url&balance=$price";
+                  header("Location: $authorize_url");
+                  exit(0);
+               }
+               // retry purchase only once if resource was not found (likely
+               // due to validity period rollover)
+               else if(
+                  $err !== NULL && array_key_exists('type', $err) &&
+                  $err->type == 'payswarm.database.NotFound')
+               {
+                  $retry = ($retry == -1) ? 1 : 0;
+               }
+               else
+               {
+                  // if no insufficient funds exception, re-throw the exception
+                  throw $E;
+               }
             }
          }
+         while($retry-- > 0);
 
          // check to see if the purchase was approved and get the remaining
          // balance on the payment token
@@ -155,7 +170,7 @@ try
 
             // update the list of authorized posts
             $details['authorized_posts'][] = $post_id;
-            $details['authorized_posts'] = 
+            $details['authorized_posts'] =
                array_unique($details['authorized_posts']);
 
             $tok['session'] = $ptoken['session'];
@@ -177,13 +192,13 @@ try
          // if there is an error, check to see that the token has been
          // revoked
          $error = $oauth->getLastResponse();
-         $invalidToken = strpos($error, 'bitmunk.database.NotFound');
+         $invalidToken = strpos($error, 'payswarm.database.NotFound');
 
          // if the token is invalid, start the process over
          if($invalidToken !== false)
          {
             global $_SERVER;
-            setcookie('payswarm-session', $session, time() - 3600, '/',  
+            setcookie('payswarm-session', $session, time() - 3600, '/',
                $_SERVER['HTTP_HOST'], true);
             header('Location: ' . payswarm_get_current_url());
          }
@@ -199,7 +214,7 @@ catch(OAuthException $E)
 {
    // FIXME: make user friendly error page
    $err = json_decode($E->lastResponse);
-   print_r('<pre>' . $E . "\nError details: \n" . 
+   print_r('<pre>' . $E . "\nError details: \n" .
       print_r($err, true) . '</pre>');
 }
 
@@ -211,13 +226,13 @@ function payswarm_access_denied($post_id)
    get_header();
 
    echo '
-<div class="category-uncategorized"> 
-  <h2 class="entry-title">Access Denied to PaySwarm Article</h2> 
-  <div class="entry-content"> 
+<div class="category-uncategorized">
+  <h2 class="entry-title">Access Denied to PaySwarm Article</h2>
+  <div class="entry-content">
     <p>
-      Access to the article was denied because this website was not 
+      Access to the article was denied because this website was not
       allowed to access your PaySwarm account. This usually happens because
-      you did not allow this website to access your PaySwarm provider 
+      you did not allow this website to access your PaySwarm provider
       information.
     </p>
 
@@ -225,7 +240,7 @@ function payswarm_access_denied($post_id)
       '">Go back to the article preview</a>.</p>
   </div>
 </div>';
-   
+
    get_footer();
 }
 

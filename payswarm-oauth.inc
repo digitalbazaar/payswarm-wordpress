@@ -13,18 +13,18 @@
  * @param string $scope the scope for the OAuth token - either payswarm-payment
  *    or payswarm-registration
  * @param string $request_url the full request URL for the OAuth token request.
- * @param string $details the details that should be stored along with the 
+ * @param string $details the details that should be stored along with the
  *    OAuth token in the WordPress database.
  */
 function payswarm_oauth1_initialize(
    $oauth, $session, $scope, $request_url, $details)
 {
-   // Initializing state - Generate request token and redirect user to 
+   // Initializing state - Generate request token and redirect user to
    // payswarm site to authorize
    $callback_url =
       add_query_arg('session', $session, payswarm_get_current_url());
 
-   $request_token_info = 
+   $request_token_info =
       $oauth->getRequestToken($request_url, $callback_url);
 
    $tok['session'] = $session;
@@ -46,14 +46,14 @@ function payswarm_oauth1_initialize(
       // if something went wrong, clear the cookie and try again
       global $_SERVER;
 
-      setcookie('payswarm-session', $session, time() - 3600, '/', 
+      setcookie('payswarm-session', $session, time() - 3600, '/',
           $_SERVER['HTTP_HOST'], true);
       header('Location: ' . payswarm_get_current_url());
    }
 }
 
 /**
- * Validates authorization on a request token. 
+ * Validates authorization on a request token.
  *
  * @package payswarm
  * @since 1.0
@@ -64,7 +64,7 @@ function payswarm_oauth1_initialize(
  * @param string $scope the scope for the OAuth token - either payswarm-payment
  *    or payswarm-registration
  * @param string $request_url the full request URL for the OAuth token request.
- * @param string $details the details that should be stored along with the 
+ * @param string $details the details that should be stored along with the
  *    OAuth token in the WordPress database.
  */
 function payswarm_oauth1_authorize(
@@ -77,7 +77,7 @@ function payswarm_oauth1_authorize(
    $tok['token'] = $access_token_info['oauth_token'];
    $tok['secret'] = $access_token_info['oauth_token_secret'];
    $tok['details'] = $details;
-   
+
    // save the access token and secret
    if(payswarm_database_update_token($tok))
    {

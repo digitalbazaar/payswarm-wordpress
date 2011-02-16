@@ -10,12 +10,12 @@
  *
  * @return string The current URL that is being served.
  */
-function payswarm_get_current_url($force_https = false) 
+function payswarm_get_current_url($force_https = false)
 {
    $rval = 'http';
 
    // check whether we're in HTTP or HTTPS mode
-   if((array_key_exists("HTTPS", $_SERVER) && $_SERVER["HTTPS"] === "on") || 
+   if((array_key_exists("HTTPS", $_SERVER) && $_SERVER["HTTPS"] === "on") ||
       $force_https)
    {
       $rval .= "s";
@@ -28,8 +28,8 @@ function payswarm_get_current_url($force_https = false)
    {
       $rval .= $_SERVER["SERVER_NAME"] . ":" . $_SERVER["SERVER_PORT"] .
          $_SERVER["REQUEST_URI"];
-   } 
-   else 
+   }
+   else
    {
       $rval .= $_SERVER["SERVER_NAME"] . $_SERVER["REQUEST_URI"];
    }
@@ -39,7 +39,7 @@ function payswarm_get_current_url($force_https = false)
 
 /**
  * Forces the current page being displayed into SSL-mode.
- * 
+ *
  * @package payswarm
  * @since 1.0
  */

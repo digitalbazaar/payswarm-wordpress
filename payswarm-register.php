@@ -2,7 +2,7 @@
 require_once('../../../wp-config.php');
 require_once('payswarm-utils.inc');
 
-// Force access to happen through SSL 
+// Force access to happen through SSL
 payswarm_force_ssl();
 
 require_once('payswarm-session.inc');
@@ -30,7 +30,7 @@ try
    // setup the OAuth client
    $client_id = get_option('payswarm_client_id');
    $client_secret = get_option('payswarm_client_secret');
-   $oauth = new OAuth($client_id, $client_secret, OAUTH_SIG_METHOD_HMACSHA1, 
+   $oauth = new OAuth($client_id, $client_secret, OAUTH_SIG_METHOD_HMACSHA1,
       OAUTH_AUTH_TYPE_FORM);
 
    // FIXME: Disable debug output for OAuth for production software
@@ -69,7 +69,7 @@ try
          payswarm_registration_denied($post);
       }
    }
-   else if($ptoken['scope'] === 'payswarm-registration' && 
+   else if($ptoken['scope'] === 'payswarm-registration' &&
       $ptoken['state'] === 'valid')
    {
       $oauth = new OAuth($client_id, $client_secret, OAUTH_SIG_METHOD_HMACSHA1);
@@ -107,7 +107,7 @@ try
       {
          // generate a key pair to send to payswarm authority
          $keys = payswarm_generate_keypair();
-         
+
          // register the public/private keypair
          $keys_url = get_option('payswarm_keys_url');
          $oauth->fetch($keys_url, array("public_key" => $keys['public']),
@@ -118,10 +118,10 @@ try
       else
       {
          die("Error: Failed to set configuration endpoints. " .
-            "Response received from PaySwarm Authority: " . 
+            "Response received from PaySwarm Authority: " .
             htmlentities($json));
       }
-      
+
       $preferences = "{}";
       if($success)
       {
@@ -137,7 +137,7 @@ try
             "Response received from PaySwarm Authority: " .
             htmlentities($key_registration_info));
       }
-      
+
       if($success)
       {
           header('Location: ' . admin_url() . 'plugins.php?page=payswarm');
@@ -153,16 +153,16 @@ try
 catch(OAuthException $E)
 {
    $err = json_decode($E->lastResponse);
-   print_r('<pre>' . $E . "\nError details: \n" . 
+   print_r('<pre>' . $E . "\nError details: \n" .
       print_r($err, true) . '</pre>');
 }
 
 /**
  * Generates a public-private X509 encoded keys.
- * 
+ *
  * @package payswarm
  * @since 1.0
- * 
+ *
  * @return Array containing two keys 'public' and 'private' each with the
  *    public and private keys encoded in X509 format.
  */
@@ -185,7 +185,7 @@ function payswarm_generate_keypair()
 
    $rval['public'] = $pubkey;
    $rval['private'] = $privkey;
-   
+
    return $rval;
 }
 
@@ -197,21 +197,21 @@ function payswarm_access_denied($post)
    get_header();
 
    echo '
-<div class="category-uncategorized"> 
-  <h2 class="entry-title">Access Denied when Registering</h2> 
-  <div class="entry-content"> 
+<div class="category-uncategorized">
+  <h2 class="entry-title">Access Denied when Registering</h2>
+  <div class="entry-content">
     <p>
-      Access to the PaySwarm registration information was denied because this 
-      website was not allowed to access your PaySwarm account. This usually 
-      happens because you did not allow this website to access your 
+      Access to the PaySwarm registration information was denied because this
+      website was not allowed to access your PaySwarm account. This usually
+      happens because you did not allow this website to access your
       PaySwarm account information by not assigning it a Registration Token.
     </p>
 
-    <p><a href="' . site_url() . "/wp-admin/plugins.php?page=payswarm" . 
+    <p><a href="' . site_url() . "/wp-admin/plugins.php?page=payswarm" .
       '">Go back to the administrative page</a>.</p>
   </div>
 </div>';
-   
+
    get_footer();
 }
 ?>

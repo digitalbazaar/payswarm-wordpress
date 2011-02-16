@@ -2,7 +2,7 @@
 
 /**
  * Adds the administrative pages to the UI if the administrator is logged in.
- * 
+ *
  * @package payswarm
  * @since 1.0
  */
@@ -16,16 +16,16 @@ function payswarm_add_admin_pages()
    // menus
    if(is_admin())
    {
-      // Force management to happen through SSL 
+      // Force management to happen through SSL
       payswarm_force_ssl();
-      
+
       // admin actions
       add_action('admin_init', 'payswarm_register_settings');
       add_action('admin_init', 'payswarm_redirect_registration');
       add_action('admin_menu', 'payswarm_create_menu');
 
       // admin javascript callbacks
-      add_action('wp_ajax_payswarm_get_authority_config', 
+      add_action('wp_ajax_payswarm_get_authority_config',
          'payswarm_get_authority_config');
 
       // create a warning if the proper settings are not set.
@@ -38,7 +38,7 @@ function payswarm_add_admin_pages()
 
 /**
  * Registers all of the PaySwarm options settings.
- * 
+ *
  * @package payswarm
  * @since 1.0
  */
@@ -60,9 +60,9 @@ function payswarm_register_settings()
 }
 
 /**
- * Performs a re-direct when a PaySwarm Authority registration attempt is 
+ * Performs a re-direct when a PaySwarm Authority registration attempt is
  * detected.
- * 
+ *
  * @package payswarm
  * @since 1.0
  */
@@ -72,7 +72,7 @@ function payswarm_redirect_registration()
    {
       // if the PaySwarm options are updated successfully, attempt to perform
       // a registration
-      if(payswarm_config_update(array('payswarm_client_config', 
+      if(payswarm_config_update(array('payswarm_client_config',
          'payswarm_client_id', 'payswarm_client_secret')))
       {
          // Make the call to the PaySwarm Authority to get the config URL
@@ -90,16 +90,16 @@ function payswarm_redirect_registration()
             else
             {
                payswarm_admin_warning(
-                  'There was an error reading the client configuration from ' . 
-                  'the PaySwarm Config URL. The PaySwarm Authority did not ' . 
-                  'provide all of the information that was required for ' . 
+                  'There was an error reading the client configuration from ' .
+                  'the PaySwarm Config URL. The PaySwarm Authority did not ' .
+                  'provide all of the information that was required for ' .
                   'configuring this client.');
             }
          }
          else
          {
             payswarm_admin_warning(
-               'There was an error when attempting to access the ' . 
+               'There was an error when attempting to access the ' .
                'PaySwarm Config URL. You may want to check to make sure that ' .
                'it is correct.');
          }
@@ -109,14 +109,14 @@ function payswarm_redirect_registration()
 
 /**
  * Adds a plugin configuration page to the administration panel.
- * 
+ *
  * @package payswarm
  * @since 1.0
  */
 function payswarm_create_menu()
 {
    //create new top-level menu
-   add_submenu_page('plugins.php', 'PaySwarm Configuration', 'PaySwarm', 
+   add_submenu_page('plugins.php', 'PaySwarm Configuration', 'PaySwarm',
       'administrator', 'payswarm', 'payswarm_settings_page');
 }
 
@@ -128,7 +128,7 @@ function payswarm_create_menu()
  *
  * @param string $warning The warning to print to the administration page.
  */
-function payswarm_admin_warning($warning) 
+function payswarm_admin_warning($warning)
 {
    echo "
    <div id='payswarm-admin-warning' class='updated fade'>
@@ -141,11 +141,11 @@ function payswarm_admin_warning($warning)
 
 /**
  * Generates any administration warnings dealing with PaySwarm configuration.
- * 
+ *
  * @package payswarm
  * @since 1.0
  */
-function payswarm_admin_warnings() 
+function payswarm_admin_warnings()
 {
    $options_not_being_set = !isset($_POST['payswarm_register_button']) ||
       !isset($_POST['payswarm_update_button']);
@@ -188,7 +188,7 @@ function payswarm_admin_warnings()
 
 /**
  * Displays the PaySwarm settings page to the administrator.
- * 
+ *
  * @package payswarm
  * @since 1.0
  */
@@ -197,14 +197,14 @@ function payswarm_settings_page()
    if(isset($_POST['payswarm_update_button']))
    {
       check_admin_referer('payswarm-save-config', 'payswarm-nonce');
-      payswarm_config_update(array('payswarm_client_config', 
-         'payswarm_client_id', 'payswarm_client_secret', 
-         'payswarm_authorize_url', 'payswarm_request_url', 
-         'payswarm_access_url', 'payswarm_preferences_url', 
-         'payswarm_keys_url', 'payswarm_licenses_url', 
-         'payswarm_contracts_url', 'payswarm_public_key', 
-         'payswarm_private_key', 'payswarm_default_currency', 
-         'payswarm_destination_account', 'payswarm_default_license_url', 
+      payswarm_config_update(array('payswarm_client_config',
+         'payswarm_client_id', 'payswarm_client_secret',
+         'payswarm_authorize_url', 'payswarm_request_url',
+         'payswarm_access_url', 'payswarm_preferences_url',
+         'payswarm_keys_url', 'payswarm_licenses_url',
+         'payswarm_contracts_url', 'payswarm_public_key',
+         'payswarm_private_key', 'payswarm_default_currency',
+         'payswarm_destination_account', 'payswarm_default_license_url',
          'payswarm_default_license_hash'));
    }
 
@@ -215,7 +215,7 @@ function payswarm_settings_page()
 <p>
 PaySwarm enables you to sell your articles, photos and other content directly
 to your website visitors. You can charge as little as a penny per article,
-or up to hundreds of dollars for your content. 
+or up to hundreds of dollars for your content.
 To use PaySwarm, you must first go to a
 <a href="http://dev.payswarm.com:19100">PaySwarm Provider</a> and create an
 account. Once you have an account, you will be able to generate a
@@ -241,21 +241,21 @@ activate PaySwarm on your site.
 
         <tr valign="top">
         <th scope="row"><?php _e('PaySwarm Config URL') ?></th>
-        <td><input type="text" size="64" 
-          id="payswarm_client_config" name="payswarm_client_config" 
+        <td><input type="text" size="64"
+          id="payswarm_client_config" name="payswarm_client_config"
           onblur="javascript:updateAuthorityConfig();"
           value="<?php echo get_option('payswarm_client_config'); ?>" /></td>
         </tr>
 
         <tr valign="top">
         <th scope="row"><?php _e('PaySwarm Client ID') ?></th>
-        <td><input type="text" size="64" name="payswarm_client_id" 
+        <td><input type="text" size="64" name="payswarm_client_id"
           value="<?php echo get_option('payswarm_client_id'); ?>" /></td>
         </tr>
 
         <tr valign="top">
         <th scope="row"><?php _e('PaySwarm Client Secret') ?></th>
-        <td><input type="text" size="64" name="payswarm_client_secret" 
+        <td><input type="text" size="64" name="payswarm_client_secret"
           value="<?php echo get_option('payswarm_client_secret'); ?>" /></td>
         </tr>
 
@@ -280,56 +280,56 @@ activate PaySwarm on your site.
 
         <tr valign="top">
         <th scope="row"><?php _e('Authorize Service') ?></th>
-        <td><input type="text" size="128" 
-          id="payswarm_authorize_url" name="payswarm_authorize_url" 
+        <td><input type="text" size="128"
+          id="payswarm_authorize_url" name="payswarm_authorize_url"
           value="<?php echo get_option('payswarm_authorize_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">
         <th scope="row"><?php _e('Request Service') ?></th>
-        <td><input type="text" size="128" 
-          id="payswarm_request_url" name="payswarm_request_url" 
+        <td><input type="text" size="128"
+          id="payswarm_request_url" name="payswarm_request_url"
           value="<?php echo get_option('payswarm_request_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">
         <th scope="row"><?php _e('Access Service') ?></th>
-        <td><input type="text" size="128" 
-          id="payswarm_access_url" name="payswarm_access_url" 
+        <td><input type="text" size="128"
+          id="payswarm_access_url" name="payswarm_access_url"
           value="<?php echo get_option('payswarm_access_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">
         <th scope="row"><?php _e('Preferences Service') ?></th>
-        <td><input type="text" size="128" 
-          id="payswarm_preferences_url" name="payswarm_preferences_url" 
+        <td><input type="text" size="128"
+          id="payswarm_preferences_url" name="payswarm_preferences_url"
           value="<?php echo get_option('payswarm_preferences_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">
         <th scope="row"><?php _e('Public Key Service') ?></th>
-        <td><input type="text" size="128" 
-          id="payswarm_keys_url" name="payswarm_keys_url" 
+        <td><input type="text" size="128"
+          id="payswarm_keys_url" name="payswarm_keys_url"
           value="<?php echo get_option('payswarm_keys_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">
         <th scope="row"><?php _e('License Service') ?></th>
-        <td><input type="text" size="128" 
-          id="payswarm_licenses_url" name="payswarm_licenses_url" 
+        <td><input type="text" size="128"
+          id="payswarm_licenses_url" name="payswarm_licenses_url"
           value="<?php echo get_option('payswarm_licenses_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">
         <th scope="row"><?php _e('Contracts Service') ?></th>
-        <td><input type="text" size="128" 
-          id="payswarm_contracts_url" name="payswarm_contracts_url" 
+        <td><input type="text" size="128"
+          id="payswarm_contracts_url" name="payswarm_contracts_url"
           value="<?php echo get_option('payswarm_contracts_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">
         <td scope="row" colspan="2">
-          <p>PaySwarm uses 
+          <p>PaySwarm uses
              <a href="http://en.wikipedia.org/wiki/Digital_signature"
                 >digital signatures</a> to ensure that posts that you
              sell can be verified by PaySwarm Authorities. Your signature
@@ -341,14 +341,14 @@ activate PaySwarm on your site.
 
         <tr valign="top">
         <th scope="row"><?php _e('Public Key') ?></th>
-        <td><textarea cols="80" rows="6" 
+        <td><textarea cols="80" rows="6"
           id="payswarm_public_key" name="payswarm_public_key"
           ><?php echo get_option('payswarm_public_key'); ?></textarea></td>
         </tr>
 
         <tr valign="top">
         <th scope="row"><?php _e('Private Key') ?></th>
-        <td><textarea cols="80" rows="6" 
+        <td><textarea cols="80" rows="6"
           id="payswarm_private_key" name="payswarm_private_key"
           ><?php echo get_option('payswarm_private_key'); ?></textarea></td>
         </tr>
@@ -358,8 +358,8 @@ activate PaySwarm on your site.
           <h3><?php _e('Financial Account and License Defaults') ?></h3>
           <p>The default article license is used to convey a set of license
           rights to the people that purchase your articles. The URL listed
-          below should return a plain text file that outlines the permissions of 
-          the buyer of the article as well as the responsibilities of the seller 
+          below should return a plain text file that outlines the permissions of
+          the buyer of the article as well as the responsibilities of the seller
           of the article.
           </p>
         </td>
@@ -377,7 +377,7 @@ activate PaySwarm on your site.
         <tr valign="top">
         <th scope="row"><?php _e('Default Financial Account') ?></th>
         <td>
-          <input type="text" size="128" name="payswarm_destination_account" 
+          <input type="text" size="128" name="payswarm_destination_account"
             value="<?php echo get_option('payswarm_destination_account'); ?>" />
         </td>
 
@@ -385,8 +385,8 @@ activate PaySwarm on your site.
         <td scope="row" colspan="2">
           <p>The default article license is used to convey a set of license
           rights to the people that purchase your articles. The URL listed
-          below should return a plain text file that outlines the permissions of 
-          the buyer of the article as well as the responsibilities of the seller 
+          below should return a plain text file that outlines the permissions of
+          the buyer of the article as well as the responsibilities of the seller
           of the article.
           </p>
         </td>
@@ -394,13 +394,13 @@ activate PaySwarm on your site.
 
         <tr valign="top">
         <th scope="row"><?php _e('Default License') ?></th>
-        <td><input type="text" size="128" 
-          id="payswarm_default_license_url" name="payswarm_default_license_url" 
+        <td><input type="text" size="128"
+          id="payswarm_default_license_url" name="payswarm_default_license_url"
           value="<?php echo get_option('payswarm_default_license_url'); ?>" />
-        <?php 
+        <?php
         if(get_option('payswarm_default_license_hash') !== false)
         {
-           echo '<p>Default License Hash: ' . 
+           echo '<p>Default License Hash: ' .
            get_option('payswarm_default_license_hash');
         }
         ?>
@@ -415,7 +415,7 @@ activate PaySwarm on your site.
 
 
     <p class="submit">
-    <input type="submit" class="button-primary" 
+    <input type="submit" class="button-primary"
        name="payswarm_update_button"
        value="<?php _e('Save PaySwarm Configuration') ?>" />
     </p>
@@ -427,6 +427,6 @@ activate PaySwarm on your site.
   <p><strong><?php _e('PaySwarm options saved.') ?></strong></p>
 </div>
 <?php endif; ?>
-<?php 
+<?php
 }
 ?>

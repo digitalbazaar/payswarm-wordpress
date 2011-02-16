@@ -19,12 +19,12 @@ define('PAYSWARM_TOKENS_TABLE_NAME', $wpdb->prefix . 'payswarm_tokens');
  * @since 1.0
  * @global string PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME
  */
-define('PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME', 
+define('PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME',
    $wpdb->prefix . 'payswarm_authorized_posts');
 
 /**
  * Installs/upgrades the PaySwarm database into a WordPress installation.
- * 
+ *
  * @package payswarm
  * @since 1.0
  */
@@ -34,10 +34,10 @@ function payswarm_install_database()
 
    // check to see if the payswarm tokens and authorized posts tables exist
    if(($wpdb->get_var(
-         'SHOW TABLES LIKE \''. PAYSWARM_TOKENS_TABLE_NAME .'\'') !== 
+         'SHOW TABLES LIKE \''. PAYSWARM_TOKENS_TABLE_NAME .'\'') !==
          PAYSWARM_TOKENS_TABLE_NAME) &&
       ($wpdb->get_var(
-         'SHOW TABLES LIKE \''. PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME .'\'') !== 
+         'SHOW TABLES LIKE \''. PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME .'\'') !==
          PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME))
          {
       // ensure that the formatting below is one field per line, dbDelta is
@@ -71,7 +71,7 @@ function payswarm_install_database()
 
 /**
  * Retrieves the token associated with a PaySwarm session.
- * 
+ *
  * Retrieves all of the token information that is associated with a PaySwarm
  * session. The token contains information such as session, state, the token
  * identifier, token secret, and the amount left on the token.
@@ -95,17 +95,17 @@ function payswarm_database_get_token(
    if($create)
    {
       $wpdb->query($wpdb->prepare(
-         'INSERT IGNORE INTO ' . PAYSWARM_TOKENS_TABLE_NAME . 
+         'INSERT IGNORE INTO ' . PAYSWARM_TOKENS_TABLE_NAME .
          '(session, scope, state, token, secret, details) ' .
          'VALUES (%s, %s, %s, %s, %s, %s)',
-         $payswarm_session, $scope, 'initializing', '', '', 
+         $payswarm_session, $scope, 'initializing', '', '',
          '{"balance":"0.0"}'));
    }
 
    // retrieve all information associated with the session
    $rval = $wpdb->get_row($wpdb->prepare(
-      'SELECT session, scope, state, token, secret, details, mtime FROM ' . 
-      PAYSWARM_TOKENS_TABLE_NAME . ' WHERE session=%s AND scope=%s LIMIT 1', 
+      'SELECT session, scope, state, token, secret, details, mtime FROM ' .
+      PAYSWARM_TOKENS_TABLE_NAME . ' WHERE session=%s AND scope=%s LIMIT 1',
       $payswarm_session, $scope), ARRAY_A);
 
    // set the return type to null if there was nothing in the database
@@ -118,14 +118,14 @@ function payswarm_database_get_token(
       // decode details
       $rval['details'] = json_decode($rval['details'], true);
    }
-      
+
    // iterate through each article associated with the session and collect
    // the list of articles into the details object
    if($rval)
    {
       $posts = $wpdb->get_col($wpdb->prepare(
-         'SELECT post FROM ' . 
-         PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' WHERE session=%s', 
+         'SELECT post FROM ' .
+         PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' WHERE session=%s',
          $payswarm_session));
 
       $rval['details']['authorized_posts'] = $posts;
@@ -136,16 +136,16 @@ function payswarm_database_get_token(
 
 /**
  * Updates a PaySwarm Token given information associated with the token.
- * 
- * Updates all of the token information that is provided. The token contains 
- * information such as session, state, the token identifier, token secret, 
+ *
+ * Updates all of the token information that is provided. The token contains
+ * information such as session, state, the token identifier, token secret,
  * and the amount left on the token.
  *
  * @package payswarm
  * @since 1.0
  *
- * @param Array $payswarm_token An associative array containing all of the 
- *    values for a $payswarm_token that should be updated. 
+ * @param Array $payswarm_token An associative array containing all of the
+ *    values for a $payswarm_token that should be updated.
  * @return boolean true if the update was successful, false otherwise.
  */
 function payswarm_database_update_token($payswarm_token)
@@ -158,13 +158,13 @@ function payswarm_database_update_token($payswarm_token)
    // each tab at the exact same time on the same site and the allowed articles
    // information or the token price update will be inaccurate. This is because
    // the OAuth calls go out to the Web and may be delayed anywhere from 1ms
-   // to 120000ms+. When this race condition occurs, it may result in the 
-   // article purchase occuring at the PaySwarm authority, but the article 
+   // to 120000ms+. When this race condition occurs, it may result in the
+   // article purchase occuring at the PaySwarm authority, but the article
    // purchase not being recorded correctly at the local WordPress installation.
-   // In an attempt to reduce the effect of this race condition, the balance 
+   // In an attempt to reduce the effect of this race condition, the balance
    // and authorized_posts are always re-read and merged before the update is
    // performed. Also note that even if this race condition occurs, the
-   // article will not be accidentally purchased twice. 
+   // article will not be accidentally purchased twice.
 
    // remove the authorized posts from the details and encode details
    $authorized_posts = array();
@@ -183,8 +183,8 @@ function payswarm_database_update_token($payswarm_token)
    }
 
    // update all information associated with the session
-   $rval = $wpdb->update(PAYSWARM_TOKENS_TABLE_NAME, $data, 
-      array('session' => $payswarm_token['session'], 
+   $rval = $wpdb->update(PAYSWARM_TOKENS_TABLE_NAME, $data,
+      array('session' => $payswarm_token['session'],
          'scope' => $payswarm_token['scope']));
 
    // Set the return type to true if the object was updated correctly
@@ -197,24 +197,24 @@ function payswarm_database_update_token($payswarm_token)
    foreach($authorized_posts as $post)
    {
       $wpdb->query($wpdb->prepare(
-         'INSERT IGNORE INTO ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' ' . 
+         'INSERT IGNORE INTO ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' ' .
          '(session, post) VALUES (%s, %s)', $payswarm_token['session'], $post));
    }
-   
+
    return $rval;
 }
 
 /**
  * Deletes a PaySwarm Token given information associated with the token.
- * 
+ *
  * The information given must at least contain the session and scope associated
  * with the token.
  *
  * @package payswarm
  * @since 1.0
  *
- * @param Array $payswarm_token An associative array containing at least 
- *    the session and scope for the token that should be deleted. 
+ * @param Array $payswarm_token An associative array containing at least
+ *    the session and scope for the token that should be deleted.
  * @return boolean true if the delete was successful, false otherwise.
  */
 function payswarm_database_delete_token($payswarm_token)
@@ -223,9 +223,9 @@ function payswarm_database_delete_token($payswarm_token)
    global $wpdb;
 
    // delete all information associated with the session
-   $dtoken= 'DELETE FROM ' . PAYSWARM_TOKENS_TABLE_NAME . 
+   $dtoken= 'DELETE FROM ' . PAYSWARM_TOKENS_TABLE_NAME .
       " WHERE session='%s' AND scope = '%s'";
-   $dposts= 'DELETE FROM ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . 
+   $dposts= 'DELETE FROM ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME .
       " WHERE session='%s'";
    $wpdb->query($wpdb->prepare(
       $dtoken, $payswarm_token['session'], $payswarm_token['scope']));
@@ -241,7 +241,7 @@ function payswarm_database_delete_token($payswarm_token)
    {
       $wpdb->query($wpdb->prepare($dposts, $payswarm_token['session']));
    }
-   
+
    return $rval;
 }
 
