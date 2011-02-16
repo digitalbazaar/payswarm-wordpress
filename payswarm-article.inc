@@ -99,8 +99,10 @@ function payswarm_generate_asset_object($info, $includeSignature)
 
    $asset = array
    (
-      '<http://purl.org/dc/terms/creator>' =>
-         $info['post_author'],
+      '<http://purl.org/dc/terms/creator>' => array
+      (
+         '<http://xmlns.com/foaf/0.1/name>' => $info['post_author']
+      ),
       '<http://purl.org/dc/terms/title>' =>
          $info['post_title'],
       '<http://purl.org/payswarm#assetProvider>' =>
@@ -506,7 +508,9 @@ function payswarm_asset_information_rdfa($post_id)
          <div id=\"payswarm-asset-info-$post_id\" class=\"hidden\">
             <a rel=\"ps:contentUrl\" href=\"" . $info['post_url'] . "\"
                property=\"dc:title\">" . $info['post_title'] . "</a> by
-            <span property=\"dc:creator\">" . $info['post_author'] . "</span>.
+            <span rel=\"dc:creator\">
+               <span property=\"foaf:name\">" . $info['post_author'] . "</span>
+            </span>.
             Offered by
             <a rel=\"ps:assetProvider\" href=\"" . $info['asset_provider'] . "\">us</a>
             via our
