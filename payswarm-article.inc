@@ -179,6 +179,17 @@ function payswarm_generate_listing_object($info, $includeSignature)
    (
       '<http://purl.org/commerce#payee>' =>
          '<' . $info['listing_payee']['id'] . '>',
+      '<http://purl.org/commerce#payeeRule>' => array
+      (
+         '<http://purl.org/commerce#destinationOwnerType>' =>
+            '<http://purl.org/payswarm#Authority>',
+         '<http://purl.org/commerce#maximumRate>' =>
+            $info['payswarm_auth_rate'],
+         '<http://purl.org/commerce#rateType>' =>
+            '<http://purl.org/commerce#InclusivePercentage>',
+         '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>' =>
+            '<http://purl.org/commerce#PayeeRule>',
+      ),
       '<http://purl.org/payswarm#assetHash>' =>
          $info['asset_hash'],
       '<http://purl.org/payswarm#forAsset>' =>
@@ -343,6 +354,8 @@ function payswarm_get_post_info($post_id, $resign = false)
          'Payment for ' . $rval['post_title'] . ' by ' . $rval['post_author'] .
          '.'
    );
+   $rval['payswarm_auth_rate'] = get_post_meta(
+      $post_id, 'payswarm_auth_rate', true);
 
    // public key identifier
    $rval['public_key_url'] = get_option('payswarm_public_key_url');
@@ -495,6 +508,13 @@ function payswarm_asset_information_rdfa($post_id)
             <span class=\"view-more\"
             onclick=\"javascript:toggleAssetInformation($post_id);\">
               [show offer details]</span>
+            <span rel=\"com:payeeRule\">
+               <span typeof=\"com:PayeeRule\">
+                  <span rel=\"com:destinationOwnerType\" resource=\"http://purl.org/payswarm#Authority\" />
+                  <span rel=\"com:rateType\" resource=\"http://purl.org/commerce#InclusivePercentage\" />
+                  <abbr property=\"com:maximumRate\" content=\"" . $info['payswarm_auth_rate'] . "\" />
+               </span>
+            </span>
             <span rel=\"ps:signature\">
                <span typeof=\"ps:JsonldSignature\">
                   This <a href=\"" . $info['post_url'] . "#listing\">listing</a> was
@@ -670,6 +690,7 @@ function payswarm_create_meta_box()
    // FIXME: Get the currency symbol from the database
    global $post;
    $price = get_post_meta($post->ID, 'payswarm_price', true);
+   $auth_rate = get_post_meta($post->ID, 'payswarm_auth_rate', true);
    $currency_symbol = "$";
 
    // dump the HTML contents
@@ -681,6 +702,14 @@ function payswarm_create_meta_box()
       'name="payswarm_price" value="'. $price . '" size="6" />' .
       '<span>The price to charge for access to the non-free content.</span>' .
       '</div>';
+   echo '<div><strong><label for="payswarm_auth_rate_field">' .
+      __("Authority Percentage") .
+      ' </label></strong>';
+   echo '%';
+   echo '<input type="text" id="payswarm_auth_rate_field" ' .
+      'name="payswarm_auth_rate" value="'. $auth_rate . '" size="6" />' .
+      '<span>The percentage to permit the PaySwarm authority to charge.</span>';
+   echo '</div>';
    echo '<div><strong><label for="payswarm_content_license_url_field">' .
       __("Content License") .
       ' </label></strong>';
@@ -735,15 +764,26 @@ function payswarm_save_post_data($post_id)
       $price = $_POST['payswarm_price'];
       $license = $_POST['payswarm_content_license_url'];
       $hash = $_POST['payswarm_content_license_hash'];
+      $auth_rate = $_POST['payswarm_auth_rate'];
 
-      // TODO: add jquery validation to price input?
+      $validated = true;
+
+      // TODO: add jquery validation to input?
       // delete the post metadata if the price <= 0 or invalid
       if($price === '' or floatval($price) <= 0)
       {
          delete_post_meta($post_id, 'payswarm_price');
+         $validated = false;
       }
-      // update the post metadata if the price is valid
-      else
+
+      // delete the post metadata if the authority rate <= 0 or invalid
+      if($auth_rate === '' or floatval($auth_rate) <= 0)
+      {
+         delete_post_meta($post_id, 'payswarm_auth_rate');
+      }
+
+      // update the post metadata if input is valid
+      if($validated)
       {
          // convert string value into a well-formed floating point value
          $price = sprintf('%1.2f', floatval($price));
@@ -751,6 +791,7 @@ function payswarm_save_post_data($post_id)
          update_post_meta($post_id, 'payswarm_price', $price);
          update_post_meta($post_id, 'payswarm_content_license_url', $license);
          update_post_meta($post_id, 'payswarm_content_license_hash', $hash);
+         update_post_meta($post_id, 'payswarm_auth_rate', $auth_rate);
 
          // force resigning of post info
          payswarm_get_post_info($post_id, true);
