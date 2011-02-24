@@ -30,7 +30,8 @@ try
    // setup the OAuth client
    $client_id = get_option('payswarm_client_id');
    $client_secret = get_option('payswarm_client_secret');
-   $oauth = new OAuth($client_id, $client_secret, OAUTH_SIG_METHOD_HMACSHA1,
+   $oauth = new OAuth(
+      $client_id, $client_secret, OAUTH_SIG_METHOD_HMACSHA1,
       OAUTH_AUTH_TYPE_FORM);
 
    // FIXME: Disable debug output for OAuth for production software
@@ -105,13 +106,19 @@ try
       $key_registration_info = "{}";
       if($success)
       {
-         // generate a key pair to send to payswarm authority
-         $keys = payswarm_generate_keypair();
+         // generate a key pair to send to payswarm authority, only overwrite
+         // existing key if option specifies it
+         $keygen = (get_option('payswarm_key_overwrite') === 'true');
+         $keys = payswarm_generate_keypair(!$keygen);
 
          // register the public/private keypair
+         $post_data = array("public_key" => $keys['public']);
+         if($keys['public_key_url'] !== '')
+         {
+            $post_data['public_key_url'] = $keys['public_key_url'];
+         }
          $keys_url = get_option('payswarm_keys_url');
-         $oauth->fetch($keys_url, array("public_key" => $keys['public']),
-            OAUTH_HTTP_METHOD_POST);
+         $oauth->fetch($keys_url, $post_data, OAUTH_HTTP_METHOD_POST);
          $key_registration_info = $oauth->getLastResponse();
          $success = payswarm_config_keys($keys, $key_registration_info);
       }
@@ -158,33 +165,54 @@ catch(OAuthException $E)
 }
 
 /**
- * Generates a public-private X509 encoded keys.
+ * Generates a public-private X509 encoded keys or gets an existing pair.
  *
  * @package payswarm
  * @since 1.0
  *
+ * @param Boolean reuse true to reuse the existing keypair from the config,
+ *           false not to.
+ *
  * @return Array containing two keys 'public' and 'private' each with the
- *    public and private keys encoded in X509 format.
+ *    public and private keys encoded in PEM X509 format, and 'public_key_url'
+ *    will either be set to '' for new keys or the old URL if reusing keys.
  */
-function payswarm_generate_keypair()
+function payswarm_generate_keypair($reuse)
 {
    $rval = array();
 
-   // Create the keypair
-   $keypair = openssl_pkey_new();
+   // reuse existing key, do not keygen
+   if($reuse)
+   {
+      $rval['public'] = get_option('payswarm_public_key');
+      $rval['private'] = get_option('payswarm_private_key');
+      $rval['public_key_url'] = get_option('payswarm_public_key_url');
+      if($rval['public'] === '' or $rval['private'] === '' or
+         $rval['public_key_url'] === '')
+      {
+         $reuse = false;
+      }
+   }
 
-   // Get private key
-   openssl_pkey_export($keypair, $privkey);
+   if(!$reuse)
+   {
+      // Create the keypair
+      $keypair = openssl_pkey_new();
 
-   // Get public key
-   $pubkey = openssl_pkey_get_details($keypair);
-   $pubkey = $pubkey["key"];
+      // Get private key
+      openssl_pkey_export($keypair, $privkey);
 
-   // free the keypair
-   openssl_free_key($keypair);
+      // Get public key
+      $pubkey = openssl_pkey_get_details($keypair);
+      $pubkey = $pubkey["key"];
 
-   $rval['public'] = $pubkey;
-   $rval['private'] = $privkey;
+      // free the keypair
+      openssl_free_key($keypair);
+
+      $rval['public'] = $pubkey;
+      $rval['private'] = $privkey;
+      $rval['public_key_url'] = '';
+   }
 
    return $rval;
 }

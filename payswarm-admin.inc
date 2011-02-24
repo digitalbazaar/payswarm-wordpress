@@ -57,6 +57,7 @@ function payswarm_register_settings()
    register_setting('payswarm-option-group', 'payswarm_contracts_url');
    register_setting('payswarm-option-group', 'payswarm_public_key');
    register_setting('payswarm-option-group', 'payswarm_private_key');
+   register_setting('payswarm-option-group', 'payswarm_key_overwrite');
 }
 
 /**
@@ -202,10 +203,21 @@ function payswarm_settings_page()
          'payswarm_authorize_url', 'payswarm_request_url',
          'payswarm_access_url', 'payswarm_preferences_url',
          'payswarm_keys_url', 'payswarm_licenses_url',
-         'payswarm_contracts_url', 'payswarm_public_key',
-         'payswarm_private_key', 'payswarm_default_currency',
+         'payswarm_contracts_url',
+         'payswarm_public_key',
+         'payswarm_private_key',
+         'payswarm_default_currency',
          'payswarm_destination_account', 'payswarm_default_license_url',
          'payswarm_default_license_hash'));
+      // special case checkboxes
+      if(isset($_POST['payswarm_key_overwrite']))
+      {
+         update_option('payswarm_key_overwrite', 'true');
+      }
+      else
+      {
+         delete_option('payswarm_key_overwrite');
+      }
    }
 
 ?>
@@ -351,6 +363,14 @@ activate PaySwarm on your site.
         <td><textarea cols="80" rows="6"
           id="payswarm_private_key" name="payswarm_private_key"
           ><?php echo get_option('payswarm_private_key'); ?></textarea></td>
+        </tr>
+
+        <tr valign="top">
+        <th scope="row"><?php _e('Overwrite Key Pair') ?></th>
+        <td><input type="checkbox"
+          id="payswarm_key_overwrite" name="payswarm_key_overwrite"
+          value="true"
+          <?php if(get_option('payswarm_key_overwrite')) echo 'checked="checked"'; ?>"/></td>
         </tr>
 
         <tr valign="top">
