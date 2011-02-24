@@ -118,9 +118,22 @@ try
             $post_data['public_key_url'] = $keys['public_key_url'];
          }
          $keys_url = get_option('payswarm_keys_url');
-         $oauth->fetch($keys_url, $post_data, OAUTH_HTTP_METHOD_POST);
-         $key_registration_info = $oauth->getLastResponse();
-         $success = payswarm_config_keys($keys, $key_registration_info);
+         try
+         {
+            $oauth->fetch($keys_url, $post_data, OAUTH_HTTP_METHOD_POST);
+            $key_registration_info = $oauth->getLastResponse();
+            $success = payswarm_config_keys($keys, $key_registration_info);
+         }
+         catch(OAuthException $E)
+         {
+            // if exception is duplicate ID, ignore
+            $err = json_decode($E->lastResponse, true);
+            if(!($err['type'] === 'payswarm.website.AddPublicKeyFailed' and
+               $err['cause']['type'] === 'payswarm.database.IdAlreadyExists'))
+            {
+               throw $E;
+            }
+         }
       }
       else
       {
