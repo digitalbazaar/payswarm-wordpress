@@ -54,9 +54,9 @@ function payswarm_install_database()
          );';
 
       $posts_sql = 'CREATE TABLE ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' (
-         session VARCHAR(255) NOT NULL,
-         post INTEGER,
-         INDEX(session)
+         customer_id VARCHAR(255) NOT NULL,
+         post_id INTEGER,
+         INDEX(customer_id)
          );';
 
       require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
@@ -81,7 +81,8 @@ function payswarm_install_database()
  *
  * @param string $payswarm_session the PaySwarm session identifier.
  * @param string $scope the intended scope of the PaySwarm session identifier.
- * @param string $create true if the token should be created
+ * @param string $create true if the token should be created.
+ *
  * @return Array An associative array of all items associated with the given
  *    PaySwarm session or NULL if no session exists.
  */
@@ -99,7 +100,7 @@ function payswarm_database_get_token(
          '(session, scope, state, token, secret, details) ' .
          'VALUES (%s, %s, %s, %s, %s, %s)',
          $payswarm_session, $scope, 'initializing', '', '',
-         '{"balance":"0.0"}'));
+         '{"balance":"0.00"}'));
    }
 
    // retrieve all information associated with the session
@@ -119,18 +120,6 @@ function payswarm_database_get_token(
       $rval['details'] = json_decode($rval['details'], true);
    }
 
-   // iterate through each article associated with the session and collect
-   // the list of articles into the details object
-   if($rval)
-   {
-      $posts = $wpdb->get_col($wpdb->prepare(
-         'SELECT post FROM ' .
-         PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' WHERE session=%s',
-         $payswarm_session));
-
-      $rval['details']['authorized_posts'] = $posts;
-   }
-
    return $rval;
 }
 
@@ -146,62 +135,23 @@ function payswarm_database_get_token(
  *
  * @param Array $payswarm_token An associative array containing all of the
  *    values for a $payswarm_token that should be updated.
+ *
  * @return boolean true if the update was successful, false otherwise.
  */
 function payswarm_database_update_token($payswarm_token)
 {
-   $rval = false;
    global $wpdb;
 
-   // NOTE: There is a race condition here where a person, using the exact
-   // same browser can open two separate tabs, perform two purchases from
-   // each tab at the exact same time on the same site and the allowed articles
-   // information or the token price update will be inaccurate. This is because
-   // the OAuth calls go out to the Web and may be delayed anywhere from 1ms
-   // to 120000ms+. When this race condition occurs, it may result in the
-   // article purchase occuring at the PaySwarm authority, but the article
-   // purchase not being recorded correctly at the local WordPress installation.
-   // In an attempt to reduce the effect of this race condition, the balance
-   // and authorized_posts are always re-read and merged before the update is
-   // performed. Also note that even if this race condition occurs, the
-   // article will not be accidentally purchased twice.
-
-   // remove the authorized posts from the details and encode details
-   $authorized_posts = array();
-   if(isset($payswarm_token['details']['authorized_posts']))
-   {
-      $authorized_posts = $payswarm_token['details']['authorized_posts'];
-      unset($payswarm_token['details']['authorized_posts']);
-   }
+   // json encode details
    $payswarm_token['details'] = json_encode($payswarm_token['details']);
 
-   // build the update data in WordPress database update format
-   $data = array();
-   foreach($payswarm_token as $key => $value)
-   {
-      $data[$key] = $value;
-   }
-
    // update all information associated with the session
-   $rval = $wpdb->update(PAYSWARM_TOKENS_TABLE_NAME, $data,
+   $rval = $wpdb->update(PAYSWARM_TOKENS_TABLE_NAME, $payswarm_token,
       array('session' => $payswarm_token['session'],
          'scope' => $payswarm_token['scope']));
 
-   // Set the return type to true if the object was updated correctly
-   if($rval !== false)
-   {
-      $rval = true;
-   }
-
-   // Update all of the authorized post information
-   foreach($authorized_posts as $post)
-   {
-      $wpdb->query($wpdb->prepare(
-         'INSERT IGNORE INTO ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' ' .
-         '(session, post) VALUES (%s, %s)', $payswarm_token['session'], $post));
-   }
-
-   return $rval;
+   // set the return type to true if the object was updated correctly
+   return ($rval !== false);
 }
 
 /**
@@ -215,6 +165,7 @@ function payswarm_database_update_token($payswarm_token)
  *
  * @param Array $payswarm_token An associative array containing at least
  *    the session and scope for the token that should be deleted.
+ *
  * @return boolean true if the delete was successful, false otherwise.
  */
 function payswarm_database_delete_token($payswarm_token)
@@ -223,23 +174,79 @@ function payswarm_database_delete_token($payswarm_token)
    global $wpdb;
 
    // delete all information associated with the session
-   $dtoken= 'DELETE FROM ' . PAYSWARM_TOKENS_TABLE_NAME .
+   $dtoken = 'DELETE FROM ' . PAYSWARM_TOKENS_TABLE_NAME .
       " WHERE session='%s' AND scope = '%s'";
-   $dposts= 'DELETE FROM ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME .
-      " WHERE session='%s'";
    $wpdb->query($wpdb->prepare(
       $dtoken, $payswarm_token['session'], $payswarm_token['scope']));
 
-   // Set the return type to true if one or more objects were deleted
+   // set the return type to true if one or more objects were deleted
    if($wpdb->num_rows > 0)
    {
       $rval = true;
    }
 
-   // Remove all article information associated with the session
-   if($rval)
+   return $rval;
+}
+
+/**
+ * Checks to see if a post is authorized using the given token. A post is
+ * authorized if the customer ID in the token has been granted access to
+ * view the post.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param Array $payswarm_token an associative array containing the token info.
+ * @param Integer $post_id the post identifier.
+ *
+ * @return boolean true if the post is authorized, false if not.
+ */
+function payswarm_database_is_post_authorized($payswarm_token, $post_id)
+{
+   $rval = false;
+   global $wpdb;
+
+   // see if a customer ID is set on the token
+   if(isset($payswarm_token['details']['customer_id']))
    {
-      $wpdb->query($wpdb->prepare($dposts, $payswarm_token['session']));
+      $customer_id = $payswarm_token['details']['customer_id'];
+      $rval = $wpdb->get_row($wpdb->prepare(
+            'SELECT post_id FROM ' .
+            PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME .
+            ' WHERE customer_id=%s and post_id=%s LIMIT 1',
+            $customer_id, $post_id), ARRAY_A);
+      $rval = (is_array($rval) && count($rval) === 1);
+   }
+
+   return $rval;
+}
+
+/**
+ * Authorizes a post to be viewed for a particular customer ID. If the given
+ * token does not contain a customer ID, the post will not be authorized.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param Array $payswarm_token an associative array containing the token info.
+ * @param Integer $post_id the post identifier.
+ *
+ * @return boolean true if the post was authorized, false if not.
+ */
+function payswarm_database_authorize_post($payswarm_token, $post_id)
+{
+   $rval = false;
+   global $wpdb;
+
+   // see if a customer ID is set on the token
+   if(isset($payswarm_token['details']['customer_id']))
+   {
+      $customer_id = $payswarm_token['details']['customer_id'];
+      $rval = $wpdb->query($wpdb->prepare(
+         'INSERT IGNORE INTO ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' ' .
+         '(customer_id, post_id) VALUES (%s, %s)',
+         $customer_id, $post_id));
+      $rval = ($rval !== false);
    }
 
    return $rval;

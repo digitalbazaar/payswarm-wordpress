@@ -23,7 +23,7 @@ $post_id = $_GET['p'];
 
 // If we are authorizing, then there should be an oauth_token, if not, start
 // the process over.
-if($ptoken['state'] === 'authorizing' && !isset($_GET['oauth_token']))
+if($ptoken['state'] === 'authorizing' and !isset($_GET['oauth_token']))
 {
    $ptoken['state'] = 'initializing';
 }
@@ -78,7 +78,7 @@ try
          payswarm_access_denied($post_id);
       }
    }
-   else if($ptoken['scope'] === 'payswarm-payment' &&
+   else if($ptoken['scope'] === 'payswarm-payment' and
       $ptoken['state'] === 'valid')
    {
       // State: authorized - we can use the stored access token
@@ -109,7 +109,7 @@ try
             {
                // check to see if we got an insufficient funds exception
                $err = json_decode($oauth->getLastResponse());
-               if($err !== NULL && array_key_exists('type', $err) &&
+               if($err !== NULL and array_key_exists('type', $err) and
                   $err->type === 'payswarm.oauth1.InsufficientFunds')
                {
                   // Attempt to recharge the already authorized OAuth token
@@ -125,7 +125,7 @@ try
                // retry purchase only once if resource was not found (likely
                // due to validity period rollover)
                else if(
-                  $err !== NULL && array_key_exists('type', $err) &&
+                  $err !== NULL and array_key_exists('type', $err) and
                   $err->type == 'payswarm.database.NotFound')
                {
                   $retry = ($retry == -1) ? 1 : 0;
@@ -149,7 +149,7 @@ try
          foreach($items as $item)
          {
             $kv = explode('=', $item, 2);
-            if($kv[0] === 'authorized' && $kv[1] === 'true')
+            if($kv[0] === 'authorized' and $kv[1] === 'true')
             {
                $authorized = true;
             }
@@ -161,27 +161,12 @@ try
 
          if($authorized)
          {
-            // append this post to the array of authorized posts associated
-            // with the payment token
-            $details = $ptoken['details'];
-
             // update the balance
-            $details['balance'] = $balance;
+            $ptoken['details']['balance'] = $balance;
 
-            // update the list of authorized posts
-            $details['authorized_posts'][] = $post_id;
-            $details['authorized_posts'] =
-               array_unique($details['authorized_posts']);
-
-            $tok['session'] = $ptoken['session'];
-            $tok['scope'] = $ptoken['scope'];
-            $tok['state'] = $ptoken['state'];
-            $tok['token'] = $ptoken['token'];
-            $tok['secret'] = $ptoken['secret'];
-            $tok['details'] = $details;
-
-            // Save the payment token and secret
-            if(payswarm_database_update_token($tok))
+            // save the payment token and authorize the post
+            if(payswarm_database_update_token($ptoken) and
+               payswarm_database_authorize_post($ptoken, $post_id))
             {
                header('Location: ' . get_permalink($post_id));
             }

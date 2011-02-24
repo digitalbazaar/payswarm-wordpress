@@ -77,6 +77,7 @@ function payswarm_oauth1_authorize(
    $tok['token'] = $access_token_info['oauth_token'];
    $tok['secret'] = $access_token_info['oauth_token_secret'];
    $tok['details'] = $details;
+   $tok['details']['customer_id'] = $access_token_info['customer_id'];
 
    // save the access token and secret
    if(payswarm_database_update_token($tok))

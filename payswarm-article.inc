@@ -614,11 +614,7 @@ function payswarm_filter_paid_content($content)
    $ptoken = payswarm_database_get_token($session, 'payswarm-payment');
    if($ptoken !== NULL)
    {
-      $authorized_posts = $ptoken['details']['authorized_posts'];
-      if(in_array($post_id, $authorized_posts))
-      {
-         $post_purchased = true;
-      }
+      $post_purchased = payswarm_database_is_post_authorized($ptoken, $post_id);
    }
 
    // if the article has not been purchased, filter out all of the for-pay
