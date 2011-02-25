@@ -252,13 +252,14 @@ function payswarm_oauth1_purchase_post($options)
          // due to validity period rollover)
          else if(
             $err !== NULL and array_key_exists('type', $err) and
-            $err->type == 'payswarm.database.NotFound')
+            $err->type == 'payswarm.database.NotFound' &&
+            $retry == -1)
          {
-            $retry = ($retry == -1) ? 1 : 0;
+            $retry = 1;
          }
          else
          {
-            // if not insufficient funds exception, re-throw the exception
+            // can't handle exception, re-throw it
             throw $E;
          }
       }
