@@ -38,8 +38,17 @@ function payswarm_oauth1_get_token($options)
       'denied' => $options['denied']
    );
 
-   // get the session ID that is associated with this request
-   $session = payswarm_check_session();
+   // TODO: currently registration is only permitted by one user, so the
+   // special 'payswarm-session' value is used for payswarm-registration
+   if($options['scope'] === 'payswarm-registration')
+   {
+      $session = 'payswarm-registration';
+   }
+   else
+   {
+      // get the session ID that is associated with this request
+      $session = payswarm_check_session();
+   }
 
    // get a payswarm token, creating it if it doesn't already exist
    $token = payswarm_database_get_token($session, $options['scope'], true);
@@ -59,8 +68,8 @@ function payswarm_oauth1_get_token($options)
    // handle next token state
    while(true)
    {
-      $token = $options['token'];
-      $options = call_user_func($states[$token['state']], $options);
+      $state = $options['token']['state'];
+      $options = call_user_func($states[$state], $options);
       if(!is_array($options))
       {
          exit(0);
@@ -79,7 +88,10 @@ function payswarm_create_oauth_client($client_id, $client_secret)
    // use OAuth SHA-1 HMAC signature method
    $oauth = new OAuth(
       $client_id, $client_secret,
-      OAUTH_SIG_METHOD_HMACSHA1, OAUTH_AUTH_TYPE_FORM);
+      OAUTH_SIG_METHOD_HMACSHA1);
+
+   // append parameters to the POST body by default
+   $oauth->setAuthType(OAUTH_AUTH_TYPE_FORM);
 
    // handle debug mode
    global $payswarm_oauth1_debug_mode;
@@ -100,19 +112,17 @@ function payswarm_create_oauth_client($client_id, $client_secret)
  */
 function payswarm_oauth1_get_request_token($options)
 {
-   // get session and scope
+   // get token
    $token = $options['token'];
-   $session = $token['session'];
-   $scope = $token['scope'];
 
    // build authority request url
-   $params = $options['request_params'];
-   $params['scope'] = $scope;
+   $params = array('scope' => $token['scope']);
+   $params = array_merge($params, $options['request_params']);
    $request_url = $options['request_url'] . '?' . http_build_query($params);
 
    // create callback url for authority to redirect to
    $callback_url = add_query_arg(
-      'session', $session, payswarm_get_current_url());
+      'session', $token['session'], payswarm_get_current_url());
 
    // get request token from authority
    $oauth = payswarm_create_oauth_client(
@@ -138,7 +148,7 @@ function payswarm_oauth1_get_request_token($options)
 
       // if something went wrong, clear the cookie and try again
       global $_SERVER;
-      setcookie('payswarm-session', $session, time() - 3600, '/',
+      setcookie('payswarm-session', '', time() - 3600, '/',
           $_SERVER['HTTP_HOST'], true);
       header('Location: ' . payswarm_get_current_url());
    }
@@ -182,6 +192,7 @@ function payswarm_oauth1_get_access_token($options)
 
    // store token
    payswarm_database_update_token($token);
+   $options['token'] = $token;
    return $options;
 }
 
@@ -266,98 +277,6 @@ function payswarm_oauth1_purchase_post($options)
    else
    {
       call_user_func($options['denied'], $options);
-   }
-}
-
-
-// FIXME: OLD FUNCTIONS BELOW
-
-
-
-/**
- * Performs OAuth token initialization and if successful, writes the token
- * result to the database.
- *
- * @package payswarm
- * @since 1.0
- *
- * @param object $oauth the OAuth object as created by the OAuth API.
- * @param string $session The session that should be associated with the
- *    OAuth credential.
- * @param string $scope the scope for the OAuth token - either payswarm-payment
- *    or payswarm-registration
- * @param string $request_url the full request URL for the OAuth token request.
- * @param string $details the details that should be stored along with the
- *    OAuth token in the WordPress database.
- */
-function payswarm_oauth1_initialize(
-   $oauth, $session, $scope, $request_url, $details)
-{
-   // Initializing state - Generate request token and redirect user to
-   // payswarm site to authorize
-   $callback_url =
-      add_query_arg('session', $session, payswarm_get_current_url());
-
-   $request_token_info =
-      $oauth->getRequestToken($request_url, $callback_url);
-
-   $tok['session'] = $session;
-   $tok['scope'] = $scope;
-   $tok['state'] = 'authorizing';
-   $tok['token'] = $request_token_info['oauth_token'];
-   $tok['secret'] = $request_token_info['oauth_token_secret'];
-   $tok['details'] = $details;
-   if(payswarm_database_update_token($tok))
-   {
-      // Save the token and the secret, which will be used later
-      $authorize_url = get_option('payswarm_authorize_url');
-      $oauth_token = $tok['token'];
-
-      header("Location: $authorize_url?oauth_token=$oauth_token");
-   }
-   else
-   {
-      // if something went wrong, clear the cookie and try again
-      global $_SERVER;
-
-      setcookie('payswarm-session', $session, time() - 3600, '/',
-          $_SERVER['HTTP_HOST'], true);
-      header('Location: ' . payswarm_get_current_url());
-   }
-}
-
-/**
- * Validates authorization on a request token.
- *
- * @package payswarm
- * @since 1.0
- *
- * @param object $oauth the OAuth object as created by the OAuth API.
- * @param string $session The session that should be associated with the
- *    OAuth credential.
- * @param string $scope the scope for the OAuth token - either payswarm-payment
- *    or payswarm-registration
- * @param string $request_url the full request URL for the OAuth token request.
- * @param string $details the details that should be stored along with the
- *    OAuth token in the WordPress database.
- */
-function payswarm_oauth1_authorize(
-   $oauth, $session, $scope, $access_url, $details)
-{
-   $access_token_info = $oauth->getAccessToken($access_url);
-   $tok['session'] = $session;
-   $tok['scope'] = $scope;
-   $tok['state'] = 'valid';
-   $tok['token'] = $access_token_info['oauth_token'];
-   $tok['secret'] = $access_token_info['oauth_token_secret'];
-   $tok['details'] = $details;
-   $tok['details']['customer_id'] = $access_token_info['customer_id'];
-
-   // save the access token and secret
-   if(payswarm_database_update_token($tok))
-   {
-      $redir_url = payswarm_get_current_url();
-      header("Location: $redir_url");
    }
 }
 

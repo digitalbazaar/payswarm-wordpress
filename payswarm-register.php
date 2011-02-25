@@ -2,179 +2,163 @@
 require_once('../../../wp-config.php');
 require_once('payswarm-utils.inc');
 
-// Force access to happen through SSL
+// force registration to happen over SSL
 payswarm_force_ssl();
 
-require_once('payswarm-session.inc');
-require_once('payswarm-database.inc');
 require_once('payswarm-oauth.inc');
 
-// the session ID that is associated with this request
-$session = 'payswarm-registration';
-
-// get the scope that is associated with this request
-$scope = 'payswarm-registration';
-
-// retrieve the PaySwarm token, creating it if it doesn't already exist
-$ptoken = payswarm_database_get_token($session, $scope, true);
-
-// If we are authorizing, then there should be an oauth_token, if not, start
-// the process over.
-if($ptoken['state'] === 'authorizing' && !isset($_GET['oauth_token']))
-{
-   $ptoken['state'] = 'initializing';
-}
-
+// get payswarm token
 try
 {
-   // setup the OAuth client
-   $client_id = get_option('payswarm_client_id');
-   $client_secret = get_option('payswarm_client_secret');
-   $oauth = new OAuth(
-      $client_id, $client_secret, OAUTH_SIG_METHOD_HMACSHA1,
-      OAUTH_AUTH_TYPE_FORM);
+   payswarm_oauth1_get_token(array(
+      'client_id' => get_option('payswarm_client_id'),
+      'client_secret' => get_option('payswarm_client_secret'),
+      'scope' => 'payswarm-registration',
+      'details' => array(),
+      'request_params' => array(),
+      'request_url' => get_option('payswarm_request_url'),
+      'authorize_url' => get_option('payswarm_authorize_url'),
+      'access_url' => get_option('payswarm_access_url'),
+      'success' => 'payswarm_registration_config',
+      'denied' => 'payswarm_registration_denied'
+   ));
+}
+catch(OAuthException $E)
+{
+   // FIXME: make user friendly error page
+   $err = json_decode($E->lastResponse);
+   print_r('<pre>' . $E . "\nError details: \n" .
+      print_r($err, true) . '</pre>');
+}
 
-   // FIXME: Disable debug output for OAuth for production software
-   $oauth->enableDebug();
-
-   // FIXME: Enable SSL checks for production software
-   $oauth->disableSSLChecks();
-
-   // check the state of the payment token
-   if($ptoken['state'] === 'initializing')
+/**
+ * Gets the PaySwarm OAuth client configuration for the given user.
+ *
+ * @param array $options the PaySwarm OAuth options.
+ */
+function payswarm_registration_config($options)
+{
+   // FIXME: consider moving into payswarm oauth function(s)?
+   try
    {
-      $request_url = get_option('payswarm_request_url') . "?scope=$scope";
-      $details = array('balance' => '0.00');
+      // setup OAuth client
+      $oauth = payswarm_create_oauth_client(
+         $options['client_id'], $options['client_secret']);
+      $token = $options['token'];
+      $oauth->setToken($token['token'], $token['secret']);
 
-      //die("INITIAL");
-      payswarm_oauth1_initialize(
-         $oauth, $session, $scope, $request_url, $details);
-      die("INITIAL 2");
-   }
-   else if($ptoken['state'] === 'authorizing')
-   {
-      // State 1 - Handle callback from PaySwarm
-      if(array_key_exists('oauth_verifier', $_GET))
-      {
-         // get and store an access token
-         $access_url = get_option('payswarm_access_url');
-         $oauth->setToken($_GET['oauth_token'], $ptoken['secret']);
-         $details = array('balance' => '0.00');
-
-         payswarm_oauth1_authorize(
-            $oauth, $session, $scope, $access_url, $details);
-      }
-      else
-      {
-         // if access was denied, print out an appropriate error
-         payswarm_registration_denied($post);
-      }
-   }
-   else if($ptoken['scope'] === $scope &&
-      $ptoken['state'] === 'valid')
-   {
-      $oauth = new OAuth($client_id, $client_secret, OAUTH_SIG_METHOD_HMACSHA1);
-      // FIXME: Disable debug output for OAuth for production software
-      // FIXME: Enable SSL checks for production software
-      $oauth->enableDebug();
-      $oauth->disableSSLChecks();
-
-      // setup the PaySwarm token and secret in preparation for making OAuth
-      // calls
-      $oauth->setToken($ptoken['token'], $ptoken['secret']);
-
-      // Make the call to the PaySwarm Authority to get the complete
-      // PaySwarm endpoint information
-      $config_url = get_option('payswarm_client_config');
       try
       {
-         $oauth->fetch($config_url, array(), OAUTH_HTTP_METHOD_GET);
+         $config_url = get_option('payswarm_client_config');
+         $oauth->setAuthType(OAUTH_AUTH_TYPE_URI);
+         $oauth->fetch($config_url);
       }
       catch(OAuthException $E)
       {
-         // if the OAuth request failed, then the PaySwarm token has
-         // expired. Remove the token and attempt the registration again.
-         payswarm_database_delete_token($ptoken);
+         // FIXME: can this produce an infinite redirect problem?
+
+         // if request failed, then assume token has expired, remove token
+         // and try again
+         payswarm_database_delete_token($options['token']);
          wp_redirect(plugins_url() . '/payswarm/payswarm-register.php');
       }
 
-      // store the PaySwarm endpoints
-      $response_info = $oauth->getLastResponseInfo();
+      // get PaySwarm endpoints from response
       $json = $oauth->getLastResponse();
-      $success = payswarm_config_endpoints($json);
-
-      $key_registration_info = "{}";
-      if($success)
-      {
-         // generate a key pair to send to payswarm authority, only overwrite
-         // existing key if option specifies it
-         $keygen = (get_option('payswarm_key_overwrite') === 'true');
-         $keys = payswarm_generate_keypair(!$keygen);
-
-         // register the public/private keypair
-         $post_data = array("public_key" => $keys['public']);
-         if($keys['public_key_url'] !== '')
-         {
-            $post_data['public_key_url'] = $keys['public_key_url'];
-         }
-         $keys_url = get_option('payswarm_keys_url');
-         try
-         {
-            $oauth->fetch($keys_url, $post_data, OAUTH_HTTP_METHOD_POST);
-            $key_registration_info = $oauth->getLastResponse();
-            $success = payswarm_config_keys($keys, $key_registration_info);
-         }
-         catch(OAuthException $E)
-         {
-            // if exception is duplicate ID, ignore
-            $err = json_decode($E->lastResponse, true);
-            if(!($err['type'] === 'payswarm.website.AddPublicKeyFailed' and
-               $err['cause']['type'] === 'payswarm.database.IdAlreadyExists'))
-            {
-               throw $E;
-            }
-         }
-      }
-      else
+      if(!payswarm_config_endpoints($json))
       {
          die("Error: Failed to set configuration endpoints. " .
             "Response received from PaySwarm Authority: " .
             htmlentities($json));
       }
 
-      $preferences = "{}";
-      if($success)
+      // generate a key pair to send to payswarm authority, only overwrite
+      // existing key if option specifies it
+      $keygen = (get_option('payswarm_key_overwrite') === 'true');
+      $keys = payswarm_generate_keypair(!$keygen);
+
+      // register the public/private keypair
+      $post_data = array("public_key" => $keys['public']);
+      if($keys['public_key_url'] !== '')
       {
-         // Retrieve the individualized PaySwarm preferences
-         $preferences_url = get_option('payswarm_preferences_url');
-         $oauth->fetch($preferences_url);
-         $preferences = $oauth->getLastResponse();
-         $success = payswarm_config_preferences($preferences);
+         $post_data['public_key_url'] = $keys['public_key_url'];
       }
-      else
+      try
       {
-         die("Error: Failed to set public/private key configuration. " .
-            "Response received from PaySwarm Authority: " .
-            htmlentities($key_registration_info));
+         $keys_url = get_option('payswarm_keys_url');
+         $oauth->setAuthType(OAUTH_AUTH_TYPE_FORM);
+         $oauth->fetch($keys_url, $post_data);
+         $key_registration_info = $oauth->getLastResponse();
+         if(!payswarm_config_keys($keys, $key_registration_info))
+         {
+            die("Error: Failed to set public/private key configuration. " .
+               "Response received from PaySwarm Authority: " .
+               htmlentities($key_registration_info));
+         }
+      }
+      catch(OAuthException $E)
+      {
+         // if exception is duplicate ID, ignore
+         $err = json_decode($E->lastResponse, true);
+         if(!($err['type'] === 'payswarm.website.AddPublicKeyFailed' and
+            $err['cause']['type'] === 'payswarm.database.IdAlreadyExists'))
+         {
+            throw $E;
+         }
       }
 
-      if($success)
-      {
-          header('Location: ' . admin_url() . 'plugins.php?page=payswarm');
-      }
-      else
+      // get the individualized PaySwarm preferences
+      $preferences_url = get_option('payswarm_preferences_url');
+      $oauth->setAuthType(OAUTH_AUTH_TYPE_URI);
+      $oauth->fetch($preferences_url);
+      $preferences = $oauth->getLastResponse();
+      if(!payswarm_config_preferences($preferences))
       {
          die("Error: Failed to set PaySwarm configuration preferences. " .
             "Response received from PaySwarm Authority: " .
             htmlentities($preferences));
       }
+
+      // redirect to admin page
+      header('Location: ' . admin_url() . 'plugins.php?page=payswarm');
+   }
+   catch(OAuthException $E)
+   {
+      $err = json_decode($E->lastResponse);
+      print_r('<pre>' . $E . "\nError details: \n" .
+         print_r($err, true) . '</pre>');
    }
 }
-catch(OAuthException $E)
+
+/**
+ * Called when access is denied to do PaySwarm registration.
+ *
+ * @param array $options the PaySwarm OAuth options.
+ */
+function payswarm_access_denied($options)
 {
-   $err = json_decode($E->lastResponse);
-   print_r('<pre>' . $E . "\nError details: \n" .
-      print_r($err, true) . '</pre>');
+   // FIXME: Unfortunately, this generates a PHP Notice error for
+   // WP_Query::$is_paged not being defined. Need to figure out which file
+   // declares that variable.
+   get_header();
+
+   echo '
+<div class="category-uncategorized">
+  <h2 class="entry-title">Access Denied when Registering</h2>
+  <div class="entry-content">
+    <p>
+      Access to the PaySwarm registration information was denied because this
+      website was not allowed to access your PaySwarm account. This usually
+      happens because you did not allow this website to access your
+      PaySwarm account information by not assigning it a Registration Token.
+    </p>
+
+    <p><a href="' . site_url() . "/wp-admin/plugins.php?page=payswarm" .
+      '">Go back to the administrative page</a>.</p>
+  </div>
+</div>';
+
+   get_footer();
 }
 
 /**
@@ -230,29 +214,4 @@ function payswarm_generate_keypair($reuse)
    return $rval;
 }
 
-function payswarm_access_denied($post)
-{
-   // FIXME: Unfortunately, this generates a PHP Notice error for
-   // WP_Query::$is_paged not being defined. Need to figure out which file
-   // declares that variable.
-   get_header();
-
-   echo '
-<div class="category-uncategorized">
-  <h2 class="entry-title">Access Denied when Registering</h2>
-  <div class="entry-content">
-    <p>
-      Access to the PaySwarm registration information was denied because this
-      website was not allowed to access your PaySwarm account. This usually
-      happens because you did not allow this website to access your
-      PaySwarm account information by not assigning it a Registration Token.
-    </p>
-
-    <p><a href="' . site_url() . "/wp-admin/plugins.php?page=payswarm" .
-      '">Go back to the administrative page</a>.</p>
-  </div>
-</div>';
-
-   get_footer();
-}
 ?>

@@ -2,7 +2,7 @@
 require_once('../../../wp-config.php');
 require_once('payswarm-utils.inc');
 
-// force access to happen through SSL
+// force access to happen over SSL
 payswarm_force_ssl();
 
 require_once('payswarm-article.inc');
@@ -69,7 +69,7 @@ function payswarm_access_purchase_post($options)
    catch(OAuthException $E)
    {
       // FIXME: handle this error within payswarm-oauth function(s)?
-      // FIXME: possible infinite redirect loop?
+      // FIXME: can this produce an infinite redirect problem?
 
       // if there is an error, check to see if the token has been revoked
       $error = $oauth->getLastResponse();
