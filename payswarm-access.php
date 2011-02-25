@@ -72,7 +72,7 @@ function payswarm_access_purchase_post($options)
       // FIXME: can this produce an infinite redirect problem?
 
       // if there is an error, check to see if the token has been revoked
-      $error = $oauth->getLastResponse();
+      $error = $E->lastResponse;
       $invalidToken = strpos($error, 'payswarm.database.NotFound');
 
       // if the token is invalid, start the process over

@@ -166,11 +166,12 @@ function payswarm_oauth1_get_request_token($options)
  */
 function payswarm_oauth1_get_access_token($options)
 {
+   $token = $options['token'];
+
    // access approved if verifier returned from authority
    if(array_key_exists('oauth_verifier', $_GET))
    {
       // get access token from authority
-      $token = $options['token'];
       $access_url = $options['access_url'];
       $oauth = payswarm_create_oauth_client(
          $options['client_id'], $options['client_secret']);
@@ -187,7 +188,7 @@ function payswarm_oauth1_get_access_token($options)
    else
    {
       // access denied
-      $token['denied'] = true;
+      $token['state'] = 'denied';
    }
 
    // store token

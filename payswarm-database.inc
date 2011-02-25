@@ -133,22 +133,21 @@ function payswarm_database_get_token(
  * @package payswarm
  * @since 1.0
  *
- * @param Array $payswarm_token An associative array containing all of the
- *    values for a $payswarm_token that should be updated.
+ * @param Array $token an associative array containing all of the
+ *    values for a $token that should be updated.
  *
  * @return boolean true if the update was successful, false otherwise.
  */
-function payswarm_database_update_token($payswarm_token)
+function payswarm_database_update_token($token)
 {
    global $wpdb;
 
    // json encode details
-   $payswarm_token['details'] = json_encode($payswarm_token['details']);
+   $token['details'] = json_encode($token['details']);
 
    // update all information associated with the session
-   $rval = $wpdb->update(PAYSWARM_TOKENS_TABLE_NAME, $payswarm_token,
-      array('session' => $payswarm_token['session'],
-         'scope' => $payswarm_token['scope']));
+   $rval = $wpdb->update(PAYSWARM_TOKENS_TABLE_NAME, $token,
+      array('session' => $token['session'], 'scope' => $token['scope']));
 
    // set the return type to true if the object was updated correctly
    return ($rval !== false);
