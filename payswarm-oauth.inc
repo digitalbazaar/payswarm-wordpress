@@ -251,9 +251,9 @@ function payswarm_oauth1_purchase_post($options)
          // retry purchase only once if resource was not found (likely
          // due to validity period rollover)
          else if(
+            $retry == -1 and
             $err !== NULL and array_key_exists('type', $err) and
-            $err->type == 'payswarm.database.NotFound' &&
-            $retry == -1)
+            $err->type == 'payswarm.database.NotFound')
          {
             $retry = 1;
          }
