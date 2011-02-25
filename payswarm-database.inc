@@ -79,7 +79,7 @@ function payswarm_install_database()
  * @package payswarm
  * @since 1.0
  *
- * @param string $payswarm_session the PaySwarm session identifier.
+ * @param string $session the PaySwarm session identifier.
  * @param string $scope the intended scope of the PaySwarm session identifier.
  * @param string $create true if the token should be created.
  *
@@ -87,7 +87,7 @@ function payswarm_install_database()
  *    PaySwarm session or NULL if no session exists.
  */
 function payswarm_database_get_token(
-   $payswarm_session, $scope, $create=false)
+   $session, $scope, $create = false)
 {
    $rval = null;
    global $wpdb;
@@ -99,15 +99,15 @@ function payswarm_database_get_token(
          'INSERT IGNORE INTO ' . PAYSWARM_TOKENS_TABLE_NAME .
          '(session, scope, state, token, secret, details) ' .
          'VALUES (%s, %s, %s, %s, %s, %s)',
-         $payswarm_session, $scope, 'initializing', '', '',
-         '{"balance":"0.00"}'));
+         $session, $scope, 'initializing', '', '',
+         '{}'));
    }
 
    // retrieve all information associated with the session
    $rval = $wpdb->get_row($wpdb->prepare(
       'SELECT session, scope, state, token, secret, details, mtime FROM ' .
       PAYSWARM_TOKENS_TABLE_NAME . ' WHERE session=%s AND scope=%s LIMIT 1',
-      $payswarm_session, $scope), ARRAY_A);
+      $session, $scope), ARRAY_A);
 
    // set the return type to null if there was nothing in the database
    if($wpdb->num_rows < 1)

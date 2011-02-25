@@ -44,7 +44,7 @@ try
    if($ptoken['state'] === 'initializing')
    {
       $request_url = get_option('payswarm_request_url') . "?scope=$scope";
-      $details = array('balance' => '0.0');
+      $details = array('balance' => '0.00');
 
       //die("INITIAL");
       payswarm_oauth1_initialize(
@@ -59,7 +59,7 @@ try
          // get and store an access token
          $access_url = get_option('payswarm_access_url');
          $oauth->setToken($_GET['oauth_token'], $ptoken['secret']);
-         $details = array('balance' => '0.0');
+         $details = array('balance' => '0.00');
 
          payswarm_oauth1_authorize(
             $oauth, $session, $scope, $access_url, $details);
@@ -70,7 +70,7 @@ try
          payswarm_registration_denied($post);
       }
    }
-   else if($ptoken['scope'] === 'payswarm-registration' &&
+   else if($ptoken['scope'] === $scope &&
       $ptoken['state'] === 'valid')
    {
       $oauth = new OAuth($client_id, $client_secret, OAUTH_SIG_METHOD_HMACSHA1);
