@@ -11,9 +11,10 @@
  * @since 1.0
  *
  * @param boolean update if set to true, updates the cookie value.
+ *
  * @return string the session ID for the active payswarm session.
  */
-function payswarm_check_session($update=true)
+function payswarm_check_session($update = true)
 {
    global $_COOKIE;
    $rval = 0;
