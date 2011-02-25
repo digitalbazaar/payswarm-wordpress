@@ -268,7 +268,7 @@ function payswarm_oauth1_purchase_post($options)
    // check to see if the purchase was authorized
    $result = array();
    parse_str($oauth->getLastResponse(), $result);
-   if($result['authorized'] === 'true')
+   if(isset($result['authorized']) and $result['authorized'] === 'true')
    {
       // update token
       $token['details']['balance'] = $result['balance'];
