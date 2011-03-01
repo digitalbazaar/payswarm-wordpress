@@ -79,7 +79,7 @@ function payswarm_access_purchase_post($options)
       if($invalidToken !== false)
       {
          global $_SERVER;
-         setcookie('payswarm-session', $session, time() - 3600, '/',
+         setcookie('payswarm-session', '', time() - 3600, '/',
             $_SERVER['HTTP_HOST'], true);
          header('Location: ' . payswarm_get_current_url());
       }
