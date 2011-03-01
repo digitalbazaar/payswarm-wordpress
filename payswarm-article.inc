@@ -190,10 +190,10 @@ function payswarm_generate_listing_object($info, $includeSignature)
          '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>' =>
             '<http://purl.org/commerce#PayeeRule>',
       ),
+      '<http://purl.org/payswarm#asset>' =>
+         '<' . $info['asset_url'] . '>',
       '<http://purl.org/payswarm#assetHash>' =>
          $info['asset_hash'],
-      '<http://purl.org/payswarm#forAsset>' =>
-         '<' . $info['asset_url'] . '>',
       '<http://purl.org/payswarm#license>' =>
          '<' . $info['license_url'] . '>',
       '<http://purl.org/payswarm#licenseHash>' =>
@@ -498,7 +498,7 @@ function payswarm_asset_information_rdfa($post_id)
            about=\"" . $info['asset_url'] . "\" typeof=\"ps:Asset ps:WebPage\"
            class=\"asset-info\">
          <div about=\"" . $info['post_url'] . "#listing\" typeof=\"ps:Listing gr:Offering\">
-            <span rel=\"ps:forAsset\" resource=\"" . $info['asset_url'] . "\">" .
+            <span rel=\"ps:asset\" resource=\"" . $info['asset_url'] . "\">" .
                __('View the full article for') . "</span>
             <span rel=\"com:payee\" resource=\"" . $info['listing_payee']['id'] . "\">
                <span property=\"com:currency\"  content=\"" . $info['listing_payee']['com:currency'] . "\">" .
