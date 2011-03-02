@@ -243,6 +243,8 @@ function payswarm_generate_listing_object($info, $includeSignature)
                $info['listing_payee']['com:currency'],
             '<http://purl.org/commerce#destination>' =>
                '<' . $info['listing_payee']['com:destination'] . '>',
+            '<http://purl.org/commerce#payeePosition>' =>
+               '0^^<http://www.w3.org/2001/XMLSchema#integer>',
             '<http://purl.org/commerce#rate>' =>
                $info['listing_payee']['com:rate'],
             '<http://purl.org/commerce#rateType>' =>
@@ -563,13 +565,14 @@ function payswarm_asset_information_rdfa($post_id)
                </span>
             </span>
             <span about=\"" . $info['listing_payee']['id'] . "\" typeof=\"com:Payee\">
-             <a rel=\"com:rateType\" href=\"" . $info['listing_payee']['com:rateType'] . "\"
-             >Flat-rate payment</a>
-             will be deposited into
-             <a rel=\"com:destination\"
-             href=\"" . $info['listing_payee']['com:destination'] . "\">this account</a>.
-             The memo field for the payment will read:
-             \"<span property=\"rdfs:comment\">" . $info['listing_payee']['rdfs:comment'] . "</span>\"
+               <span property=\"com:payeePosition\" datatype=\"xsd:integer\" content=\"0\" />
+               <a rel=\"com:rateType\" href=\"" . $info['listing_payee']['com:rateType'] . "\"
+               >Flat-rate payment</a>
+               will be deposited into
+               <a rel=\"com:destination\"
+               href=\"" . $info['listing_payee']['com:destination'] . "\">this account</a>.
+               The memo field for the payment will read:
+               \"<span property=\"rdfs:comment\">" . $info['listing_payee']['rdfs:comment'] . "</span>\"
             </span>
          </div>
          <div class=\"row\">
