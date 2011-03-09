@@ -70,6 +70,7 @@ function payswarm_access_purchase_post($options)
    {
       // FIXME: handle this error within payswarm-oauth function(s)?
       // FIXME: can this produce an infinite redirect problem?
+      throw $E;
 
       // if there is an error, check to see if the token has been revoked
       $error = $E->lastResponse;

@@ -123,17 +123,17 @@ function payswarm_generate_asset_object($info, $includeSignature)
    {
       $asset += array
       (
-         '<http://purl.org/payswarm#signature>' => array
+         '<http://purl.org/signature#signature>' => array
          (
             '<http://purl.org/dc/terms/created>' =>
                $info['asset_signature_created'] .
                '^^<http://www.w3.org/2001/XMLSchema#dateTime>',
             '<http://purl.org/dc/terms/creator>' =>
                '<' . $info['public_key_url'] . '>',
-            '<http://purl.org/payswarm#signatureValue>' =>
+            '<http://purl.org/signature#signatureValue>' =>
                $info['asset_signature'],
             '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>' =>
-               '<http://purl.org/payswarm#JsonldSignature>'
+               '<http://purl.org/signature#JsonldSignature>'
          )
       );
    }
@@ -216,17 +216,17 @@ function payswarm_generate_listing_object($info, $includeSignature)
    {
       $listing += array
       (
-         '<http://purl.org/payswarm#signature>' => array
+         '<http://purl.org/signature#signature>' => array
          (
             '<http://purl.org/dc/terms/created>' =>
-               $info['asset_signature_created'] .
+               $info['listing_signature_created'] .
                '^^<http://www.w3.org/2001/XMLSchema#dateTime>',
             '<http://purl.org/dc/terms/creator>' =>
                '<' . $info['public_key_url'] . '>',
-            '<http://purl.org/payswarm#signatureValue>' =>
+            '<http://purl.org/signature#signatureValue>' =>
                $info['listing_signature'],
             '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>' =>
-               '<http://purl.org/payswarm#JsonldSignature>'
+               '<http://purl.org/signature#JsonldSignature>'
          )
       );
    }
@@ -496,6 +496,7 @@ function payswarm_asset_information_rdfa($post_id)
            xmlns:gr=\"http://purl.org/goodrelations/v1#\"
            xmlns:ps=\"http://purl.org/payswarm#\"
            xmlns:rdfs=\"http://www.w3.org/2000/01/rdf-schema#\"
+           xmlns:sig=\"http://purl.org/signature#\"
            xmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\"
            about=\"" . $info['asset_url'] . "\" typeof=\"ps:Asset ps:WebPage\"
            class=\"asset-info\">
@@ -517,10 +518,10 @@ function payswarm_asset_information_rdfa($post_id)
                   <abbr property=\"com:maximumRate\" content=\"" . $info['payswarm_auth_rate'] . "\" />
                </span>
             </span>
-            <span rel=\"ps:signature\">
-               <span typeof=\"ps:JsonldSignature\">
+            <span rel=\"sig:signature\">
+               <span typeof=\"sig:JsonldSignature\">
                   This <a href=\"" . $info['post_url'] . "#listing\">listing</a> was
-                  <abbr property=\"ps:signatureValue\"
+                  <abbr property=\"sig:signatureValue\"
                   content=\"" . $info['listing_signature'] . "\" title=\"" . $info['listing_signature'] . "\">digitally signed</abbr>
                   using <a rel=\"dc:creator\" href=\"" . $info['public_key_url'] . "\">this key</a>
                   at <span property=\"dc:created\" datatype=\"xsd:dateTime\">" . $info['listing_signature_created'] . "</span>.
@@ -555,10 +556,10 @@ function payswarm_asset_information_rdfa($post_id)
                content=\"" . $info['listing_valid_until'] . "\"
                datatype=\"xsd:dateTime\">24 hours from now</abbr>.
             </span>
-            <span rel=\"ps:signature\">
-               <span typeof=\"ps:JsonldSignature\">
+            <span rel=\"sig:signature\">
+               <span typeof=\"sig:JsonldSignature\">
                   This <a href=\"" . $info['asset_url'] . "\">asset</a>
-                  was <abbr property=\"ps:signatureValue\"
+                  was <abbr property=\"sig:signatureValue\"
                   content=\"" . $info['asset_signature'] . "\" title=\"" . $info['asset_signature'] . "\">digitally signed</abbr>
                   using <a rel=\"dc:creator\" href=\"" . $info['public_key_url'] . "\">this key</a>
                   at <span property=\"dc:created\" datatype=\"xsd:dateTime\">" . $info['asset_signature_created'] . "</span>.
