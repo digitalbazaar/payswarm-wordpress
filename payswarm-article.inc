@@ -614,7 +614,9 @@ function payswarm_filter_paid_content($content)
 
    // check to see if the article has been purchased already
    $post_id = $post->ID;
-   $session = payswarm_check_session(false);
+   
+   // FIXME: changed how check session works - double check it works here
+   $session = payswarm_check_session();
    $ptoken = payswarm_database_get_token($session, 'payswarm-payment');
    if($ptoken !== NULL)
    {

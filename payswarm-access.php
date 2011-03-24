@@ -32,6 +32,8 @@ try
 }
 catch(OAuthException $E)
 {
+   // FIXME: catch oauth exception and redirect to payswarm website?
+   
    // FIXME: make user friendly error page
    $err = json_decode($E->lastResponse);
    print_r('<pre>' . $E . "\nError details: \n" .
@@ -79,9 +81,8 @@ function payswarm_access_purchase_post($options)
       // if the token is invalid, start the process over
       if($invalidToken !== false)
       {
-         global $_SERVER;
-         setcookie('payswarm-session', '', time() - 3600, '/',
-            $_SERVER['HTTP_HOST'], true);
+         // clear the session and redirect to the current page
+         payswarm_clear_session();
          header('Location: ' . payswarm_get_current_url());
       }
       else

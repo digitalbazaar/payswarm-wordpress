@@ -1,5 +1,5 @@
 <?php
-require_once('payswarm-session.inc');
+require_once('payswarm-utils.inc');
 require_once('payswarm-database.inc');
 
 // set to false for production mode
@@ -46,6 +46,8 @@ function payswarm_oauth1_get_token($options)
    }
    else
    {
+      // FIXME: check session changed - make sure behavior is the same
+
       // get the session ID that is associated with this request
       $session = payswarm_check_session();
    }
@@ -146,10 +148,8 @@ function payswarm_oauth1_get_request_token($options)
    {
       // FIXME: can this produce an infinite redirect problem?
 
-      // if something went wrong, clear the cookie and try again
-      global $_SERVER;
-      setcookie('payswarm-session', '', time() - 3600, '/',
-          $_SERVER['HTTP_HOST'], true);
+      // clear the session and redirect to the current page
+      payswarm_clear_session();
       header('Location: ' . payswarm_get_current_url());
    }
 
@@ -243,6 +243,8 @@ function payswarm_oauth1_purchase_post($options)
                'oauth_callback' => payswarm_get_current_url()
             );
             $params = array_merge($params, $options['authorize_params']);
+            
+            // redirect to token authorization page on payswarm authority
             $authorize_url =
                $options['authorize_url'] . '?' . http_build_query($params);
             header("Location: $authorize_url");
