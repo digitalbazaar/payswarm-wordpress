@@ -185,8 +185,12 @@ function payswarm_generate_listing_object($info, $includeSignature)
             '<http://purl.org/payswarm#Authority>',
          '<http://purl.org/commerce#maximumRate>' =>
             $info['payswarm_auth_rate'],
+         '<http://purl.org/commerce#rateContext>' => array(
+            '<http://purl.org/commerce#Inclusive>',
+            '<http://purl.org/commerce#Tax>',
+            '<http://purl.org/commerce#TaxExempt>'),
          '<http://purl.org/commerce#rateType>' =>
-            '<http://purl.org/commerce#InclusivePercentage>',
+            '<http://purl.org/commerce#Percentage>',
          '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>' =>
             '<http://purl.org/commerce#PayeeRule>',
       ),
@@ -514,7 +518,10 @@ function payswarm_asset_information_rdfa($post_id)
             <span rel=\"com:payeeRule\">
                <span typeof=\"com:PayeeRule\">
                   <span rel=\"com:destinationOwnerType\" resource=\"http://purl.org/payswarm#Authority\" />
-                  <span rel=\"com:rateType\" resource=\"http://purl.org/commerce#InclusivePercentage\" />
+                  <span rel=\"com:rateType\" resource=\"http://purl.org/commerce#Percentage\" />
+                  <span rel=\"com:rateContext\" resource=\"http://purl.org/commerce#Inclusive\" />
+                  <span rel=\"com:rateContext\" resource=\"http://purl.org/commerce#Tax\" />
+                  <span rel=\"com:rateContext\" resource=\"http://purl.org/commerce#TaxExempt\" />
                   <abbr property=\"com:maximumRate\" content=\"" . $info['payswarm_auth_rate'] . "\" />
                </span>
             </span>
@@ -614,7 +621,7 @@ function payswarm_filter_paid_content($content)
 
    // check to see if the article has been purchased already
    $post_id = $post->ID;
-   
+
    // FIXME: changed how check session works - double check it works here
    $session = payswarm_check_session();
    $ptoken = payswarm_database_get_token($session, 'payswarm-payment');
