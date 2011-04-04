@@ -693,8 +693,9 @@ function payswarm_add_meta_boxes()
  */
 function payswarm_create_meta_box()
 {
-   // nonce is required for fields to prevent forgery attacks
-   wp_nonce_field(plugin_basename(__FILE__), 'payswarm_price_nonce');
+   // nonce is required for to prevent forgery attacks
+   $plugin = plugin_basename(__FILE__);
+   wp_nonce_field($plugin . '_save_meta', '_payswarm_save_meta');
 
    // FIXME: Get the currency symbol from the database
    global $post;
@@ -758,53 +759,55 @@ function payswarm_save_post_data($post_id)
    $revision = wp_is_post_revision($post_id);
    $edit_allowed = current_user_can('edit_post', $post_id);
 
-   // ensure the nonce is valid
+   // ensure nonce is valid
    $valid_nonce = false;
-   if(isset($_POST['payswarm_price_nonce']))
+   if(isset($_POST['_payswarm_save_meta']))
    {
-      $valid_nonce = wp_verify_nonce($_POST['payswarm_price_nonce'],
-         plugin_basename(__FILE__));
+      $plugin = plugin_basename(__FILE__);
+      $valid_nonce = wp_verify_nonce(
+         $_POST['_payswarm_save_meta'], $plugin . '_save_meta');
    }
 
    // only update on non-auto and non-revision save
-   if(!$autosave && !$revision && $valid_nonce && $edit_allowed)
+   if(!$autosave && !$revision && $edit_allowed)
    {
-      // get parameters from the post data
-      $price = $_POST['payswarm_price'];
-      $license = $_POST['payswarm_content_license_url'];
-      $hash = $_POST['payswarm_content_license_hash'];
-      $auth_rate = $_POST['payswarm_auth_rate'];
-
-      $validated = true;
-
-      // TODO: add jquery validation to input?
-      // delete the post metadata if the price <= 0 or invalid
-      if($price === '' or floatval($price) <= 0)
+      // only update critical fields if nonce is present and valid
+      // Note: Nonce will be missing if "Quick Edit" option is used
+      if($valid_nonce)
       {
-         delete_post_meta($post_id, 'payswarm_price');
-         $validated = false;
+         // get parameters from the post data
+         $price = $_POST['payswarm_price'];
+         $license = $_POST['payswarm_content_license_url'];
+         $hash = $_POST['payswarm_content_license_hash'];
+         $auth_rate = $_POST['payswarm_auth_rate'];
+
+         // TODO: add jquery validation to input?
+         // do not update post metadata if the price < 0 or invalid
+         // do not update post metadata if the authority rate < 0 or invalid
+         $validated = true;
+         if($price === '' or floatval($price) < 0 or
+            $auth_rate === '' or floatval($auth_rate) < 0)
+         {
+            $validated = false;
+         }
+
+         // update the post metadata if input is valid
+         if($validated)
+         {
+            // convert string value into a well-formed floating point value
+            $price = sprintf('%1.2f', floatval($price));
+
+            update_post_meta($post_id, 'payswarm_price', $price);
+            update_post_meta($post_id, 'payswarm_auth_rate', $auth_rate);
+            update_post_meta(
+               $post_id, 'payswarm_content_license_url', $license);
+            update_post_meta(
+               $post_id, 'payswarm_content_license_hash', $hash);
+         }
       }
 
-      // delete the post metadata if the authority rate <= 0 or invalid
-      if($auth_rate === '' or floatval($auth_rate) <= 0)
-      {
-         delete_post_meta($post_id, 'payswarm_auth_rate');
-      }
-
-      // update the post metadata if input is valid
-      if($validated)
-      {
-         // convert string value into a well-formed floating point value
-         $price = sprintf('%1.2f', floatval($price));
-
-         update_post_meta($post_id, 'payswarm_price', $price);
-         update_post_meta($post_id, 'payswarm_content_license_url', $license);
-         update_post_meta($post_id, 'payswarm_content_license_hash', $hash);
-         update_post_meta($post_id, 'payswarm_auth_rate', $auth_rate);
-
-         // force resigning of post info
-         payswarm_get_post_info($post_id, true);
-      }
+      // force resigning of post info
+      payswarm_get_post_info($post_id, true);
    }
 
    return $post_id;
