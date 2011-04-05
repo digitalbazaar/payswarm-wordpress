@@ -118,6 +118,24 @@ function payswarm_registration_config($options)
             "Response received from PaySwarm Authority: " .
             htmlentities($preferences));
       }
+      else
+      {
+         // check to see if the default price/rate are set, if not, set them
+         $default_price = get_option('payswarm_default_price');
+         $default_auth_rate = get_option('payswarm_default_auth_rate');
+         if(!is_numeric($default_price))
+         {
+            $default_price = '0.05';
+         }
+         if(!is_numeric($default_auth_rate))
+         {
+            $default_auth_rate = '10';
+         }
+         update_option('payswarm_default_price', 
+            sprintf('%1.2f', floatval($default_price)));
+         update_option('payswarm_default_auth_rate', 
+            sprintf('%1.2f', floatval($default_auth_rate)));
+      }
 
       // redirect to admin page
       header('Location: ' . admin_url() . 'plugins.php?page=payswarm');
