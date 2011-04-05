@@ -695,7 +695,7 @@ function payswarm_create_meta_box()
 {
    // nonce is required for to prevent forgery attacks
    $plugin = plugin_basename(__FILE__);
-   wp_nonce_field($plugin . '_save_meta', '_payswarm_save_meta');
+   wp_nonce_field($plugin . '_save_meta', '_payswarm_save_meta_nonce');
 
    // FIXME: Get the currency symbol from the database
    global $post;
@@ -749,6 +749,7 @@ function payswarm_create_meta_box()
  *
  * @param integer $post_id The post identifier as recorded in the WordPress
  *    database tables.
+ *
  * @return integer The post identifier as recorded in the WordPress database
  *    tables.
  */
@@ -758,59 +759,65 @@ function payswarm_save_post_data($post_id)
    $autosave = wp_is_post_autosave($post_id);
    $revision = wp_is_post_revision($post_id);
    $edit_allowed = current_user_can('edit_post', $post_id);
-   $xmlrpc_request = defined('XMLRPC_REQUEST');
-
-   // ensure nonce is valid
-   $valid_nonce = false;
-   if(isset($_POST['_payswarm_save_meta']))
-   {
-      $plugin = plugin_basename(__FILE__);
-      $valid_nonce = wp_verify_nonce(
-         $_POST['_payswarm_save_meta'], $plugin . '_save_meta');
-   }
 
    // only update on non-auto and non-revision save
    if(!$autosave && !$revision && $edit_allowed)
    {
-      // only update critical fields if nonce is present and valid
-      // Note: Nonce will be missing if "Quick Edit" option is used
-      if($valid_nonce or $xmlrpc_request)
+      // ensure POST nonce is valid
+      $valid_nonce = false;
+      if(isset($_POST['_payswarm_save_meta_nonce']))
       {
-         // get parameters from the post data
+         $plugin = plugin_basename(__FILE__);
+         $valid_nonce = wp_verify_nonce(
+            $_POST['_payswarm_save_meta_nonce'], $plugin . '_save_meta');
+      }
+
+      /* Note: If the nonce is not valid, then use the existing data from the
+         post. The nonce will be missing (and thus, invalid) when "Quick Edit"
+         or xmlrpc were used to save the post data. */
+      if($valid_nonce)
+      {
          $price = $_POST['payswarm_price'];
          $license = $_POST['payswarm_content_license_url'];
          $hash = $_POST['payswarm_content_license_hash'];
          $auth_rate = $_POST['payswarm_auth_rate'];
-         if($xmlrpc_request)
-         {
-            $license = get_option('payswarm_default_license_url');
-            $hash = get_option('payswarm_default_license_hash');
-         }
-
-         // TODO: add jquery validation to input?
-         // do not update post metadata if the price < 0 or invalid
-         // do not update post metadata if the authority rate < 0 or invalid
-         $validated = true;
-         if($price === '' or floatval($price) < 0 or
-            $auth_rate === '' or floatval($auth_rate) < 0)
-         {
-            $validated = false;
-         }
-
-         // update the post metadata if input is valid
-         if($validated)
-         {
-            // convert string value into a well-formed floating point value
-            $price = sprintf('%1.2f', floatval($price));
-
-            update_post_meta($post_id, 'payswarm_price', $price);
-            update_post_meta($post_id, 'payswarm_auth_rate', $auth_rate);
-            update_post_meta(
-               $post_id, 'payswarm_content_license_url', $license);
-            update_post_meta(
-               $post_id, 'payswarm_content_license_hash', $hash);
-         }
       }
+      // invalid nonce, get existing post data
+      else
+      {
+         $price = get_post_meta($post_id, 'payswarm_price', true);
+         $auth_rate = get_post_meta($post_id, 'payswarm_auth_rate', true);
+         $license = get_post_meta(
+            $post_id, 'payswarm_content_license_url', true);
+         $hash = get_post_meta($post_id, 'payswarm_content_license_hash', true);
+      }
+
+      // ensure fields have valid values, use defaults if necessary
+      if(!is_numeric($price) || floatval($price) < 0)
+      {
+         $price = get_option('payswarm_default_price');
+      }
+      if(!is_numeric($auth_rate) || floatval($auth_rate) < 0)
+      {
+         $price = get_option('payswarm_default_auth_rate');
+      }
+      if($license === '' || $hash === '')
+      {
+         $license = get_option('payswarm_default_license_url');
+         $hash = get_option('payswarm_default_license_hash');
+      }
+
+      // convert string values into a well-formed floating point value
+      $price = sprintf('%1.2f', floatval($price));
+      $auth_rate = sprintf('%1.2f', floatval($auth_rate));
+
+      // update post meta data
+      update_post_meta($post_id, 'payswarm_price', $price);
+      update_post_meta($post_id, 'payswarm_auth_rate', $auth_rate);
+      update_post_meta(
+         $post_id, 'payswarm_content_license_url', $license);
+      update_post_meta(
+         $post_id, 'payswarm_content_license_hash', $hash);
 
       // force resigning of post info
       payswarm_get_post_info($post_id, true);
