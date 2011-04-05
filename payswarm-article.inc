@@ -799,7 +799,7 @@ function payswarm_save_post_data($post_id)
       }
       if(!is_numeric($auth_rate) || floatval($auth_rate) < 0)
       {
-         $price = get_option('payswarm_default_auth_rate');
+         $auth_rate = get_option('payswarm_default_auth_rate');
       }
       if($license === '' || $hash === '')
       {
