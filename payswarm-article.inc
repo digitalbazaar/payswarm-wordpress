@@ -758,6 +758,7 @@ function payswarm_save_post_data($post_id)
    $autosave = wp_is_post_autosave($post_id);
    $revision = wp_is_post_revision($post_id);
    $edit_allowed = current_user_can('edit_post', $post_id);
+   $xmlrpc_request = defined('XMLRPC_REQUEST');
 
    // ensure nonce is valid
    $valid_nonce = false;
@@ -773,13 +774,18 @@ function payswarm_save_post_data($post_id)
    {
       // only update critical fields if nonce is present and valid
       // Note: Nonce will be missing if "Quick Edit" option is used
-      if($valid_nonce)
+      if($valid_nonce or $xmlrpc_request)
       {
          // get parameters from the post data
          $price = $_POST['payswarm_price'];
          $license = $_POST['payswarm_content_license_url'];
          $hash = $_POST['payswarm_content_license_hash'];
          $auth_rate = $_POST['payswarm_auth_rate'];
+         if($xmlrpc_request)
+         {
+            $license = get_option('payswarm_default_license_url');
+            $hash = get_option('payswarm_default_license_hash');
+         }
 
          // TODO: add jquery validation to input?
          // do not update post metadata if the price < 0 or invalid
