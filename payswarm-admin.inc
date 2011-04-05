@@ -48,7 +48,9 @@ function payswarm_register_settings()
    register_setting('payswarm-option-group', 'payswarm_client_config');
    register_setting('payswarm-option-group', 'payswarm_client_id');
    register_setting('payswarm-option-group', 'payswarm_client_secret');
+   register_setting('payswarm-option-group', 'payswarm_default_auth_rate');
    register_setting('payswarm-option-group', 'payswarm_default_currency');
+   register_setting('payswarm-option-group', 'payswarm_default_price');
    register_setting('payswarm-option-group', 'payswarm_destination_account');
    register_setting('payswarm-option-group', 'payswarm_default_license_url');
    register_setting('payswarm-option-group', 'payswarm_authorize_url');
@@ -153,7 +155,9 @@ function payswarm_admin_warnings()
    $options_nonexistant = !get_option('payswarm_client_config') ||
       !get_option('payswarm_client_id') ||
       !get_option('payswarm_client_secret') ||
+      !get_option('payswarm_default_auth_rate') ||
       !get_option('payswarm_default_currency') ||
+      !get_option('payswarm_default_price') ||
       !get_option('payswarm_destination_account') ||
       !get_option('payswarm_default_license_url') ||
       !get_option('payswarm_authorize_url') ||
@@ -165,7 +169,9 @@ function payswarm_admin_warnings()
    $options_invalid = strlen(get_option('payswarm_client_config')) < 1 ||
       strlen(get_option('payswarm_client_id')) < 1 ||
       strlen(get_option('payswarm_client_secret')) < 1 ||
+      strlen(get_option('payswarm_default_auth_rate')) < 1 ||
       strlen(get_option('payswarm_default_currency')) < 1 ||
+      strlen(get_option('payswarm_default_price')) < 1 ||
       strlen(get_option('payswarm_destination_account')) < 1 ||
       strlen(get_option('payswarm_default_license_url')) < 1 ||
       strlen(get_option('payswarm_authorize_url')) < 1 ||
@@ -206,7 +212,9 @@ function payswarm_settings_page()
          'payswarm_contracts_url',
          'payswarm_public_key',
          'payswarm_private_key',
+         'payswarm_default_auth_rate',
          'payswarm_default_currency',
+         'payswarm_default_price',
          'payswarm_destination_account', 'payswarm_default_license_url',
          'payswarm_default_license_hash'));
       // special case checkboxes
@@ -376,11 +384,11 @@ activate PaySwarm on your site.
         <tr valign="top">
         <td scope="row" colspan="2">
           <h3><?php _e('Financial Account and License Defaults') ?></h3>
-          <p>The default article license is used to convey a set of license
-          rights to the people that purchase your articles. The URL listed
-          below should return a plain text file that outlines the permissions of
-          the buyer of the article as well as the responsibilities of the seller
-          of the article.
+          <p>The financial account information below is used to specify
+          default accounts, prices and rates used when selling content from
+          this site. The default price is the amount of money that is charged
+          per article by default. The default Authority rate is the maximum
+          percentage a PaySwarm Authority can take in processing fees.
           </p>
         </td>
         </tr>
@@ -393,6 +401,20 @@ activate PaySwarm on your site.
           </select>
         </td>
         </tr>
+
+        <tr valign="top">
+        <th scope="row"><?php _e('Default Price') ?></th>
+        <td>
+          <input type="text" size="8" name="payswarm_default_price"
+            value="<?php echo get_option('payswarm_default_price'); ?>" /> USD
+        </td>
+
+        <tr valign="top">
+        <th scope="row"><?php _e('Default Authority Rate') ?></th>
+        <td>
+          <input type="text" size="8" name="payswarm_default_auth_rate"
+            value="<?php echo get_option('payswarm_default_auth_rate'); ?>" /> %
+        </td>
 
         <tr valign="top">
         <th scope="row"><?php _e('Default Financial Account') ?></th>
