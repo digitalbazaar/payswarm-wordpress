@@ -811,6 +811,12 @@ function payswarm_save_post_data($post_id)
       $price = sprintf('%1.2f', floatval($price));
       $auth_rate = sprintf('%1.2f', floatval($auth_rate));
 
+      // remove old post meta data to ensure there are no duplicate fields
+      delete_post_meta($post_id, 'payswarm_price');
+      delete_post_meta($post_id, 'payswarm_auth_rate');
+      delete_post_meta($post_id, 'payswarm_content_license_url');
+      delete_post_meta($post_id, 'payswarm_content_license_hash');
+
       // update post meta data
       update_post_meta($post_id, 'payswarm_price', $price);
       update_post_meta($post_id, 'payswarm_auth_rate', $auth_rate);
