@@ -251,4 +251,26 @@ function payswarm_database_authorize_post($payswarm_token, $post_id)
    return $rval;
 }
 
+/**
+ * Deletes old post metadata from a post given a post ID and metadata ID and
+ * name.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param Integer $post_id the post identifier.
+ * @param Integer $meta_id the metadata identifier.
+ * @param String $meta_key the metadata key value.
+ */
+function payswarm_database_remove_old_metadata($post_id, $meta_id, $meta_key)
+{
+   global $wpdb;
+
+   // delete the post identifier
+   $wpdb->query($wpdb->prepare(
+      'DELETE FROM ' . $wpdb->postmeta . ' ' .
+      'WHERE post_id=%s AND meta_id<%s AND meta_key=%s',
+      $post_id, $meta_id, $meta_key));
+}
+
 ?>

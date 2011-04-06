@@ -778,9 +778,9 @@ function payswarm_save_post_data($post_id)
       if($valid_nonce)
       {
          $price = $_POST['payswarm_price'];
+         $auth_rate = $_POST['payswarm_auth_rate'];
          $license = $_POST['payswarm_content_license_url'];
          $hash = $_POST['payswarm_content_license_hash'];
-         $auth_rate = $_POST['payswarm_auth_rate'];
       }
       // invalid nonce, get existing post data
       else
@@ -792,37 +792,12 @@ function payswarm_save_post_data($post_id)
          $hash = get_post_meta($post_id, 'payswarm_content_license_hash', true);
       }
 
-      // ensure fields have valid values, use defaults if necessary
-      if(!is_numeric($price) || floatval($price) < 0)
-      {
-         $price = get_option('payswarm_default_price');
-      }
-      if(!is_numeric($auth_rate) || floatval($auth_rate) < 0)
-      {
-         $auth_rate = get_option('payswarm_default_auth_rate');
-      }
-      if($license === '' || $hash === '')
-      {
-         $license = get_option('payswarm_default_license_url');
-         $hash = get_option('payswarm_default_license_hash');
-      }
-
-      // convert string values into a well-formed floating point value
-      $price = sprintf('%1.2f', floatval($price));
-      $auth_rate = sprintf('%1.2f', floatval($auth_rate));
-
-      // remove old post meta data to ensure there are no duplicate fields
-      delete_post_meta($post_id, 'payswarm_price');
-      delete_post_meta($post_id, 'payswarm_auth_rate');
-      delete_post_meta($post_id, 'payswarm_content_license_url');
-      delete_post_meta($post_id, 'payswarm_content_license_hash');
-
-      // update post meta data
-      update_post_meta($post_id, 'payswarm_price', $price);
-      update_post_meta($post_id, 'payswarm_auth_rate', $auth_rate);
-      update_post_meta(
+      // validate and update post meta data 
+      payswarm_update_post_meta($post_id, 'payswarm_price', $price);
+      payswarm_update_post_meta($post_id, 'payswarm_auth_rate', $auth_rate);
+      payswarm_update_post_meta(
          $post_id, 'payswarm_content_license_url', $license);
-      update_post_meta(
+      payswarm_update_post_meta(
          $post_id, 'payswarm_content_license_hash', $hash);
 
       // force resigning of post info
@@ -830,6 +805,158 @@ function payswarm_save_post_data($post_id)
    }
 
    return $post_id;
+}
+
+/**
+ * Validates PaySwarm-specific post metadata before storing it to the database.
+ *
+ * If the given data is invalid, reasonable defaults are used in place of the
+ * invalid data provided. Anyone calling this method must ensure that the
+ * payswarm_get_post_info() method is called after this method in order to
+ * ensure that all PaySwarm-related digital signatures are updated.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param integer $post_id The post identifier that is associated with the
+ *    metadata.
+ * @param string $meta_key The metadata key to update.
+ * @param string $meta_value The metadata value to use for the update.
+ */
+function payswarm_update_post_meta($post_id, $meta_key, $meta_value)
+{
+   // ensure the price is valid, if not use the default and update
+   if($meta_key === 'payswarm_price')
+   {
+      $price = $meta_value;
+      if(!is_numeric($price) || floatval($price) < 0)
+      {
+         $price = get_option('payswarm_default_price');
+         $price = sprintf('%1.7g', floatval($price));
+         update_post_meta($post_id, 'payswarm_price', $price);
+      }
+   }
+   // ensure the auth rate is valid, if not use the default and update
+   else if($meta_key === 'payswarm_auth_rate')
+   {
+      $auth_rate = $meta_value;
+      if(!is_numeric($auth_rate) || floatval($auth_rate) < 0)
+      {
+         $auth_rate = get_option('payswarm_default_auth_rate');
+         $auth_rate = sprintf('%1.7g', floatval($auth_rate));
+         update_post_meta($post_id, 'payswarm_auth_rate', $auth_rate);
+      }
+   }
+   // ensure the license URL is valid, if not use the default and update
+   else if($meta_key === 'payswarm_content_license_url')
+   {
+      $license = $meta_value;
+      if($license === '')
+      {
+         $license = get_option('payswarm_default_license_url');
+         $hash = get_option('payswarm_default_license_hash');
+         update_post_meta(
+            $post_id, 'payswarm_content_license_url', $license);
+         update_post_meta(
+            $post_id, 'payswarm_content_license_hash', $hash);
+      }
+   }
+   // ensure the license hash is valid, if not use the default and update
+   else if($meta_key === 'payswarm_content_license_hash')
+   {
+      $hash = $meta_value;
+      if($hash === '')
+      {
+         $license = get_option('payswarm_default_license_url');
+         $hash = get_option('payswarm_default_license_hash');
+         update_post_meta(
+            $post_id, 'payswarm_content_license_url', $license);
+         update_post_meta(
+            $post_id, 'payswarm_content_license_hash', $hash);
+      }
+   }
+}
+
+/**
+ * This action hook is called whenever post metadata is added to a post.
+ *
+ * The PaySwarm-specific code is run in order to prevent duplicate metadata
+ * in the database as well as to validate the metadata before it is written
+ * to the database.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param integer $meta_id The metadata identifier in the postmeta WordPress
+ *    database.
+ */
+function payswarm_added_postmeta($meta_id)
+{
+   $meta = get_post_meta_by_id($meta_id);
+   $revision = wp_is_post_revision($meta->post_id);
+
+   // do not perform the signature update/checks if the post is a revision
+   // or if the metadata is not PaySwarm metadata
+   if(!$revision && (strpos($meta->meta_key, 'payswarm_') === 0))
+   {
+      // delete any older meta_id from the database for any PaySwarm metadata
+      payswarm_database_remove_old_metadata(
+         $meta->post_id, $meta_id, $meta->meta_key);
+
+      // ensure the following data is validated before being saved
+      if($meta->meta_key === 'payswarm_price' ||
+         $meta->meta_key === 'payswarm_auth_rate' ||
+         $meta->meta_key === 'payswarm_content_license_url' ||
+         $meta->meta_key === 'payswarm_content_license_hash')
+      {
+         payswarm_update_post_meta(
+            $meta->post_id, $meta->meta_id, $meta->meta_value);
+      }
+      else
+      {
+         // update other non-validation-required PaySwarm metadata
+         update_post_meta($meta->post_id, $meta->meta_id, $meta->meta_value);
+      }
+
+      // force a new signature for the post info
+      payswarm_get_post_info($meta->post_id, true);
+   }
+}
+
+/**
+ * This action hook is called whenever post metadata is updated for a post.
+ *
+ * The PaySwarm-specific code validates the metadata before it is written
+ * to the database, or uses reasonable defaults if invalid data is provided.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param integer $meta_id The metadata identifier in the postmeta WordPress
+ *    database.
+ */
+function payswarm_updated_postmeta($meta_id)
+{
+   $meta = get_post_meta_by_id($meta_id);
+   $revision = wp_is_post_revision($meta->post_id);
+
+   // do not perform the signature update/checks if the post is a revision
+   // or if the metadata is not PaySwarm metadata
+   if(!$revision && (strpos($meta->meta_key, 'payswarm_') === 0))
+   {
+      // ensure the following data is validated before being saved
+      if($meta->meta_key === 'payswarm_price' ||
+         $meta->meta_key === 'payswarm_auth_rate' ||
+         $meta->meta_key === 'payswarm_content_license_url' ||
+         $meta->meta_key === 'payswarm_content_license_hash')
+      {
+         payswarm_update_post_meta(
+            $meta->post_id, $meta->meta_id, $meta->meta_value);
+      }
+
+      // force a new signature for the post info
+      payswarm_get_post_info($meta->post_id, true);
+   }
 }
 
 ?>

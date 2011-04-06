@@ -52,6 +52,8 @@ payswarm_add_admin_pages();
 add_action('wp_print_styles', 'payswarm_add_stylesheets');
 add_action('add_meta_boxes', 'payswarm_add_meta_boxes');
 add_action('save_post', 'payswarm_save_post_data');
+add_action('added_postmeta', 'payswarm_added_postmeta');
+add_action('updated_postmeta', 'payswarm_updated_postmeta');
 
 // ensure that the PaySwarm session is being tracked
 add_action('sanitize_comment_cookies', 'payswarm_check_session');
