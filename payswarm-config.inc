@@ -18,16 +18,9 @@ function payswarm_config_update($options)
    // the $_POST variable and that it's length is greater than 1
    foreach($options as $option)
    {
-      if(isset($_POST[$option]))
+      if(isset($_POST[$option]) && strlen($_POST[$option]) > 1)
       {
-         if(strlen($_POST[$option]) > 1)
-         {
-            update_option($option, $_POST[$option]);
-         }
-         else
-         {
-            $rval = false;
-         }
+         update_option($option, $_POST[$option]);
       }
       else
       {
