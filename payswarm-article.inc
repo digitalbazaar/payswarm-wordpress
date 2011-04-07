@@ -538,9 +538,13 @@ function payswarm_asset_information_rdfa($post_id)
          </div>
          <div id=\"payswarm-asset-info-$post_id\" class=\"hidden\">
             <a rel=\"ps:contentUrl\" href=\"" . $info['post_url'] . "\"
-               property=\"dc:title\">" . $info['post_title'] . "</a> by
+               property=\"dc:title\">" . 
+              htmlentities($info['post_title']) . 
+            "</a> by
             <span rel=\"dc:creator\">
-               <span property=\"foaf:name\">" . $info['post_author'] . "</span>
+               <span property=\"foaf:name\">" . 
+                  htmlentities($info['post_author']) . 
+               "</span>
             </span>.
             Offered by
             <a rel=\"ps:assetProvider\" href=\"" . $info['asset_provider'] . "\">us</a>
@@ -602,7 +606,9 @@ function payswarm_asset_information_rdfa($post_id)
                <a rel=\"com:destination\"
                href=\"" . $info['listing_payee']['com:destination'] . "\">this account</a>.
                The memo field for the payment will read:
-               \"<span property=\"rdfs:comment\">" . $info['listing_payee']['rdfs:comment'] . "</span>\"
+               \"<span property=\"rdfs:comment\">" . 
+                  htmlentities($info['listing_payee']['rdfs:comment']) . 
+               "</span>\"
             </span>
          </div>
          <div class=\"row\">
