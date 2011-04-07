@@ -53,6 +53,7 @@ function payswarm_register_settings()
    register_setting('payswarm-option-group', 'payswarm_default_price');
    register_setting('payswarm-option-group', 'payswarm_destination_account');
    register_setting('payswarm-option-group', 'payswarm_default_license_url');
+   register_setting('payswarm-option-group', 'payswarm_default_license_hash');
    register_setting('payswarm-option-group', 'payswarm_authorize_url');
    register_setting('payswarm-option-group', 'payswarm_request_url');
    register_setting('payswarm-option-group', 'payswarm_access_url');
@@ -75,8 +76,10 @@ function payswarm_redirect_registration()
    {
       // if the PaySwarm options are updated successfully, attempt to perform
       // a registration
-      if(payswarm_config_update(array('payswarm_client_config',
-         'payswarm_client_id', 'payswarm_client_secret')))
+      if(payswarm_config_update(array(
+         'payswarm_client_config',
+         'payswarm_client_id',
+         'payswarm_client_secret')))
       {
          // Make the call to the PaySwarm Authority to get the config URL
          $config_url = get_option('payswarm_client_config');
@@ -160,6 +163,7 @@ function payswarm_admin_warnings()
       !get_option('payswarm_default_price') ||
       !get_option('payswarm_destination_account') ||
       !get_option('payswarm_default_license_url') ||
+      !get_option('payswarm_default_license_hash') ||
       !get_option('payswarm_authorize_url') ||
       !get_option('payswarm_request_url') ||
       !get_option('payswarm_access_url') ||
@@ -174,6 +178,7 @@ function payswarm_admin_warnings()
       strlen(get_option('payswarm_default_price')) < 1 ||
       strlen(get_option('payswarm_destination_account')) < 1 ||
       strlen(get_option('payswarm_default_license_url')) < 1 ||
+      strlen(get_option('payswarm_default_license_hash')) < 1 ||
       strlen(get_option('payswarm_authorize_url')) < 1 ||
       strlen(get_option('payswarm_request_url')) < 1 ||
       strlen(get_option('payswarm_access_url')) < 1 ||
@@ -204,18 +209,24 @@ function payswarm_settings_page()
    if(isset($_POST['payswarm_update_button']))
    {
       check_admin_referer('payswarm-save-config', 'payswarm-nonce');
-      payswarm_config_update(array('payswarm_client_config',
-         'payswarm_client_id', 'payswarm_client_secret',
-         'payswarm_authorize_url', 'payswarm_request_url',
-         'payswarm_access_url', 'payswarm_preferences_url',
-         'payswarm_keys_url', 'payswarm_licenses_url',
+      payswarm_config_update(array(
+         'payswarm_client_config',
+         'payswarm_client_id',
+         'payswarm_client_secret',
+         'payswarm_authorize_url',
+         'payswarm_request_url',
+         'payswarm_access_url',
+         'payswarm_preferences_url',
+         'payswarm_keys_url',
+         'payswarm_licenses_url',
          'payswarm_contracts_url',
          'payswarm_public_key',
          'payswarm_private_key',
          'payswarm_default_auth_rate',
          'payswarm_default_currency',
          'payswarm_default_price',
-         'payswarm_destination_account', 'payswarm_default_license_url',
+         'payswarm_destination_account',
+         'payswarm_default_license_url',
          'payswarm_default_license_hash'));
       // special case checkboxes
       if(isset($_POST['payswarm_key_overwrite']))

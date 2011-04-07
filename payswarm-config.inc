@@ -28,6 +28,10 @@ function payswarm_config_update($options)
       }
    }
 
+   // set resign_if_before date
+   $now = date_format(date_create(), 'Y-m-d\TH:i:s\Z');
+   update_option('payswarm_resign_if_before', $now);
+
    return $rval;
 }
 
