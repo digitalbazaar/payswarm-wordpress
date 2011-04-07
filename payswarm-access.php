@@ -33,7 +33,7 @@ try
 catch(OAuthException $E)
 {
    // FIXME: catch oauth exception and redirect to payswarm website?
-   
+
    // FIXME: make user friendly error page
    $err = json_decode($E->lastResponse);
    print_r('<pre>' . $E . "\nError details: \n" .

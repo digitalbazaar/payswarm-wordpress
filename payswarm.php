@@ -55,8 +55,9 @@ add_action('save_post', 'payswarm_save_post_data');
 add_action('added_postmeta', 'payswarm_added_postmeta');
 add_action('updated_postmeta', 'payswarm_updated_postmeta');
 
-// ensure that the PaySwarm session is being tracked
-add_action('sanitize_comment_cookies', 'payswarm_check_session');
+// this hook gets called before any page content is generated and on every
+// page, so it makes sure a PaySwarm session gets created or updated
+add_action('sanitize_comment_cookies', 'payswarm_create_session');
 
 // add filters for text that the PaySwarm plugin will modify
 add_filter('the_content', 'payswarm_filter_paid_content');

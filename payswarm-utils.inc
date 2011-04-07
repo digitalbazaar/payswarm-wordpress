@@ -1,37 +1,69 @@
 <?php
 
 /**
- * Checks to ensure that a PaySwarm session is being tracked on the site.
- *
- * Checks to see if a cookie called 'payswarm-session' exists in HTTPS mode,
- * if it doesn't, one is created. This session is used to associate the visitor
- * with a PaySwarm Payment Token if one is ever retrieved for the visitor.
+ * Gets the PaySwarm session that is being tracked on the site.
  *
  * @package payswarm
  * @since 1.0
  *
- * @return string the session ID for the active payswarm session.
+ * @return mixed the session ID for the active payswarm session or false if
+ *         no such session exists.
  */
-function payswarm_check_session()
+function payswarm_get_session()
 {
    global $_COOKIE;
-   $session = 0;
+   $session = false;
 
    // check to see if the payswarm-session cookie exists
    if(array_key_exists('payswarm-session', $_COOKIE))
    {
       $session = $_COOKIE['payswarm-session'];
    }
-   else
+
+   return $session;
+}
+
+/**
+ * Creates a new PaySwarm session if one doesn't already exist. If one does
+ * exist, it updates it if the "update" flag is set to true.
+ *
+ * The PaySwarm session is stored in a cookie 'payswarm-session'. This session
+ * is used to associate the visitor with a PaySwarm Payment Token if one is
+ * ever retrieved for the visitor.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param update true to update the PaySwarm session if already exists.
+ *
+ * @return string the session ID for the active PaySwarm session.
+ */
+function payswarm_create_session($update = true)
+{
+   global $_COOKIE;
+
+   // try to get existing session
+   $session = payswarm_get_session();
+
+   // create new cookie value if it doesn't exist
+   if($session === false)
    {
-      // create new cookie value if it doesn't exist
       $time_value = time();
       $random_value = rand(0, 100000);
       $session = sha1("$time_value$random_value");
+      $update = true;
+   }
 
+   if($update)
+   {
+      // FIXME: if get_option("payswarm_ssl_on") then use https cookie, else
+      // security is handled in a different way, so set cookie to non-https
+      $secure = true;
+
+      // update session cookie
       global $_SERVER;
       setcookie('payswarm-session', $session, time() + 3600, '/',
-         $_SERVER['HTTP_HOST'], true);
+         $_SERVER['HTTP_HOST'], $secure);
    }
 
    return $session;
@@ -39,18 +71,22 @@ function payswarm_check_session()
 
 /**
  * Clears a PaySwarm session.
- * 
+ *
  * Removes the 'payswarm-session' cookie by setting the value to empty
  * and setting the time an hour in the past.
- * 
+ *
  * @package payswarm
  * @since 1.0
  */
 function payswarm_clear_session()
 {
+   // FIXME: if get_option("payswarm_ssl_on") then use https cookie, else
+   // security is handled in a different way, so set cookie to non-https
+   $secure = true;
+
    global $_SERVER;
    setcookie('payswarm-session', '', time() - 3600, '/',
-      $_SERVER['HTTP_HOST'], true);
+      $_SERVER['HTTP_HOST'], $secure);
 }
 
 /**
@@ -108,7 +144,7 @@ function payswarm_force_ssl()
 /**
  * This function is called when the website using the payswarm plugin
  * receives an exception that it doesn't know how to handle.
- * 
+ *
  * @package payswarm
  * @since 1.0
  */

@@ -46,10 +46,8 @@ function payswarm_oauth1_get_token($options)
    }
    else
    {
-      // FIXME: check session changed - make sure behavior is the same
-
-      // get the session ID that is associated with this request
-      $session = payswarm_check_session();
+      // get the session that is associated with this request
+      $session = payswarm_get_session();
    }
 
    // get a payswarm token, creating it if it doesn't already exist
@@ -243,7 +241,7 @@ function payswarm_oauth1_purchase_post($options)
                'oauth_callback' => payswarm_get_current_url()
             );
             $params = array_merge($params, $options['authorize_params']);
-            
+
             // redirect to token authorization page on payswarm authority
             $authorize_url =
                $options['authorize_url'] . '?' . http_build_query($params);

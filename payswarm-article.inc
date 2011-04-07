@@ -616,23 +616,20 @@ function payswarm_asset_information_rdfa($post_id)
 function payswarm_filter_paid_content($content)
 {
    global $post;
-   $processed_content = $content;
-   $post_purchased = false;
 
    // check to see if the article has been purchased already
+   $purchased = false;
    $post_id = $post->ID;
-
-   // FIXME: changed how check session works - double check it works here
-   $session = payswarm_check_session();
+   $session = payswarm_get_session();
    $ptoken = payswarm_database_get_token($session, 'payswarm-payment');
    if($ptoken !== NULL)
    {
-      $post_purchased = payswarm_database_is_post_authorized($ptoken, $post_id);
+      $purchased = payswarm_database_is_post_authorized($ptoken, $post_id);
    }
 
    // if the article has not been purchased, filter out all of the for-pay
    // article content.
-   if(!$post_purchased)
+   if(!$purchased)
    {
       $temp = explode('<!--payswarm-->', $content, 2);
       $processed_content = $temp[0];
@@ -661,6 +658,10 @@ function payswarm_filter_paid_content($content)
                <img alt="'. __('Cannot Purchase') .'" src="' . $pslogo_url .
              '" />'. __('Cannot Purchase') .'</button>
            </div></div>';
+      }
+      else
+      {
+         $processed_content = $content;
       }
    }
    else
@@ -792,7 +793,7 @@ function payswarm_save_post_data($post_id)
          $hash = get_post_meta($post_id, 'payswarm_content_license_hash', true);
       }
 
-      // validate and update post meta data 
+      // validate and update post meta data
       payswarm_update_post_meta($post_id, 'payswarm_price', $price);
       payswarm_update_post_meta($post_id, 'payswarm_auth_rate', $auth_rate);
       payswarm_update_post_meta(
