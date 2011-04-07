@@ -35,28 +35,29 @@ function payswarm_install_database()
    // check to see if the payswarm tokens and authorized posts tables exist
    if(($wpdb->get_var(
          'SHOW TABLES LIKE \''. PAYSWARM_TOKENS_TABLE_NAME .'\'') !==
-         PAYSWARM_TOKENS_TABLE_NAME) &&
+         PAYSWARM_TOKENS_TABLE_NAME) ||
       ($wpdb->get_var(
          'SHOW TABLES LIKE \''. PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME .'\'') !==
          PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME))
-         {
+   {
       // ensure that the formatting below is one field per line, dbDelta is
       // very picky when it comes to what it allows.
       $tokens_sql = 'CREATE TABLE ' . PAYSWARM_TOKENS_TABLE_NAME . ' (
-         session VARCHAR(255) NOT NULL,
+         session VARCHAR(40) NOT NULL,
+         ip VARCHAR(15) NOT NULL,
          scope TINYTEXT,
          state TINYTEXT,
          token TINYTEXT,
          secret TINYTEXT,
          details TEXT,
          mtime TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-         PRIMARY KEY (session)
+         PRIMARY KEY (session,ip)
          );';
 
       $posts_sql = 'CREATE TABLE ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' (
          customer_id VARCHAR(255) NOT NULL,
          post_id INTEGER,
-         INDEX(customer_id)
+         INDEX (customer_id)
          );';
 
       require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
@@ -92,22 +93,26 @@ function payswarm_database_get_token(
    $rval = null;
    global $wpdb;
 
+   // get client IP address
+   $ip = $_SERVER['REMOTE_ADDR'];
+
    // create the token if it doesn't already exist in the database
    if($create)
    {
       $wpdb->query($wpdb->prepare(
          'INSERT IGNORE INTO ' . PAYSWARM_TOKENS_TABLE_NAME .
-         '(session, scope, state, token, secret, details) ' .
-         'VALUES (%s, %s, %s, %s, %s, %s)',
-         $session, $scope, 'initializing', '', '',
+         '(session, ip, scope, state, token, secret, details) ' .
+         'VALUES (%s, %s, %s, %s, %s, %s, %s)',
+         $session, $ip, $scope, 'initializing', '', '',
          '{}'));
    }
 
    // retrieve all information associated with the session
    $rval = $wpdb->get_row($wpdb->prepare(
       'SELECT session, scope, state, token, secret, details, mtime FROM ' .
-      PAYSWARM_TOKENS_TABLE_NAME . ' WHERE session=%s AND scope=%s LIMIT 1',
-      $session, $scope), ARRAY_A);
+      PAYSWARM_TOKENS_TABLE_NAME .
+      ' WHERE session=%s AND ip=%s AND scope=%s LIMIT 1',
+      $session, $ip, $scope), ARRAY_A);
 
    // set the return type to null if there was nothing in the database
    if($wpdb->num_rows < 1)

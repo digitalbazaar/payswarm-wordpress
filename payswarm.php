@@ -42,7 +42,7 @@ require_once('payswarm-config.inc');
 require_once('payswarm-admin.inc');
 require_once('payswarm-article.inc');
 
-// make sure to create the PaySwarm tokens database if it doesn't exist
+// make sure to create the PaySwarm database if it doesn't exist
 register_activation_hook(__FILE__, 'payswarm_install_database');
 
 // add admin pages if the administrator is running the plugin
