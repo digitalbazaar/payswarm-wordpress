@@ -180,6 +180,7 @@ function payswarm_oauth1_get_access_token($options)
       $token['state'] = 'valid';
       $token['details'] = $options['details'];
       $token['details']['customer_id'] = $result['customer_id'];
+      $token['details']['token_reference_id'] = $result['token_reference_id'];
       $token['token'] = $result['oauth_token'];
       $token['secret'] = $result['oauth_token_secret'];
    }
