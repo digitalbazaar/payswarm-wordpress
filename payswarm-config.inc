@@ -10,21 +10,24 @@
  *    values that exist in the $_POST environment variable.
  * @return true if setting all options was successful, false otherwise.
  */
-function payswarm_config_update($options)
+function payswarm_config_update($options = NULL)
 {
    $rval = true;
 
-   // for each option in the list of options, check to see if it exists in
-   // the $_POST variable and that it's length is greater than 1
-   foreach($options as $option)
+   if($options !== NULL)
    {
-      if(isset($_POST[$option]) && strlen($_POST[$option]) > 1)
+      // for each option in the list of options, check to see if it exists in
+      // the $_POST variable and that it's length is greater than 1
+      foreach($options as $option)
       {
-         update_option($option, $_POST[$option]);
-      }
-      else
-      {
-         $rval = false;
+         if(isset($_POST[$option]) && strlen($_POST[$option]) > 1)
+         {
+            update_option($option, $_POST[$option]);
+         }
+         else
+         {
+            $rval = false;
+         }
       }
    }
 

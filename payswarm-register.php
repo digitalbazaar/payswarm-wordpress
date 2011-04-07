@@ -131,11 +131,18 @@ function payswarm_registration_config($options)
          {
             $default_auth_rate = '10';
          }
-         update_option('payswarm_default_price', 
-            sprintf('%1.2f', floatval($default_price)));
-         update_option('payswarm_default_auth_rate', 
-            sprintf('%1.2f', floatval($default_auth_rate)));
+         update_option('payswarm_default_price',
+            sprintf('%1.7g', floatval($default_price)));
+         update_option('payswarm_default_auth_rate',
+            sprintf('%1.7g', floatval($default_auth_rate)));
+
+         // FIXME: we need the default prices and auth rates to propagate
+         // to posts so that they're prices will be updated -- at least in
+         // the case that the user prefers it?
       }
+
+      // notify that config has been updated
+      payswarm_config_update();
 
       // redirect to admin page
       header('Location: ' . admin_url() . 'plugins.php?page=payswarm');
