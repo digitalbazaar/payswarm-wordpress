@@ -208,6 +208,8 @@ function payswarm_settings_page()
 {
    if(isset($_POST['payswarm_update_button']))
    {
+      // FIXME: this code does not validate input or ensure amounts use 7
+      // decimal places, etc.
       check_admin_referer('payswarm-save-config', 'payswarm-nonce');
       payswarm_config_update(array(
          'payswarm_client_config',

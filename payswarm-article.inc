@@ -527,9 +527,9 @@ function payswarm_asset_information_rdfa($post_id)
                   $info['currency_symbol'] . "</span>
                <abbr property=\"com:rate\" title=\"" .
                   $info['listing_payee']['com:rate'] .
-                  "\" content=\"" . 
+                  "\" content=\"" .
                   $info['listing_payee']['com:rate'] .
-                  "\">" . sprintf("%1.2f", $info['listing_payee']['com:rate']) . 
+                  "\">" . sprintf("%1.02f", $info['listing_payee']['com:rate']) .
                "</abbr>
             </span>
             <span class=\"view-more\"
@@ -538,12 +538,12 @@ function payswarm_asset_information_rdfa($post_id)
          </div>
          <div id=\"payswarm-asset-info-$post_id\" class=\"hidden\">
             <a rel=\"ps:contentUrl\" href=\"" . $info['post_url'] . "\"
-               property=\"dc:title\">" . 
-              htmlentities($info['post_title']) . 
+               property=\"dc:title\">" .
+              htmlentities($info['post_title']) .
             "</a> by
             <span rel=\"dc:creator\">
-               <span property=\"foaf:name\">" . 
-                  htmlentities($info['post_author']) . 
+               <span property=\"foaf:name\">" .
+                  htmlentities($info['post_author']) .
                "</span>
             </span>.
             Offered by
@@ -606,8 +606,8 @@ function payswarm_asset_information_rdfa($post_id)
                <a rel=\"com:destination\"
                href=\"" . $info['listing_payee']['com:destination'] . "\">this account</a>.
                The memo field for the payment will read:
-               \"<span property=\"rdfs:comment\">" . 
-                  htmlentities($info['listing_payee']['rdfs:comment']) . 
+               \"<span property=\"rdfs:comment\">" .
+                  htmlentities($info['listing_payee']['rdfs:comment']) .
                "</span>\"
             </span>
          </div>
@@ -621,6 +621,58 @@ function payswarm_asset_information_rdfa($post_id)
             </form>
          </div>
       </div>";
+
+   return $rval;
+}
+
+/**
+ * Filters out either paid or alternate text from an article.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string $content The article content to filter.
+ * @param string $paid True to filter out paid content, false to filter out
+ *                  alternate text.
+ *
+ * @return string The filtered article.
+ */
+function payswarm_filter_content($content, $paid)
+{
+   $rval = '';
+
+   // setup start and end tags for filtering
+   $start = $paid ? '<!--payswarm-->' : '<!--payswarm-alternate-->';
+   $start_len = strlen($start);
+   $end = $paid ? '<!--payswarm-alternate-->' : '<!--payswarm-->';
+
+   $pos = 0;
+   do
+   {
+      // find start of content to remove
+      $tmp = strpos($content, $start, $pos);
+
+      // nothing to filter, add all content
+      if($tmp === false)
+      {
+         $rval .= substr($content, $pos);
+      }
+      // filter out content
+      else
+      {
+         // add all content up to start of content to filter out
+         $rval .= substr($content, $pos, ($tmp - $pos));
+
+         // find end of content to filter out
+         $tmp = strpos($content, $end, $tmp + $start_len);
+      }
+      $pos = $tmp;
+   }
+   while($pos !== false);
+
+   // remove special tags from content
+   $rval = str_replace('<!--payswarm-->', '', $rval);
+   $rval = str_replace('<!--payswarm-alternate-->', '', $rval);
 
    return $rval;
 }
@@ -655,46 +707,57 @@ function payswarm_filter_paid_content($content)
       $purchased = payswarm_database_is_post_authorized($ptoken, $post_id);
    }
 
-   // if the article has not been purchased, filter out all of the for-pay
-   // article content.
-   if(!$purchased)
-   {
-      $temp = explode('<!--payswarm-->', $content, 2);
-      $processed_content = $temp[0];
-      $paid_content_exists = (count($temp) > 1) and (strlen($temp[1] > 0));
-      $amount = get_post_meta($post_id, 'payswarm_price', true);
-      $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
+   // remove any spurious paragraph and break tags
+   $content = str_replace(
+      '<p><!--payswarm--></p>',
+      '<!--payswarm-->', $content);
+   $content = str_replace(
+      '<p><!--payswarm--><br />',
+      '<!--payswarm-->', $content);
+   $content = str_replace(
+      '<p><!--payswarm-alternate--></p>',
+      '<!--payswarm-alternate-->', $content);
+   $content = str_replace(
+      '<p><!--payswarm-alternate--><br />',
+      '<!--payswarm-alternate-->', $content);
 
-      if($amount !== '' and $paid_content_exists)
+   // if the article has not been purchased and there is for-pay content
+   if(!$purchased && preg_match('/<!--payswarm-->.+/ms', $content))
+   {
+      // remove all for-pay content
+      $processed_content = payswarm_filter_content($content, true);
+
+      // if a price is available, add purchase UI
+      $amount = get_post_meta($post_id, 'payswarm_price', true);
+      if($amount !== '')
       {
-         // if the article has not been purchased, and a price is available,
-         // display the price and a purchase button.
-         $processed_content .= '</p><div class="purchase section">
-             <div class="money row">' .
-             payswarm_asset_information_rdfa($post_id) .
-             '</div></div>';
+         $processed_content .=
+            '<div class="purchase section">' .
+            '<div class="money row">' .
+            payswarm_asset_information_rdfa($post_id) .
+            '</div></div>';
       }
-      else if($paid_content_exists)
-      {
-         // if the article has not been purchased, but a price is not available,
-         // tell the visitor that the article cannot be purchased.
-         $processed_content .= '<div class="purchase section">
-             <div class="money row">
-             <span class="label">' .
-                __('The author has not set the price for the paid content.') .
-             '</span><button class="purchase-button">
-               <img alt="'. __('Cannot Purchase') .'" src="' . $pslogo_url .
-             '" />'. __('Cannot Purchase') .'</button>
-           </div></div>';
-      }
+      // no purchase price available
       else
       {
-         $processed_content = $content;
+         // tell the visitor that the article cannot be purchased
+         $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
+         $processed_content .=
+            '<div class="purchase section">' .
+            '<div class="money row">' .
+            '<span class="label">' .
+               __('The author has not set the price for the paid content.') .
+            '</span><button class="purchase-button">' .
+            '<img alt="' . __('Cannot Purchase') .'" src="' . $pslogo_url .
+            '" />' . __('Cannot Purchase') . '</button>' .
+            '</div></div>';
       }
    }
+   // article has been purchased or there is no for-pay content
    else
    {
-      $processed_content = str_replace('<!--payswarm-->', '', $content);
+      // remove alternate content that only displays when visitor hasn't paid
+      $processed_content = payswarm_filter_content($content, false);
    }
 
    return $processed_content;
@@ -861,7 +924,7 @@ function payswarm_update_post_meta($post_id, $meta_key, $meta_value)
       if(!is_numeric($price) || floatval($price) < 0)
       {
          $price = get_option('payswarm_default_price');
-         $price = sprintf('%1.7g', floatval($price));
+         $price = sprintf('%1.07f', floatval($price));
          update_post_meta($post_id, 'payswarm_price', $price);
       }
    }
@@ -872,7 +935,7 @@ function payswarm_update_post_meta($post_id, $meta_key, $meta_value)
       if(!is_numeric($auth_rate) || floatval($auth_rate) < 0)
       {
          $auth_rate = get_option('payswarm_default_auth_rate');
-         $auth_rate = sprintf('%1.7g', floatval($auth_rate));
+         $auth_rate = sprintf('%1.07f', floatval($auth_rate));
          update_post_meta($post_id, 'payswarm_auth_rate', $auth_rate);
       }
    }
