@@ -525,30 +525,16 @@ function payswarm_asset_information_rdfa($post_id)
             <span rel=\"com:payee\" resource=\"" . $info['listing_payee']['id'] . "\">
                <span property=\"com:currency\"  content=\"" . $info['listing_payee']['com:currency'] . "\">" .
                   $info['currency_symbol'] . "</span>
-               <span property=\"com:rate\">" . $info['listing_payee']['com:rate'] . "</span>
+               <abbr property=\"com:rate\" title=\"" .
+                  $info['listing_payee']['com:rate'] .
+                  "\" content=\"" . 
+                  $info['listing_payee']['com:rate'] .
+                  "\">" . sprintf("%1.2f", $info['listing_payee']['com:rate']) . 
+               "</abbr>
             </span>
             <span class=\"view-more\"
             onclick=\"javascript:toggleAssetInformation($post_id);\">
               [show offer details]</span>
-            <span rel=\"com:payeeRule\">
-               <span typeof=\"com:PayeeRule\">
-                  <span rel=\"com:destinationOwnerType\" resource=\"http://purl.org/payswarm#Authority\" />
-                  <span rel=\"com:rateType\" resource=\"http://purl.org/commerce#Percentage\" />
-                  <span rel=\"com:rateContext\" resource=\"http://purl.org/commerce#Inclusive\" />
-                  <span rel=\"com:rateContext\" resource=\"http://purl.org/commerce#Tax\" />
-                  <span rel=\"com:rateContext\" resource=\"http://purl.org/commerce#TaxExempt\" />
-                  <abbr property=\"com:maximumRate\" content=\"" . $info['payswarm_auth_rate'] . "\" />
-               </span>
-            </span>
-            <span rel=\"sig:signature\">
-               <span typeof=\"sig:JsonldSignature\">
-                  This <a href=\"" . $info['post_url'] . "#listing\">listing</a> was
-                  <abbr property=\"sig:signatureValue\"
-                  content=\"" . $info['listing_signature'] . "\" title=\"" . $info['listing_signature'] . "\">digitally signed</abbr>
-                  using <a rel=\"dc:creator\" href=\"" . $info['public_key_url'] . "\">this key</a>
-                  at <span property=\"dc:created\" datatype=\"xsd:dateTime\">" . $info['listing_signature_created'] . "</span>.
-               </span>
-            </span>
          </div>
          <div id=\"payswarm-asset-info-$post_id\" class=\"hidden\">
             <a rel=\"ps:contentUrl\" href=\"" . $info['post_url'] . "\"
@@ -571,12 +557,12 @@ function payswarm_asset_information_rdfa($post_id)
             <abbr property=\"ps:validFrom\"
                title=\"" . $info['listing_valid_from'] . "\"
                content=\"" . $info['listing_valid_from'] . "\"
-               datatype=\"xsd:dateTime\">now</abbr>
+               datatype=\"xsd:dateTime\">today</abbr>
             until
             <abbr property=\"ps:validUntil\"
                title=\"" . $info['listing_valid_until'] . "\"
                content=\"" . $info['listing_valid_until'] . "\"
-               datatype=\"xsd:dateTime\">24 hours from now</abbr>.
+               datatype=\"xsd:dateTime\">tomorrow</abbr>.
             </span>
             <span rel=\"sig:signature\">
                <span typeof=\"sig:JsonldSignature\">
@@ -587,8 +573,29 @@ function payswarm_asset_information_rdfa($post_id)
                   at <span property=\"dc:created\" datatype=\"xsd:dateTime\">" . $info['asset_signature_created'] . "</span>.
                </span>
             </span>
+            <span about=\"" . $info['post_url'] . "#listing\">
+              <span rel=\"com:payeeRule\">
+                 <span typeof=\"com:PayeeRule\">
+                    <span rel=\"com:destinationOwnerType\" resource=\"http://purl.org/payswarm#Authority\"></span>
+                    <span rel=\"com:rateType\" resource=\"http://purl.org/commerce#Percentage\"></span>
+                    <span rel=\"com:rateContext\" resource=\"http://purl.org/commerce#Inclusive\"></span>
+                    <span rel=\"com:rateContext\" resource=\"http://purl.org/commerce#Tax\"></span>
+                    <span rel=\"com:rateContext\" resource=\"http://purl.org/commerce#TaxExempt\"></span>
+                    <span property=\"com:maximumRate\" content=\"" . $info['payswarm_auth_rate'] . "\"></span>
+                 </span>
+              </span>
+              <span rel=\"sig:signature\">
+                 <span typeof=\"sig:JsonldSignature\">
+                    This <a href=\"" . $info['post_url'] . "#listing\">listing</a> was
+                    <abbr property=\"sig:signatureValue\"
+                    content=\"" . $info['listing_signature'] . "\" title=\"" . $info['listing_signature'] . "\">digitally signed</abbr>
+                    using <a rel=\"dc:creator\" href=\"" . $info['public_key_url'] . "\">this key</a>
+                    at <span property=\"dc:created\" datatype=\"xsd:dateTime\">" . $info['listing_signature_created'] . "</span>.
+                 </span>
+              </span>
+            </span>
             <span about=\"" . $info['listing_payee']['id'] . "\" typeof=\"com:Payee\">
-               <span property=\"com:payeePosition\" datatype=\"xsd:integer\" content=\"0\" />
+               <span property=\"com:payeePosition\" datatype=\"xsd:integer\" content=\"0\"></span>
                <a rel=\"com:rateType\" href=\"" . $info['listing_payee']['com:rateType'] . "\"
                >Flat-rate payment</a>
                will be deposited into
