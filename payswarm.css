@@ -53,8 +53,8 @@ vertical-align: middle;
 text-align: left;
 }
 
-.view-more:hover {
+.view-more, .view-more:hover {
+float: right;
 cursor: pointer;
 text-decoration: underline;
 }
-

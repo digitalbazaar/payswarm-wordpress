@@ -520,6 +520,11 @@ function payswarm_asset_information_rdfa($post_id)
            about=\"" . $info['asset_url'] . "\" typeof=\"ps:Asset ps:WebPage\"
            class=\"asset-info\">
          <div about=\"" . $info['post_url'] . "#listing\" typeof=\"ps:Listing gr:Offering\">
+            <form action=\"$access_url\" method=\"post\">
+               <button class=\"purchase-button\">
+                  <img alt=\"". __('Access') ."\" src=\"$pslogo_url\" />" .
+                  __('Access') . "</button>
+            
             <span rel=\"ps:asset\" resource=\"" . $info['asset_url'] . "\">" .
                __('View the full article for') . "</span>
             <span rel=\"com:payee\" resource=\"" . $info['listing_payee']['id'] . "\">
@@ -533,8 +538,8 @@ function payswarm_asset_information_rdfa($post_id)
                "</abbr>
             </span>
             <span class=\"view-more\"
-            onclick=\"javascript:toggleAssetInformation($post_id);\">
-              [show offer details]</span>
+               onclick=\"javascript:toggleAssetInformation($post_id);\">View offer details</span>
+            </form>
          </div>
          <div id=\"payswarm-asset-info-$post_id\" class=\"hidden\">
             <a rel=\"ps:contentUrl\" href=\"" . $info['post_url'] . "\"
@@ -610,15 +615,6 @@ function payswarm_asset_information_rdfa($post_id)
                   htmlentities($info['listing_payee']['rdfs:comment']) .
                "</span>\"
             </span>
-         </div>
-         <div class=\"row\">
-            <form action=\"$access_url\" method=\"post\">
-            <div>
-               <button class=\"purchase-button\">
-                  <img alt=\"". __('Access') ."\" src=\"$pslogo_url\" />" .
-                  __('Access') . "</button>
-            </div>
-            </form>
          </div>
       </div>";
 
@@ -701,6 +697,14 @@ function payswarm_filter_paid_content($content)
    $purchased = false;
    $post_id = $post->ID;
    $session = payswarm_get_session();
+   // FIXME: if you are viewing multiple articles on a page, for example on the
+   // main blogroll, the page displays an error about content
+   // already being sent before this cookie is set
+   
+   // FIXME: if you are viewing multiple articles on a page, for example on the
+   // main blogroll, the page displays an error about content
+   // already being sent before this cookie is set
+   
    $ptoken = payswarm_database_get_token($session, 'payswarm-payment');
    if($ptoken !== NULL)
    {
