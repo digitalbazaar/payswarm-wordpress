@@ -166,8 +166,6 @@ function payswarm_redirect($url)
  *
  * @param e the exception.
  * 
- * @param e the exception.
- * 
  * @package payswarm
  * @since 1.0
  */
