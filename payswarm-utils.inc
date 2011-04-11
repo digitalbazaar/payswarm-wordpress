@@ -170,16 +170,37 @@ function payswarm_force_ssl()
    }
 }
 
+function payswarm_redirect($url)
+{
+   // FIXME: set header to redirect to URL in 5 seconds
+   
+   get_header();
+
+   echo '
+<div class="category-uncategorized">
+  <h2 class="entry-title">Redirecting to PaySwarm provider</h2>
+  <div class="entry-content">
+    <p>
+      We are redirecting you to your PaySwarm provider. Please wait...
+    </p>
+  </div>
+</div>';
+
+   get_footer();
+}
+
 /**
  * This function is called when the website using the payswarm plugin
  * receives an exception that it doesn't know how to handle.
  *
+ * @param e the exception.
+ * 
  * @package payswarm
  * @since 1.0
  */
-function payswarm_exception()
+function payswarm_exception($e)
 {
-   global $post_id;
+   $response = json_decode($e->lastResponse);
 
    // FIXME: Unfortunately, this generates a PHP Notice error for
    // WP_Query::$is_paged not being defined. Need to figure out which file
@@ -188,17 +209,15 @@ function payswarm_exception()
 
    echo '
 <div class="category-uncategorized">
-  <h2 class="entry-title">Access Denied to PaySwarm Article</h2>
+  <h2 class="entry-title">Problem with PaySwarm</h2>
   <div class="entry-content">
     <p>
-      Access to the article was denied because this website was not
-      allowed to access your PaySwarm account. This usually happens because
-      you did not allow this website to access your PaySwarm provider
-      information.
+      You have encountered a problem with the PaySwarm access process
+      for this website.
     </p>
-
-    <p><a href="' . get_permalink($post_id) .
-      '">Go back to the article preview</a>.</p>
+    <h3>Debug Information</h3>
+    <p><pre>' . print_r($response, true) . '</pre></p>
+    <p><pre>' . print_r($e, true) . '</pre></p>
   </div>
 </div>';
 
