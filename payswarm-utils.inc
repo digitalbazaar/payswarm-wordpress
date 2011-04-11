@@ -45,25 +45,51 @@ function payswarm_create_session($update = true)
    // try to get existing session
    $session = payswarm_get_session();
 
-   // create new cookie value if it doesn't exist
+   // update cookie value if it doesn't exist
    if($session === false)
    {
-      $time_value = time();
-      $random_value = rand(0, 100000);
-      $session = sha1("$time_value$random_value");
       $update = true;
    }
 
    if($update)
    {
-      // FIXME: if get_option("payswarm_ssl_on") then use https cookie, else
-      // security is handled in a different way, so set cookie to non-https
-      $secure = true;
+      $now = time();
+      $timeout = 0;
 
-      // update session cookie
-      global $_SERVER;
-      setcookie('payswarm-session', $session, time() + 3600, '/',
-         $_SERVER['HTTP_HOST'], $secure);
+      // no session exists, create new one
+      if($session === false)
+      {
+         $random_value = rand(0, 100000);
+         $session = sha1("$now$random_value");
+      }
+      // get timeout cookie
+      else if(array_key_exists('payswarm-session-timeout', $_COOKIE))
+      {
+         $timeout = $_COOKIE['payswarm-session-timeout'];
+      }
+
+      // only update the cookie every 5 minutes since it requires a database
+      // write (allows purging of expired sessions from the database)
+      $now = time();
+      if($now - 300 > $timeout)
+      {
+         // update session in database (updates expiration time)
+         $timeout = $now + 3600;
+         payswarm_database_update_session($session);
+
+         // FIXME: if get_option("payswarm_ssl_on") then use https cookie, else
+         // security is handled in a different way, so set cookie to non-https
+         $secure = true;
+
+         // update cookies
+         global $_SERVER;
+         setcookie(
+            'payswarm-session', $session, $timeout, '/',
+            $_SERVER['HTTP_HOST'], $secure);
+         setcookie(
+            'payswarm-timeout', $timeout, $timeout, '/',
+            $_SERVER['HTTP_HOST'], $secure);
+      }
    }
 
    return $session;
@@ -85,7 +111,10 @@ function payswarm_clear_session()
    $secure = true;
 
    global $_SERVER;
-   setcookie('payswarm-session', '', time() - 3600, '/',
+   $expires = time() - 3600;
+   setcookie('payswarm-session', '', $expires, '/',
+      $_SERVER['HTTP_HOST'], $secure);
+   setcookie('payswarm-timeout', '', $expires, '/',
       $_SERVER['HTTP_HOST'], $secure);
 }
 

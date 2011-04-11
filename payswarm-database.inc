@@ -50,7 +50,7 @@ function payswarm_install_database()
          token TINYTEXT,
          secret TINYTEXT,
          details TEXT,
-         mtime TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+         mtime TIMESTAMP,
          PRIMARY KEY (session,ip)
          );';
 
@@ -68,6 +68,68 @@ function payswarm_install_database()
 
    // NOTE: We need to put in code here to upgrade the schema if we ever change
    // the database schema
+
+   // create hourly event hook
+   wp_schedule_event(time(), 'hourly', 'payswarm_hourly_event');
+}
+
+/**
+ * Uninstalls the PaySwarm database from a WordPress installation.
+ *
+ * @package payswarm
+ * @since 1.0
+ */
+function payswarm_uninstall_database()
+{
+   // FIXME: remove payswarm tables? this would cause articles to lose their
+   // prices, etc. ... perhaps we want the code to use default prices if they
+   // haven't been set?
+
+   // clear scheduled event hooks
+   wp_clear_scheduled_hook('payswarm_hourly_event');
+}
+
+/**
+ * Updates a PaySwarm session's modified time to prevent it from expiring.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string $session the PaySwarm session identifier.
+ */
+function payswarm_database_update_session($session)
+{
+   global $wpdb;
+
+   // get client IP address
+   $ip = $_SERVER['REMOTE_ADDR'];
+
+   // create the token if it doesn't already exist in the database
+   $wpdb->query($wpdb->prepare(
+      'UPDATE ' . PAYSWARM_TOKENS_TABLE_NAME .
+      ' SET mtime=UTC_TIMESTAMP WHERE session=%s AND ip=%s',
+      $session, $ip));
+}
+
+/**
+ * Cleans up expired PaySwarm sessions.
+ *
+ * @package payswarm
+ * @since 1.0
+ */
+function payswarm_database_cleanup_sessions()
+{
+   global $wpdb;
+
+   // expire sessions more than 1 hour old
+   $expires = time() - 3600;
+   $expires = date_create("@$expires");
+   $expires = date_format($expires, 'Y-m-d H:i:s');
+
+   // delete all expired tokens
+   $wpdb->query($wpdb->prepare(
+      'DELETE FROM ' . PAYSWARM_TOKENS_TABLE_NAME . ' WHERE mtime<%s',
+      $expires));
 }
 
 /**
@@ -101,8 +163,8 @@ function payswarm_database_get_token(
    {
       $wpdb->query($wpdb->prepare(
          'INSERT IGNORE INTO ' . PAYSWARM_TOKENS_TABLE_NAME .
-         '(session, ip, scope, state, token, secret, details) ' .
-         'VALUES (%s, %s, %s, %s, %s, %s, %s)',
+         ' (session, ip, scope, state, token, secret, details, mtime) ' .
+         'VALUES (%s, %s, %s, %s, %s, %s, %s, UTC_TIMESTAMP)',
          $session, $ip, $scope, 'initializing', '', '',
          '{}'));
    }

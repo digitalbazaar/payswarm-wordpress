@@ -42,13 +42,17 @@ require_once('payswarm-config.inc');
 require_once('payswarm-admin.inc');
 require_once('payswarm-article.inc');
 
-// make sure to create the PaySwarm database if it doesn't exist
+// install PaySwarm database on plugin installation
 register_activation_hook(__FILE__, 'payswarm_install_database');
+
+// uninstall PaySwarm database on plugin uninstallation
+register_deactivation_hook(__FILE__, 'payswarm_uninstall_database');
 
 // add admin pages if the administrator is running the plugin
 payswarm_add_admin_pages();
 
 // add actions associated with the WordPress processing
+add_action('payswarm_hourly_event', 'payswarm_database_cleanup_sessions');
 add_action('wp_print_styles', 'payswarm_add_stylesheets');
 add_action('add_meta_boxes', 'payswarm_add_meta_boxes');
 add_action('save_post', 'payswarm_save_post_data');
