@@ -399,7 +399,7 @@ function payswarm_get_post_info($post_id, $resign = false)
       date_add($next24, date_interval_create_from_date_string('1 day'));
       $valid_from = date_format($date, DateTime::ISO8601);
       $valid_until = date_format($next24, DateTime::ISO8601);
-      $sig_created = date_format($date, 'Y-m-d\TH:i:s\Z');
+      $sig_created = date_format(date_create(), 'Y-m-d\TH:i:s\Z');
       $rval['listing_valid_from'] = $valid_from;
       $rval['listing_valid_until'] = $valid_until;
 
