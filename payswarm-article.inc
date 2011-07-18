@@ -138,6 +138,7 @@ function payswarm_sign_json($obj, $private_key)
 function payswarm_generate_asset_object($info, $includeSignature)
 {
    $asset = array(
+      '@context' => payswarm_create_default_jsonld_context(),
       '@subject' => $info['asset_url'],
       '@type' => array('ps:Asset', 'ps:WebPage'),
       'dc:creator' => (object)array(
@@ -224,6 +225,7 @@ function payswarm_generate_listing_object($info, $includeSignature)
    }
 
    return (object)array(
+      '@context' => payswarm_create_default_jsonld_context(),
       '@subject' => array(
          (object)$listing,
          // payee
