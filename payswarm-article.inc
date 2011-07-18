@@ -320,10 +320,29 @@ function payswarm_get_post_info($post_id, $resign = false)
    $rval['asset_url'] = $rval['post_url'] . '#asset';
 
    // license
-   $rval['license_url'] =
-      get_post_meta($post_id, 'payswarm_content_license_url', true);
-   $rval['license_hash'] =
-      get_post_meta($post_id, 'payswarm_content_license_hash', true);
+   $default_license = get_option('payswarm_default_license_url');
+   $license = get_post_meta($post_id, 'payswarm_content_license_url', true);
+   $license_hash = get_post_meta(
+      $post_id, 'payswarm_content_license_hash', true);
+
+   // if the license URL for the post and the default license are the same,
+   // then require the hash to be the same (update it to the default hash and
+   // resign if there is a difference)
+   if($default_license === $license)
+   {
+      // FIXME: make using the updated default license hash an option in
+      // the future instead of requiring it
+      $default_license_hash = get_option('payswarm_default_license_hash');
+      if($license_hash !== $default_license_hash)
+      {
+         $license_hash = $default_license_hash;
+         update_post_meta(
+            $post_id, 'payswarm_content_license_hash', $license_hash);
+         $resign = true;
+      }
+   }
+   $rval['license_url'] = $license;
+   $rval['license_hash'] = $license_hash;
 
    // listing
    $rval['listing_url'] = $rval['post_url'] . '#listing';
