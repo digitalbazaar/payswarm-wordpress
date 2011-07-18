@@ -54,10 +54,10 @@ function payswarm_config_set_value($config, $property, $option)
 {
    $rval = false;
 
+   $config = (array)$config;
    if(array_key_exists($property, $config))
    {
       update_option($option, $config[$property]);
-
       $rval = true;
    }
 
