@@ -1,4 +1,5 @@
 <?php
+require_once('jsonld/jsonld.php');
 
 /**
  * Updates the given options that exist and are valid in the $_POST environment.
@@ -78,7 +79,7 @@ function payswarm_config_set_value($config, $property, $option)
 function payswarm_config_oauth($json)
 {
    $rval = true;
-   $client_config = json_decode($json, true);
+   $client_config = (array)jsonld_expand(json_decode($json));
 
    $authorize_ws = "http://purl.org/payswarm/webservices#oAuthAuthorize";
    $request_ws = "http://purl.org/payswarm/webservices#oAuthRequest";
@@ -111,7 +112,7 @@ function payswarm_config_oauth($json)
 function payswarm_config_endpoints($jsonld)
 {
    $rval = true;
-   $client_config = json_decode($jsonld, true);
+   $client_config = (array)jsonld_expand(json_decode($jsonld));
 
    $authorize_ws = "http://purl.org/payswarm/webservices#oAuthAuthorize";
    $request_ws = "http://purl.org/payswarm/webservices#oAuthRequest";
@@ -160,7 +161,7 @@ function payswarm_config_endpoints($jsonld)
 function payswarm_config_keys($keys, $jsonld)
 {
    $rval = true;
-   $public_key_registration = json_decode($jsonld, true);
+   $public_key_registration = (array)jsonld_expand(json_decode($jsonld));
    $cert_identity = "http://www.w3.org/ns/auth/cert#identity";
 
    $rval =
@@ -193,7 +194,7 @@ function payswarm_config_keys($keys, $jsonld)
 function payswarm_config_preferences($jsonld)
 {
    $rval = true;
-   $preferences = json_decode($jsonld, true);
+   $preferences = (array)jsonld_expand(json_decode($jsonld));
 
    $currency_url = "http://purl.org/payswarm/preferences#currency";
    $account_url = "http://purl.org/payswarm/#account";
