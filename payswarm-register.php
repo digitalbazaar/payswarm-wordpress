@@ -101,7 +101,7 @@ function payswarm_registration_config($options)
          // if exception is duplicate ID, ignore
          $err = json_decode($E->lastResponse, true);
          if(!($err['type'] === 'payswarm.website.AddPublicKeyFailed' and
-            $err['cause']['type'] === 'payswarm.database.IdAlreadyExists'))
+            $err['cause']['type'] === 'payswarm.user.DuplicatePublicKey'))
          {
             throw $E;
          }
