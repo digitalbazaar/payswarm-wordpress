@@ -25,7 +25,7 @@ function payswarm_create_default_jsonld_context()
    $ctx = (object)array(
       'com' => 'http://purl.org/commerce#',
       'dc' => 'http://purl.org/dc/terms/',
-      'foaf' => 'http://xmlns.org/foaf/0.1/',
+      'foaf' => 'http://xmlns.com/foaf/0.1/',
       'gr' => 'http://purl.org/goodrelations/v1#',
       'ps' => 'http://purl.org/payswarm#',
       'psp' => 'http://purl.org/payswarm/preferences#',
@@ -34,10 +34,11 @@ function payswarm_create_default_jsonld_context()
       'sig' => 'http://purl.org/signature#',
       'vcard' => 'http://www.w3.org/2006/vcard/ns#',
       'xsd' => 'http://www.w3.org/2001/XMLSchema#',
-      '@coerce' => object(array(
+      '@coerce' => (object)array(
          'xsd:anyURI' => array(
             'com:destination',
             'com:destinationOwnerType',
+            'com:payee',
             'com:rateContext',
             'com:rateType',
             'com:source',
@@ -55,7 +56,6 @@ function payswarm_create_default_jsonld_context()
             'ps:validFrom',
             'ps:validUntil'),
          'rdf:XMLLiteral' => 'ps:licenseTemplate')
-      )
    );
    return jsonld_merge_contexts(jsonld_create_default_context(), $ctx);
 }
@@ -198,7 +198,7 @@ function payswarm_generate_listing_object($info, $includeSignature)
       'com:payeeRule' => (object)array(
          '@type' => 'com:PayeeRule',
          'com:destinationOwnerType' => 'ps:Authority',
-         'com:maximumRate' => $info['payswarm_auth_rate'],
+         'com:maximumRate' => '' . $info['payswarm_auth_rate'],
          'com:rateContext' => array(
             'com:Inclusive',
             'com:Tax',
@@ -215,7 +215,7 @@ function payswarm_generate_listing_object($info, $includeSignature)
    if($includeSignature)
    {
       $listing += array(
-         'sig:signature' => array(
+         'sig:signature' => (object)array(
             '@type' => 'sig:JsonldSignature',
             'dc:created' => $info['listing_signature_created'],
             'dc:creator' => $info['public_key_url'],
@@ -235,10 +235,10 @@ function payswarm_generate_listing_object($info, $includeSignature)
             'com:currency' => $info['listing_payee']['com:currency'],
             'com:destination' => $info['listing_payee']['com:destination'],
             'com:payeePosition' => 0,
-            'com:rate' => $info['listing_payee']['com:rate'],
+            'com:rate' => '' . $info['listing_payee']['com:rate'],
             'com:rateType' => $info['listing_payee']['com:rateType'],
             'rdfs:comment' => $info['listing_payee']['rdfs:comment'],
-         ),
+         )
       )
    );
 }
