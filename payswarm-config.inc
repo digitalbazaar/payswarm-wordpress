@@ -1,5 +1,5 @@
 <?php
-require_once('jsonld/jsonld.php');
+require_once('jsonld.php');
 
 /**
  * Updates the given options that exist and are valid in the $_POST environment.

@@ -1,5 +1,5 @@
 <?php
-require_once('jsonld/jsonld.php');
+require_once('jsonld.php');
 
 /**
  * Adds the required stylesheets for the PaySwarm plugin.
