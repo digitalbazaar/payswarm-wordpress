@@ -34,7 +34,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  * @global string PAYSWARM_PLUGIN_URL
  */
 define('PAYSWARM_PLUGIN_URL', site_url() . '/wp-content/plugins/' .
-   str_replace(basename( __FILE__), '', plugin_basename(__FILE__)));
+   str_replace(basename(__FILE__), '', plugin_basename(__FILE__)));
 
 require_once('payswarm-utils.inc');
 require_once('payswarm-database.inc');
