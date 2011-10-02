@@ -119,6 +119,110 @@ function payswarm_clear_session()
 }
 
 /**
+ * JSON-encodes (with unescaped slashes) the given data.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string $data The native PHP data which will be converted to JSON by
+ *    json_encode().
+ *
+ * @return The encoded JSON data.
+ */
+function payswarm_json_encode($data)
+{
+   // Newer PHP has a flag to avoid escaped '/'
+   if(defined('JSON_UNESCAPED_SLASHES'))
+   {
+      $json = json_encode($data, JSON_UNESCAPED_SLASHES);
+   }
+   else
+   {
+      // Use a simple string replacement of '\/' to '/'.
+      // FIXME: does this need to be more complex?
+      $json = str_replace('\\/', '/', json_encode($data));
+   }
+
+   return $json;
+}
+
+/**
+ * Generates a hash of the JSON encoded data.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param stdClass $obj The JSON-LD object to hash.
+ *
+ * @return The SHA-1 hash of the encoded JSON data.
+ */
+function payswarm_generate_json_hash($obj)
+{
+   // SHA-1 hash JSON
+   return sha1(payswarm_json_encode(jsonld_normalize($obj)));
+}
+
+/**
+ * Signs JSON encoded data.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param stdClass $obj The JSON-LD object to sign.
+ * @param string $pem the PEM-encoded private key to sign with.
+ *
+ * @return The base64-encoded signature of the encoded JSON data.
+ */
+function payswarm_sign_json($obj, $pem)
+{
+   // sign and return base64-encoded signature
+   $json = payswarm_json_encode(jsonld_normalize($obj));
+   openssl_sign($json, $signature, $pem, OPENSSL_ALGO_SHA1);
+   return base64_encode($signature);
+}
+
+/**
+ * Verifies JSON encoded data.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param stdClass $obj The JSON-LD object to verify.
+ * @param string $pem the PEM-encoded public key to verify with.
+ *
+ * @return true if verified, false if not.
+ */
+function payswarm_verify_json($obj, $pem)
+{
+   $rval = false;
+
+   // save signature property and remove from object
+   $sprop = $obj->{'sec:signature'};
+   unset($sprop->{'sec:signature'});
+
+   // normalize the object and restore the signature property
+   $normalized = jsonld_normalize($obj);
+   $obj->{'sec:signature'} = $sprop;
+
+   // get the signature value
+   $sig = base64_decode($sprop->{'sec:signatureValue'});
+
+   // verify the signature
+   $json = payswarm_json_encode($normalized);
+   $rc = openssl_verify($json, $sig, $pem, OPENSSL_ALGO_SHA1);
+   if($rc === 1)
+   {
+      $rval = true;
+   }
+   else if($rc === -1)
+   {
+      // FIXME: throw exception, error while trying to verify
+   }
+
+   return $rval;
+}
+
+/**
  * Retrieves the current URL being served.
  *
  * @package payswarm
@@ -173,7 +277,7 @@ function payswarm_force_ssl()
 function payswarm_redirect($url)
 {
    // FIXME: set header to redirect to URL in 5 seconds
-   
+
    get_header();
 
    echo '
@@ -194,7 +298,7 @@ function payswarm_redirect($url)
  * receives an exception that it doesn't know how to handle.
  *
  * @param e the exception.
- * 
+ *
  * @package payswarm
  * @since 1.0
  */

@@ -61,69 +61,6 @@ function payswarm_create_default_jsonld_context()
 }
 
 /**
- * JSON-encodes (with unescaped slashes) the given data.
- *
- * @package payswarm
- * @since 1.0
- *
- * @param string $data The native PHP data which will be converted to JSON by
- *    json_encode().
- *
- * @return The encoded JSON data.
- */
-function payswarm_json_encode($data)
-{
-   // Newer PHP has a flag to avoid escaped '/'
-   if(defined('JSON_UNESCAPED_SLASHES'))
-   {
-      $json = json_encode($data, JSON_UNESCAPED_SLASHES);
-   }
-   else
-   {
-      // Use a simple string replacement of '\/' to '/'.
-      // FIXME: does this need to be more complex?
-      $json = str_replace('\\/', '/', json_encode($data));
-   }
-
-   return $json;
-}
-
-/**
- * Generates a hash of the JSON encoded data.
- *
- * @package payswarm
- * @since 1.0
- *
- * @param string $data $obj The JSON-LD object to hash.
- *
- * @return The SHA-1 hash of the encoded JSON data.
- */
-function payswarm_generate_json_hash($obj)
-{
-   // SHA-1 hash JSON
-   return sha1(payswarm_json_encode(jsonld_normalize($obj)));
-}
-
-/**
- * Signs JSON encoded data.
- *
- * @package payswarm
- * @since 1.0
- *
- * @param string $obj The JSON-LD object to sign.
- * @param string $private_key the private key to sign with.
- *
- * @return The base64-encoded signature of the encoded JSON data.
- */
-function payswarm_sign_json($obj, $private_key)
-{
-   // sign and return base64-encoded signature
-   $json = payswarm_json_encode(jsonld_normalize($obj));
-   openssl_sign($json, $signature, $private_key, OPENSSL_ALGO_SHA1);
-   return base64_encode($signature);
-}
-
-/**
  * Generates a JSON-LD asset object given all of the parameters that belong in
  * the asset description.
  *
