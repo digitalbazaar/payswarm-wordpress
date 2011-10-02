@@ -3,10 +3,10 @@
 /**
  * Decrypts an encrypted PaySwarm message.
  *
- * @param encMsg the message to decrypt.
- * @param pem the PEM-encoded private key to decrypt the message.
+ * @param stdClass $encMsg the message to decrypt.
+ * @param string $pem the PEM-encoded private key to decrypt the message.
  *
- * @return the decrypted message.
+ * @return string the decrypted message.
  */
 function payswarm_decrypt_message($encMsg, $pem)
 {
