@@ -73,7 +73,7 @@ function payswarm_redirect_registration()
       // a registration
       if(payswarm_config_update(array('payswarm_config_url')))
       {
-         // Make the call to the PaySwarm Authority to get the config URL
+         // Get the PaySwarm Authority config information
          $config_url = get_option('payswarm_config_url');
 
          // FIXME: Ignore SSL - we will want to enable SSL verification
@@ -81,6 +81,7 @@ function payswarm_redirect_registration()
 
          if(!is_wp_error($response))
          {
+            payswarm_config_endpoints($response["body"]);
             wp_redirect(plugins_url() . '/payswarm/payswarm-register.php');
          }
          else

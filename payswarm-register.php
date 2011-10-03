@@ -2,26 +2,10 @@
 require_once('../../../wp-config.php');
 require_once('payswarm-utils.inc');
 
-// force registration to happen over SSL
-payswarm_force_ssl();
-
-require_once('payswarm-oauth.inc');
-
-// get payswarm token
 try
 {
-   payswarm_oauth1_get_token(array(
-      'client_id' => get_option('payswarm_client_id'),
-      'client_secret' => get_option('payswarm_client_secret'),
-      'scope' => 'payswarm-registration',
-      'details' => array(),
-      'request_params' => array(),
-      'request_url' => get_option('payswarm_request_url'),
-      'authorize_url' => get_option('payswarm_authorize_url'),
-      'access_url' => get_option('payswarm_access_url'),
-      'success' => 'payswarm_registration_config',
-      'denied' => 'payswarm_registration_denied'
-   ));
+   // FIXME: Perform registration redirect
+   print "FIXME: Perform registration redirect";
 }
 catch(OAuthException $E)
 {

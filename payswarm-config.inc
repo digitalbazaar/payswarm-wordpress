@@ -71,7 +71,7 @@ function payswarm_config_set_value($config, $property, $option)
  * @since 1.0
  *
  * @param string $jsonld A blob of JSON text that is encoded in JSON-LD format,
- *    usually returned by the PaySwarm Authority after hitting the client
+ *    usually returned by the PaySwarm Authority after hitting the
  *    configuration URL.
  *
  * @return true if the update was successful, false otherwise.
@@ -79,32 +79,19 @@ function payswarm_config_set_value($config, $property, $option)
 function payswarm_config_endpoints($jsonld)
 {
    $rval = true;
-   $client_config = (array)jsonld_expand(json_decode($jsonld));
-
-   $authorize_ws = "http://purl.org/payswarm/webservices#oAuthAuthorize";
-   $request_ws = "http://purl.org/payswarm/webservices#oAuthRequest";
-   $token_ws = "http://purl.org/payswarm/webservices#oAuthTokens";
-   $contract_ws = "http://purl.org/payswarm/webservices#oAuthContracts";
-   $license_ws = "http://purl.org/payswarm/webservices#oAuthLicenses";
-   $keys_ws = "http://purl.org/payswarm/webservices#oAuthKeys";
-   $preferences_ws = "http://purl.org/payswarm/webservices#oAuthPreferences";
+   $client_config = json_decode($jsonld);
 
    $rval =
       ($client_config !== NULL) &&
       payswarm_config_set_value(
-         $client_config, $authorize_ws, 'payswarm_authorize_url') &&
+         $client_config, "ps:registrationService", 
+         'payswarm_registration_url') &&
       payswarm_config_set_value(
-         $client_config, $request_ws, 'payswarm_request_url') &&
+         $client_config, "ps:contractsService", 'payswarm_contracts_url') &&
       payswarm_config_set_value(
-         $client_config, $token_ws, 'payswarm_access_url') &&
+         $client_config, "ps:licenseService", 'payswarm_licenses_url') &&
       payswarm_config_set_value(
-         $client_config, $contract_ws, 'payswarm_contracts_url') &&
-      payswarm_config_set_value(
-         $client_config, $license_ws, 'payswarm_licenses_url') &&
-      payswarm_config_set_value(
-         $client_config, $keys_ws, 'payswarm_keys_url') &&
-      payswarm_config_set_value(
-         $client_config, $preferences_ws, 'payswarm_preferences_url');
+         $client_config, "ps:publicKeyService", 'payswarm_keys_url');
 
    return $rval;
 }
