@@ -79,17 +79,18 @@ function payswarm_redirect_registration()
          // FIXME: Ignore SSL - we will want to enable SSL verification
          $response = wp_remote_get($config_url, array('sslverify' => false));
 
-         if(!is_wp_error($response))
+         if(!is_wp_error($response) && 
+            payswarm_config_endpoints($response["body"]))
          {
-            payswarm_config_endpoints($response["body"]);
             wp_redirect(plugins_url() . '/payswarm/payswarm-register.php');
          }
          else
          {
             payswarm_admin_warning(
-               'There was an error when attempting to access the ' .
-               'PaySwarm Authority Configuration URL. You may want to check ' .
-               'to make sure that it is correct.');
+               'There was an error reading the PaySwarm Authority ' .
+               'Configuration. This may have happened because the ' .
+               'PaySwarm Authority configuration specified was incorrect or ' .
+               'because the PaySwarm Authority you listed is down.');
          }
       }
    }
