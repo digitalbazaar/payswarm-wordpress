@@ -70,39 +70,6 @@ function payswarm_config_set_value($config, $property, $option)
  * @package payswarm
  * @since 1.0
  *
- * @param string $json A blob of JSON text that is encoded in JSON-LD format,
- *    usually returned by the PaySwarm Authority after hitting the client
- *    configuration URL.
- *
- * @return true if the update was successful, false otherwise.
- */
-function payswarm_config_oauth($json)
-{
-   $rval = true;
-   $client_config = (array)jsonld_expand(json_decode($json));
-
-   $authorize_ws = "http://purl.org/payswarm/webservices#oAuthAuthorize";
-   $request_ws = "http://purl.org/payswarm/webservices#oAuthRequest";
-   $token_ws = "http://purl.org/payswarm/webservices#oAuthTokens";
-
-   $rval =
-      ($client_config !== NULL) &&
-      payswarm_config_set_value(
-         $client_config, $authorize_ws, 'payswarm_authorize_url') &&
-      payswarm_config_set_value(
-         $client_config, $request_ws, 'payswarm_request_url') &&
-      payswarm_config_set_value(
-         $client_config, $token_ws, 'payswarm_access_url');
-
-   return $rval;
-}
-
-/**
- * Updates the PaySwarm client configuration given a blob of JSON text.
- *
- * @package payswarm
- * @since 1.0
- *
  * @param string $jsonld A blob of JSON text that is encoded in JSON-LD format,
  *    usually returned by the PaySwarm Authority after hitting the client
  *    configuration URL.

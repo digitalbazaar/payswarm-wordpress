@@ -26,3 +26,32 @@ function toggleAssetInformation(postId)
    }
 }
 
+/**
+ * Updates the PaySwarm Authority Configuration URL.
+ *
+ * @param event the event that fires the authority configuration
+ */
+function updateAuthorityConfigUrl(event)
+{
+   var authority = document.getElementById("payswarm_authority").value;
+   var hostPortRegex = /(http:\/\/|https:\/\/)?([^/]+)\/?/i;
+
+   // extract host and port information
+   var hostPort = authority.match(hostPortRegex);
+
+   // if a valid value was found, update the configuration URL
+   if(hostPort != null)
+   {
+      // build config URL
+      var configUrl = "https://" + hostPort[2] + "/payswarm-v1-config";
+
+      // update display on the screen and form element
+      var configDisplay = 
+         document.getElementById("payswarm_config_url_display");
+      var config = 
+         document.getElementById("payswarm_config_url");
+      configDisplay.innerText = configUrl;
+      config.value = configUrl;
+   }
+}
+

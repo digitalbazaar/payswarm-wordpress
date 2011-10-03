@@ -45,18 +45,13 @@ function payswarm_add_admin_pages()
 function payswarm_register_settings()
 {
    // whitelist the PaySwarm options
-   register_setting('payswarm-option-group', 'payswarm_client_config');
-   register_setting('payswarm-option-group', 'payswarm_client_id');
-   register_setting('payswarm-option-group', 'payswarm_client_secret');
+   register_setting('payswarm-option-group', 'payswarm_config_url');
    register_setting('payswarm-option-group', 'payswarm_default_auth_rate');
    register_setting('payswarm-option-group', 'payswarm_default_currency');
    register_setting('payswarm-option-group', 'payswarm_default_price');
    register_setting('payswarm-option-group', 'payswarm_destination_account');
    register_setting('payswarm-option-group', 'payswarm_default_license_url');
    register_setting('payswarm-option-group', 'payswarm_default_license_hash');
-   register_setting('payswarm-option-group', 'payswarm_authorize_url');
-   register_setting('payswarm-option-group', 'payswarm_request_url');
-   register_setting('payswarm-option-group', 'payswarm_access_url');
    register_setting('payswarm-option-group', 'payswarm_contracts_url');
    register_setting('payswarm-option-group', 'payswarm_public_key');
    register_setting('payswarm-option-group', 'payswarm_private_key');
@@ -76,38 +71,24 @@ function payswarm_redirect_registration()
    {
       // if the PaySwarm options are updated successfully, attempt to perform
       // a registration
-      if(payswarm_config_update(array(
-         'payswarm_client_config',
-         'payswarm_client_id',
-         'payswarm_client_secret')))
+      if(payswarm_config_update(array('payswarm_config_url')))
       {
          // Make the call to the PaySwarm Authority to get the config URL
-         $config_url = get_option('payswarm_client_config');
+         $config_url = get_option('payswarm_config_url');
 
          // FIXME: Ignore SSL - we will want to enable SSL verification
          $response = wp_remote_get($config_url, array('sslverify' => false));
 
          if(!is_wp_error($response))
          {
-            if(payswarm_config_oauth($response['body']))
-            {
-               wp_redirect(plugins_url() . '/payswarm/payswarm-register.php');
-            }
-            else
-            {
-               payswarm_admin_warning(
-                  'There was an error reading the client configuration from ' .
-                  'the PaySwarm Config URL. The PaySwarm Authority did not ' .
-                  'provide all of the information that was required for ' .
-                  'configuring this client.');
-            }
+            wp_redirect(plugins_url() . '/payswarm/payswarm-register.php');
          }
          else
          {
             payswarm_admin_warning(
                'There was an error when attempting to access the ' .
-               'PaySwarm Config URL. You may want to check to make sure that ' .
-               'it is correct.');
+               'PaySwarm Authority Configuration URL. You may want to check ' .
+               'to make sure that it is correct.');
          }
       }
    }
@@ -155,33 +136,23 @@ function payswarm_admin_warnings()
 {
    $options_not_being_set = !isset($_POST['payswarm_register_button']) ||
       !isset($_POST['payswarm_update_button']);
-   $options_nonexistant = !get_option('payswarm_client_config') ||
-      !get_option('payswarm_client_id') ||
-      !get_option('payswarm_client_secret') ||
+   $options_nonexistant = !get_option('payswarm_config_url') ||
       !get_option('payswarm_default_auth_rate') ||
       !get_option('payswarm_default_currency') ||
       !get_option('payswarm_default_price') ||
       !get_option('payswarm_destination_account') ||
       !get_option('payswarm_default_license_url') ||
       !get_option('payswarm_default_license_hash') ||
-      !get_option('payswarm_authorize_url') ||
-      !get_option('payswarm_request_url') ||
-      !get_option('payswarm_access_url') ||
       !get_option('payswarm_contracts_url') ||
       !get_option('payswarm_public_key') ||
       !get_option('payswarm_private_key');
-   $options_invalid = strlen(get_option('payswarm_client_config')) < 1 ||
-      strlen(get_option('payswarm_client_id')) < 1 ||
-      strlen(get_option('payswarm_client_secret')) < 1 ||
+   $options_invalid = strlen(get_option('payswarm_config_url')) < 1 ||
       strlen(get_option('payswarm_default_auth_rate')) < 1 ||
       strlen(get_option('payswarm_default_currency')) < 1 ||
       strlen(get_option('payswarm_default_price')) < 1 ||
       strlen(get_option('payswarm_destination_account')) < 1 ||
       strlen(get_option('payswarm_default_license_url')) < 1 ||
       strlen(get_option('payswarm_default_license_hash')) < 1 ||
-      strlen(get_option('payswarm_authorize_url')) < 1 ||
-      strlen(get_option('payswarm_request_url')) < 1 ||
-      strlen(get_option('payswarm_access_url')) < 1 ||
       strlen(get_option('payswarm_contracts_url')) < 1 ||
       strlen(get_option('payswarm_public_key')) < 1 ||
       strlen(get_option('payswarm_private_key')) < 1;
@@ -212,13 +183,7 @@ function payswarm_settings_page()
       // decimal places, etc.
       check_admin_referer('payswarm-save-config', 'payswarm-nonce');
       payswarm_config_update(array(
-         'payswarm_client_config',
-         'payswarm_client_id',
-         'payswarm_client_secret',
-         'payswarm_authorize_url',
-         'payswarm_request_url',
-         'payswarm_access_url',
-         'payswarm_preferences_url',
+         'payswarm_config_url',
          'payswarm_keys_url',
          'payswarm_licenses_url',
          'payswarm_contracts_url',
@@ -272,9 +237,17 @@ To use PaySwarm, you must first create an account on a
         <tr valign="top">
         <th scope="row"><?php _e('PaySwarm Authority') ?></th>
         <td><input type="text" size="64"
-          id="payswarm_client_config" name="payswarm_client_config"
-          onblur="javascript:updateAuthorityConfig();"
-          value="<?php echo get_option('payswarm_client_config'); ?>" /></td>
+          id="payswarm_authority" name="payswarm_authority"
+          onkeyup="javascript:updateAuthorityConfigUrl();"
+          value="dev.payswarm.com" />
+           <p>Configuration: 
+              <span id="payswarm_config_url_display">
+                https://dev.payswarm.com/payswarm-v1-config</span>
+              <input type="hidden" id="payswarm_config_url" 
+                name="payswarm_config_url" 
+                value="https://dev.payswarm.com/payswarm-v1-config" />
+           </p>
+        </td>
         </tr>
 
         <tr valign="top">
@@ -315,18 +288,6 @@ To use PaySwarm, you must first create an account on a
         <td><input type="text" size="128"
           id="payswarm_contracts_url" name="payswarm_contracts_url"
           value="<?php echo get_option('payswarm_contracts_url'); ?>" /></td>
-        </tr>
-
-        <tr valign="top">
-        <td scope="row" colspan="2">
-          <p>PaySwarm uses
-             <a href="http://en.wikipedia.org/wiki/Digital_signature"
-                >digital signatures</a> to ensure that posts that you
-             sell can be verified by PaySwarm Authorities. Your signature
-             keys are listed below. Do not change either of them unless you know
-             what you are doing.
-          </p>
-        </td>
         </tr>
 
         <tr valign="top">
