@@ -247,14 +247,11 @@ function payswarm_settings_page()
 
 <p>
 PaySwarm enables you to sell your articles, photos and other content directly
-to your website visitors. You can charge as little as a penny per article,
+to your website visitors without requiring them to fill in any of their credit
+card or banking details. You can charge as little as a penny per article,
 or up to hundreds of dollars for your content.
-To use PaySwarm, you must first go to a
-<a href="http://dev.payswarm.com:19100">PaySwarm Provider</a> and create an
-account. Once you have an account, you will be able to generate a
-<strong>PaySwarm Client ID</strong> and a
-<strong>PaySwarm Client Secret</strong>, which you must enter below to
-activate PaySwarm on your site.
+To use PaySwarm, you must first create an account on a 
+<a href="http://dev.payswarm.com/">PaySwarm Authority</a>.
 </p>
 
 <form method="post" action="">
@@ -264,32 +261,20 @@ activate PaySwarm on your site.
         <tr valign="top">
           <td scope="row" colspan="2">
             <h3><?php _e('Basic PaySwarm Settings') ?></h3>
-            <p>You must register with a PaySwarm Authority first. You must
-            then generate a PaySwarm Client ID and a PaySwarm Client Secret
-            on that PaySwarm Authority. Enter the information that you generate
-            via your PaySwarm Authority below.
+            <p>After you have created an account on a 
+              <a href="http://dev.payswarm.com/">PaySwarm Authority</a>, 
+              enter the website for the PaySwarm Authority below. For example:
+              <code>http://dev.payswarm.com/</code>.
             </p>
           </td>
         </tr>
 
         <tr valign="top">
-        <th scope="row"><?php _e('PaySwarm Config URL') ?></th>
+        <th scope="row"><?php _e('PaySwarm Authority') ?></th>
         <td><input type="text" size="64"
           id="payswarm_client_config" name="payswarm_client_config"
           onblur="javascript:updateAuthorityConfig();"
           value="<?php echo get_option('payswarm_client_config'); ?>" /></td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('PaySwarm Client ID') ?></th>
-        <td><input type="text" size="64" name="payswarm_client_id"
-          value="<?php echo get_option('payswarm_client_id'); ?>" /></td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('PaySwarm Client Secret') ?></th>
-        <td><input type="text" size="64" name="payswarm_client_secret"
-          value="<?php echo get_option('payswarm_client_secret'); ?>" /></td>
         </tr>
 
         <tr valign="top">
@@ -312,38 +297,10 @@ activate PaySwarm on your site.
         </tr>
 
         <tr valign="top">
-        <th scope="row"><?php _e('Authorize Service') ?></th>
+        <th scope="row"><?php _e('Registration Service') ?></th>
         <td><input type="text" size="128"
-          id="payswarm_authorize_url" name="payswarm_authorize_url"
-          value="<?php echo get_option('payswarm_authorize_url'); ?>" /></td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Request Service') ?></th>
-        <td><input type="text" size="128"
-          id="payswarm_request_url" name="payswarm_request_url"
-          value="<?php echo get_option('payswarm_request_url'); ?>" /></td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Access Service') ?></th>
-        <td><input type="text" size="128"
-          id="payswarm_access_url" name="payswarm_access_url"
-          value="<?php echo get_option('payswarm_access_url'); ?>" /></td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Preferences Service') ?></th>
-        <td><input type="text" size="128"
-          id="payswarm_preferences_url" name="payswarm_preferences_url"
-          value="<?php echo get_option('payswarm_preferences_url'); ?>" /></td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Public Key Service') ?></th>
-        <td><input type="text" size="128"
-          id="payswarm_keys_url" name="payswarm_keys_url"
-          value="<?php echo get_option('payswarm_keys_url'); ?>" /></td>
+          id="payswarm_registration_url" name="payswarm_registration_url"
+          value="<?php echo get_option('payswarm_registration_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">
