@@ -79,18 +79,28 @@ function payswarm_redirect_registration()
          // FIXME: Ignore SSL - we will want to enable SSL verification
          $response = wp_remote_get($config_url, array('sslverify' => false));
 
-         if(!is_wp_error($response) && 
-            payswarm_config_endpoints($response["body"]))
+         print_r($response);
+
+         if(is_wp_error($response))
          {
-            wp_redirect(plugins_url() . '/payswarm/payswarm-register.php');
+            payswarm_admin_warning(
+               'There was an error fetching the PaySwarm Authority ' .
+               'Configuration. This may have happened because the ' .
+               'PaySwarm Authority configuration URL specified was incorrect ' .
+               'or because the PaySwarm Authority you specified is down.');
+         }
+         else if(!payswarm_config_endpoints($response["body"]))
+         {
+            payswarm_admin_warning(
+               'The PaySwarm Authority Configuration that was retrieved ' .
+               'does not contain the necessary information required to ' .
+               'complete the registration process. Please check the ' .
+               'PaySwarm Authority you entered and its corresponding ' .
+               'configuration URL.');
          }
          else
          {
-            payswarm_admin_warning(
-               'There was an error reading the PaySwarm Authority ' .
-               'Configuration. This may have happened because the ' .
-               'PaySwarm Authority configuration specified was incorrect or ' .
-               'because the PaySwarm Authority you listed is down.');
+            wp_redirect(plugins_url() . '/payswarm/payswarm-register.php');
          }
       }
    }
@@ -241,6 +251,7 @@ To use PaySwarm, you must first create an account on a
         <td><input type="text" size="64"
           id="payswarm_authority" name="payswarm_authority"
           onkeyup="javascript:updateAuthorityConfigUrl();"
+          onblur="javascript:updateAuthorityConfigUrl();"
           value="dev.payswarm.com" />
            <p>Configuration: 
               <span id="payswarm_config_url_display">

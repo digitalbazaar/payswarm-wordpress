@@ -106,30 +106,13 @@ function payswarm_config_endpoints($jsonld)
  * @param array $keys The public/private keypair that was registered. The
  *    associative array should have to keys in it - 'public' and 'private' for
  *    the public key and the private key, respectively.
- * @param array $jsonld The registration information for the public key, which
- *    is a JSON-LD object that contains the public key URL and the WebID URL
- *    that owns the key.
  *
  * @return true if the update was successful, false otherwise.
  */
-function payswarm_config_keys($keys, $jsonld)
+function payswarm_config_keys($keys)
 {
-   $rval = true;
-   $public_key_registration = (array)jsonld_expand(json_decode($jsonld));
-   $cert_identity = "http://www.w3.org/ns/auth/cert#identity";
-
-   $rval =
-      ($public_key_registration !== NULL) &&
-      payswarm_config_set_value(
-         $public_key_registration, '@subject', 'payswarm_public_key_url') &&
-      payswarm_config_set_value(
-         $public_key_registration, $cert_identity, 'payswarm_webid_url');
-
-   if($rval)
-   {
-      update_option('payswarm_public_key', $keys['public']);
-      update_option('payswarm_private_key', $keys['private']);
-   }
+   update_option('payswarm_public_key', $keys['public']);
+   update_option('payswarm_private_key', $keys['private']);
 
    return $rval;
 }
