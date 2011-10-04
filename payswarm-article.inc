@@ -344,7 +344,7 @@ function payswarm_get_post_info($post_id, $resign = false)
       $private_key = get_option('payswarm_private_key');
 
       // generate new asset signature
-      $asset_signature = payswarm_sign_asset($rval, $private_key);
+      $asset_signature = payswarm_sign_asset($rval, $private_key, $date);
       $rval['asset_signature'] = $asset_signature;
       $rval['asset_signature_created'] = $sig_created;
 
@@ -353,7 +353,7 @@ function payswarm_get_post_info($post_id, $resign = false)
       $rval['asset_hash'] = $asset_hash;
 
       // generate new listing signature
-      $listing_signature = payswarm_sign_listing($rval, $private_key);
+      $listing_signature = payswarm_sign_listing($rval, $private_key, $date);
       $rval['listing_signature'] = $listing_signature;
       $rval['listing_signature_created'] = $sig_created;
 
