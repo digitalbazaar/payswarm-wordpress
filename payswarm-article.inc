@@ -31,7 +31,7 @@ function payswarm_create_default_jsonld_context()
       'psp' => 'http://purl.org/payswarm/preferences#',
       'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
       'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#',
-      'sig' => 'http://purl.org/signature#',
+      'sec' => 'http://purl.org/security#',
       'vcard' => 'http://www.w3.org/2006/vcard/ns#',
       'xsd' => 'http://www.w3.org/2001/XMLSchema#',
       '@coerce' => (object)array(
@@ -48,7 +48,7 @@ function payswarm_create_default_jsonld_context()
             'ps:authority',
             'ps:contentUrl',
             'ps:license',
-            'sig:signer'),
+            'sec:signer'),
          'xsd:integer' => 'com:payeePosition',
          'xsd:dateTime' => array(
             'dc:created',
@@ -88,11 +88,11 @@ function payswarm_generate_asset_object($info, $includeSignature)
    if($includeSignature)
    {
       $asset += array(
-         'sig:signature' => (object)array(
-            '@type' => 'sig:JsonldSignature',
+         'sec:signature' => (object)array(
+            '@type' => 'sec:JsonldSignature',
             'dc:created' => $info['asset_signature_created'],
             'dc:creator' => $info['public_key_url'],
-            'sig:signatureValue' => $info['asset_signature'])
+            'sec:signatureValue' => $info['asset_signature'])
       );
    }
 
@@ -152,11 +152,11 @@ function payswarm_generate_listing_object($info, $includeSignature)
    if($includeSignature)
    {
       $listing += array(
-         'sig:signature' => (object)array(
-            '@type' => 'sig:JsonldSignature',
+         'sec:signature' => (object)array(
+            '@type' => 'sec:JsonldSignature',
             'dc:created' => $info['listing_signature_created'],
             'dc:creator' => $info['public_key_url'],
-            'sig:signatureValue' => $info['listing_signature']
+            'sec:signatureValue' => $info['listing_signature']
          )
       );
    }
@@ -508,10 +508,10 @@ function payswarm_asset_information_rdfa($post_id)
                content=\"" . $info['listing_valid_until'] . "\"
                datatype=\"xsd:dateTime\">tomorrow</abbr>.
             </span>
-            <span rel=\"sig:signature\">
-               <span typeof=\"sig:JsonldSignature\">
+            <span rel=\"sec:signature\">
+               <span typeof=\"sec:JsonldSignature\">
                   This <a href=\"" . $info['asset_url'] . "\">asset</a>
-                  was <abbr property=\"sig:signatureValue\"
+                  was <abbr property=\"sec:signatureValue\"
                   content=\"" . $info['asset_signature'] . "\" title=\"" . $info['asset_signature'] . "\">digitally signed</abbr>
                   using <a rel=\"dc:creator\" href=\"" . $info['public_key_url'] . "\">this key</a>
                   at <span property=\"dc:created\" datatype=\"xsd:dateTime\">" . $info['asset_signature_created'] . "</span>.
@@ -528,10 +528,10 @@ function payswarm_asset_information_rdfa($post_id)
                     <span property=\"com:maximumRate\" content=\"" . $info['payswarm_auth_rate'] . "\"></span>
                  </span>
               </span>
-              <span rel=\"sig:signature\">
-                 <span typeof=\"sig:JsonldSignature\">
+              <span rel=\"sec:signature\">
+                 <span typeof=\"sec:JsonldSignature\">
                     This <a href=\"" . $info['post_url'] . "#listing\">listing</a> was
-                    <abbr property=\"sig:signatureValue\"
+                    <abbr property=\"sec:signatureValue\"
                     content=\"" . $info['listing_signature'] . "\" title=\"" . $info['listing_signature'] . "\">digitally signed</abbr>
                     using <a rel=\"dc:creator\" href=\"" . $info['public_key_url'] . "\">this key</a>
                     at <span property=\"dc:created\" datatype=\"xsd:dateTime\">" . $info['listing_signature_created'] . "</span>.
