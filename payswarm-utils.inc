@@ -170,14 +170,15 @@ function payswarm_generate_json_hash($obj)
  *
  * @param stdClass $obj The JSON-LD object to sign.
  * @param string $pem the PEM-encoded private key to sign with.
+ * @param string $date the signature creation date.
  *
  * @return The base64-encoded signature of the encoded JSON data.
  */
-function payswarm_sign_json($obj, $pem)
+function payswarm_sign_json($obj, $pem, $date)
 {
    // sign and return base64-encoded signature
    $json = payswarm_json_encode(jsonld_normalize($obj));
-   openssl_sign($json, $signature, $pem, OPENSSL_ALGO_SHA1);
+   openssl_sign($json, $signature, $date . $pem, OPENSSL_ALGO_SHA1);
    return base64_encode($signature);
 }
 
@@ -204,12 +205,13 @@ function payswarm_verify_json($obj, $pem)
    $normalized = jsonld_normalize($obj);
    $obj->{'sec:signature'} = $sprop;
 
-   // get the signature value
+   // get the signature value and date
    $sig = base64_decode($sprop->{'sec:signatureValue'});
+   $date = $sprop->{'dc:created'};
 
    // verify the signature
    $json = payswarm_json_encode($normalized);
-   $rc = openssl_verify($json, $sig, $pem, OPENSSL_ALGO_SHA1);
+   $rc = openssl_verify($date . $json, $sig, $pem, OPENSSL_ALGO_SHA1);
    if($rc === 1)
    {
       $rval = true;

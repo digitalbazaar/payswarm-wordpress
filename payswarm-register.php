@@ -2,38 +2,41 @@
 require_once('../../../wp-config.php');
 require_once('payswarm-utils.inc');
 
-try
+// FIXME: Perform registration redirect
+if(!isset($_POST["encrypted-message"]))
 {
-   // FIXME: Perform registration redirect
-   if(!isset($_POST["encrypted-message"]))
+   $keys = array();
+   if(!get_option('payswarm_public_key') ||
+      get_option('payswarm_key_overwrite') === 'true')
    {
-      if(!get_option('payswarm_public_key') ||
-         get_option('payswarm_key_overwrite') === 'true')
-      {
-         // generate the public/private keypair
-         $keys = payswarm_generate_keypair(false);
-         payswarm_config_keys($keys);
-
-         // register the keypair with the PaySwarm Authority
-         $reg_base_url = get_option('payswarm_registration_url');
-
-         // generate a pseudo-random nonce for the callback and store the
-         // value in the database
-         $nonce = 
-            base_convert(mt_rand(), 10, 36) . base_convert(mt_rand(), 10, 36);
-         update_option('payswarm_registration_nonce', $nonce);
-
-         // generate the registration re-direct URL
-         $callback_url = plugins_url() . '/payswarm/payswarm-register.php' .
-            "?nonce=" . $nonce;
-         $registration_url = $reg_base_url . '?public-key=' .
-            urlencode($keys['public']) . '&registration-callback=' .
-            urlencode($callback_url);
-
-         // re-direct the user agent to the PaySwarm Authority registration URL
-         wp_redirect($registration_url);
-      }
+      // generate the public/private keypair
+      $keys = payswarm_generate_keypair(false);
+      payswarm_config_keys($keys);
    }
+   else
+   {
+      $keys["public"] = get_option('payswarm_public_key');
+   }
+
+   // register the keypair with the PaySwarm Authority
+   $reg_base_url = get_option('payswarm_registration_url');
+
+   // generate a pseudo-random nonce for the callback and store the
+   // value in the database
+   $nonce = 
+      base_convert(mt_rand(), 10, 36) . base_convert(mt_rand(), 10, 36);
+   update_option('payswarm_registration_nonce', $nonce);
+
+   // generate the registration re-direct URL
+   $callback_url = plugins_url() . '/payswarm/payswarm-register.php' .
+      "?nonce=" . $nonce;
+   $registration_url = $reg_base_url . '?public-key=' .
+      urlencode($keys['public']) . '&registration-callback=' .
+      urlencode($callback_url);
+
+   // re-direct the user agent to the PaySwarm Authority registration URL
+   header("HTTP/1.1 303 See Other");
+   header("Location: $registration_url");
 }
 
 /**

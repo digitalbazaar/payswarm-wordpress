@@ -84,7 +84,7 @@ function payswarm_config_endpoints($jsonld)
    $rval =
       ($client_config !== NULL) &&
       payswarm_config_set_value(
-         $client_config, "ps:registrationService", 
+         $client_config, "ps:vendorRegistrationService", 
          'payswarm_registration_url') &&
       payswarm_config_set_value(
          $client_config, "ps:contractsService", 'payswarm_contracts_url') &&
