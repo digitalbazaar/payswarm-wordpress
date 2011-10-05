@@ -1,45 +1,28 @@
 <?php
 require_once('../../../wp-config.php');
 require_once('payswarm-utils.inc');
-
-// force access to happen over SSL
-payswarm_force_ssl();
-
 require_once('payswarm-article.inc');
-require_once('payswarm-oauth.inc');
 
 // get post to access
 $post_id = $_GET['p'];
 
-// get payswarm token
-try
-{
-   payswarm_oauth1_get_token(array(
-      'client_id' => get_option('payswarm_client_id'),
-      'client_secret' => get_option('payswarm_client_secret'),
-      'scope' => 'payswarm-payment',
-      'details' => array('balance' => '0.00'),
-      'request_params' => array(
-         'currency' => 'USD',
-         'balance' => get_post_meta($post_id, 'payswarm_price', true)
-      ),
-      'request_url' => get_option('payswarm_request_url'),
-      'authorize_url' => get_option('payswarm_authorize_url'),
-      'access_url' => get_option('payswarm_access_url'),
-      'success' => 'payswarm_access_purchase_post',
-      'denied' => 'payswarm_access_denied'
-   ));
-}
-catch(OAuthException $E)
-{
-   // FIXME: catch oauth exception and redirect to payswarm website?
-   payswarm_exception($E);
+print "FIXME: Implement new purchase flow...";
 
-   // FIXME: make user friendly error page
-   //$err = json_decode($E->lastResponse);
-   //print_r('<pre>' . $E . "\nError details: \n" .
-   //   print_r($err, true) . '</pre>');
-}
+// PURCHASE REQUEST
+
+// TODO: UI to select the PaySwarm Authority if one isn't already selected
+
+// digitally sign the purchase request
+
+// create a POST form including the purchase request targeted at the PA
+
+// PURCHASE RESPONSE
+
+// accept the response from the PA and decrypt it
+
+// decrypt the response, and if it is valid, approve access to the article
+
+// store session ID for person from purchase response.
 
 /**
  * Requests the purchase of a post with the PaySwarm authority.
