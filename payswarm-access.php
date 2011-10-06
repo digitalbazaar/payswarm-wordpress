@@ -6,17 +6,58 @@ require_once('payswarm-article.inc');
 // get post to access
 $post_id = $_GET['p'];
 
-print "FIXME: Implement new purchase flow...";
-
 // PURCHASE REQUEST
 
 // TODO: UI to select the PaySwarm Authority if one isn't already selected
+// get the contracts URL for the PaySwarm Authority
+$contracts_url = get_option("payswarm_contracts_url");
 
-// digitally sign the purchase request
+// create the purchase request
+$info = payswarm_get_post_info($post_id);
 
+// FIXME: Should this be digitally signed, no reason to if over SSL, right?
 // create a POST form including the purchase request targeted at the PA
+//print_r($info);
+echo payswarm_purchase_form($contracts_url, $info);
 
-// PURCHASE RESPONSE
+/**
+ * Generates the purchase form given a post information object.
+ *
+ * @param array $info the information about the particular post.
+ */
+function payswarm_purchase_form($contracts_url, $info)
+{
+   $title = $info['post_title'];
+   $author = $info['post_author'];
+   $purchase_request = array(
+      '@context' => 'http://purl.org/payswarm/v1',
+      'ps:listing' => $info['listing_url'],
+      'ps:listingHash' => $info['listing_hash']);
+   // FIXME: Add JSON_UNESCAPED_SLASHES to json_encode call when PHP 5.4 is
+   //        available.
+   $purchase_request = htmlspecialchars(json_encode($purchase_request));
+
+   $rval = <<<FORM
+<html>
+<head>
+<title>Purchase $title by $author</title>
+</head>
+<h1>Purchase $title by $author</h1>
+<p>Do you want to purchase $title by $author?</p>
+<form method="POST" action="$contracts_url">
+<input type="hidden" name="message" value="$purchase_request" />
+<input type="submit" value="Yes" />
+<input type="button" value="No" />
+<p><em>If you have previously purchased, this item you won't be charged twice 
+for it.</em></p>
+</form>
+</html>
+FORM;
+
+   return $rval;
+}
+
+// TODO: PURCHASE RESPONSE
 
 // accept the response from the PA and decrypt it
 

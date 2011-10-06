@@ -16,51 +16,6 @@ function payswarm_add_stylesheets()
 }
 
 /**
- * Creates a default payswarm JSON-LD context.
- *
- * @return the default payswarm JSON-LD context.
- */
-function payswarm_create_default_jsonld_context()
-{
-   $ctx = (object)array(
-      'com' => 'http://purl.org/commerce#',
-      'dc' => 'http://purl.org/dc/terms/',
-      'foaf' => 'http://xmlns.com/foaf/0.1/',
-      'gr' => 'http://purl.org/goodrelations/v1#',
-      'ps' => 'http://purl.org/payswarm#',
-      'psp' => 'http://purl.org/payswarm/preferences#',
-      'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
-      'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#',
-      'sec' => 'http://purl.org/security#',
-      'vcard' => 'http://www.w3.org/2006/vcard/ns#',
-      'xsd' => 'http://www.w3.org/2001/XMLSchema#',
-      '@coerce' => (object)array(
-         'xsd:anyURI' => array(
-            'com:destination',
-            'com:destinationOwnerType',
-            'com:payee',
-            'com:rateContext',
-            'com:rateType',
-            'com:source',
-            'dc:creator',
-            'ps:asset',
-            'ps:assetProvider',
-            'ps:authority',
-            'ps:contentUrl',
-            'ps:license',
-            'sec:signer'),
-         'xsd:integer' => 'com:payeePosition',
-         'xsd:dateTime' => array(
-            'dc:created',
-            'com:date',
-            'ps:validFrom',
-            'ps:validUntil'),
-         'rdf:XMLLiteral' => 'ps:licenseTemplate')
-   );
-   return jsonld_merge_contexts(jsonld_create_default_context(), $ctx);
-}
-
-/**
  * Generates a JSON-LD asset object given all of the parameters that belong in
  * the asset description.
  *
