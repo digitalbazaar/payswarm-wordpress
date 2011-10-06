@@ -1,6 +1,15 @@
 <?php
+// NOTE: DO not move this block of code, we need to extract the encrypted
+// message if it exists before including wp-config.php
+$raw_encrypted_message = null;
+if(isset($_POST["encrypted-message"]))
+   $raw_encrypted_message = $_POST["encrypted-message"];
+   
+// NOTE: When you require wp-config.php, magic quotes is turned on to
+// modify POST parameters
 require_once('../../../wp-config.php');
 require_once('payswarm-utils.inc');
+require_once('payswarm-client.inc');
 
 // FIXME: Perform registration redirect
 if(!isset($_POST["encrypted-message"]))
@@ -37,6 +46,22 @@ if(!isset($_POST["encrypted-message"]))
    // re-direct the user agent to the PaySwarm Authority registration URL
    header("HTTP/1.1 303 See Other");
    header("Location: $registration_url");
+}
+else
+{
+   $pkey = get_option('payswarm_private_key');
+   // stripslashes is necessary below because including wp-config.inc causes
+   // backslash escaping of POST data
+   $encrypted_message = json_decode($raw_encrypted_message);
+   print_r($encrypted_message);
+
+   print "\n\nMESSAGE\n\n";
+
+   $message = payswarm_decrypt_message($encrypted_message, $pkey);
+   print_r($message);
+
+   // FIXME: Verify the signature of the message
+   // FIXME: Ensure that the message is accurate to +- 15 minutes
 }
 
 /**

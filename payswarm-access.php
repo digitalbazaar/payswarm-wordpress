@@ -33,9 +33,7 @@ function payswarm_purchase_form($contracts_url, $info)
       '@context' => 'http://purl.org/payswarm/v1',
       'ps:listing' => $info['listing_url'],
       'ps:listingHash' => $info['listing_hash']);
-   // FIXME: Add JSON_UNESCAPED_SLASHES to json_encode call when PHP 5.4 is
-   //        available.
-   $purchase_request = htmlspecialchars(json_encode($purchase_request));
+   $purchase_request = htmlspecialchars(payswarm_json_encode($purchase_request));
 
    $rval = <<<FORM
 <html>
