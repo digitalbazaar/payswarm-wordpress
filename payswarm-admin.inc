@@ -54,6 +54,7 @@ function payswarm_register_settings()
    register_setting('payswarm-option-group', 'payswarm_default_license_hash');
    register_setting('payswarm-option-group', 'payswarm_contracts_url');
    register_setting('payswarm-option-group', 'payswarm_public_key');
+   register_setting('payswarm-option-group', 'payswarm_public_key_url');
    register_setting('payswarm-option-group', 'payswarm_private_key');
    register_setting('payswarm-option-group', 'payswarm_key_overwrite');
 }
@@ -77,7 +78,8 @@ function payswarm_redirect_registration()
          $config_url = get_option('payswarm_config_url');
 
          // FIXME: Ignore SSL - we will want to enable SSL verification
-         $response = wp_remote_get($config_url, array('sslverify' => false));
+         $response = wp_remote_get(
+            $config_url, array('sslverify' => PAYSWARM_SSL_ENABLED));
 
          print_r($response);
 
@@ -157,6 +159,7 @@ function payswarm_admin_warnings()
       !get_option('payswarm_default_license_hash') ||
       !get_option('payswarm_contracts_url') ||
       !get_option('payswarm_public_key') ||
+      !get_option('payswarm_public_key_url') ||
       !get_option('payswarm_private_key');
    $options_invalid = strlen(get_option('payswarm_config_url')) < 1 ||
       strlen(get_option('payswarm_default_auth_rate')) < 1 ||
@@ -167,6 +170,7 @@ function payswarm_admin_warnings()
       strlen(get_option('payswarm_default_license_hash')) < 1 ||
       strlen(get_option('payswarm_contracts_url')) < 1 ||
       strlen(get_option('payswarm_public_key')) < 1 ||
+      strlen(get_option('payswarm_public_key_url')) < 1 ||
       strlen(get_option('payswarm_private_key')) < 1;
 
    // output a warning if any part of the PaySwarm configuration is not set
@@ -197,9 +201,11 @@ function payswarm_settings_page()
       payswarm_config_update(array(
          'payswarm_config_url',
          'payswarm_keys_url',
+         'payswarm_registration_url',
          'payswarm_licenses_url',
          'payswarm_contracts_url',
          'payswarm_public_key',
+         'payswarm_public_key_url',
          'payswarm_private_key',
          'payswarm_default_auth_rate',
          'payswarm_default_currency',
@@ -284,21 +290,21 @@ To use PaySwarm, you must first create an account on a
 
         <tr valign="top">
         <th scope="row"><?php _e('Registration Service') ?></th>
-        <td><input type="text" size="128"
+        <td><input type="text" size="64"
           id="payswarm_registration_url" name="payswarm_registration_url"
           value="<?php echo get_option('payswarm_registration_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">
         <th scope="row"><?php _e('License Service') ?></th>
-        <td><input type="text" size="128"
+        <td><input type="text" size="64"
           id="payswarm_licenses_url" name="payswarm_licenses_url"
           value="<?php echo get_option('payswarm_licenses_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">
         <th scope="row"><?php _e('Contracts Service') ?></th>
-        <td><input type="text" size="128"
+        <td><input type="text" size="64"
           id="payswarm_contracts_url" name="payswarm_contracts_url"
           value="<?php echo get_option('payswarm_contracts_url'); ?>" /></td>
         </tr>
@@ -308,6 +314,13 @@ To use PaySwarm, you must first create an account on a
         <td><textarea cols="80" rows="6"
           id="payswarm_public_key" name="payswarm_public_key"
           ><?php echo get_option('payswarm_public_key'); ?></textarea></td>
+        </tr>
+
+        <tr valign="top">
+        <th scope="row"><?php _e('Public Key Location') ?></th>
+        <td><input type="text" size="64"
+          id="payswarm_public_key_url" name="payswarm_public_key_url"
+          value="<?php echo get_option('payswarm_public_key_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">
@@ -363,7 +376,7 @@ To use PaySwarm, you must first create an account on a
         <tr valign="top">
         <th scope="row"><?php _e('Default Financial Account') ?></th>
         <td>
-          <input type="text" size="128" name="payswarm_destination_account"
+          <input type="text" size="64" name="payswarm_destination_account"
             value="<?php echo get_option('payswarm_destination_account'); ?>" />
         </td>
 
@@ -380,7 +393,7 @@ To use PaySwarm, you must first create an account on a
 
         <tr valign="top">
         <th scope="row"><?php _e('Default License') ?></th>
-        <td><input type="text" size="128"
+        <td><input type="text" size="64"
           id="payswarm_default_license_url" name="payswarm_default_license_url"
           value="<?php echo get_option('payswarm_default_license_url'); ?>" />
         <?php

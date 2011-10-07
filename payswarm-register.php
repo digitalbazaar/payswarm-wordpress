@@ -2,8 +2,11 @@
 // NOTE: DO not move this block of code, we need to extract the encrypted
 // message if it exists before including wp-config.php
 $raw_encrypted_message = null;
+$raw_nonce = null;
 if(isset($_POST["encrypted-message"]))
    $raw_encrypted_message = $_POST["encrypted-message"];
+if(isset($_GET["nonce"]))
+   $raw_nonce = $_GET["nonce"];
    
 // NOTE: When you require wp-config.php, magic quotes is turned on to
 // modify POST parameters
@@ -49,19 +52,77 @@ if(!isset($_POST["encrypted-message"]))
 }
 else
 {
-   $pkey = get_option('payswarm_private_key');
-   // stripslashes is necessary below because including wp-config.inc causes
-   // backslash escaping of POST data
-   $encrypted_message = json_decode($raw_encrypted_message);
-   print_r($encrypted_message);
+   // verify that the nonce is valid
+   // TODO: I don't think this security measure actually prevents a
+   //       registration replay attack - the digital signature from the PA
+   //       does that. Need to discuss.
+   $nonce_valid = false;
+   if($raw_nonce)
+   {
+      $nonce = get_option('payswarm_registration_nonce');
+      if($nonce === $raw_nonce)
+      {
+         $nonce_valid = true;
+         // FIXME: enable after testing is complete
+         //delete_option('payswarm_registration_nonce');
+      }
+   }
 
-   print "\n\nMESSAGE\n\n";
+   // decrypt the encrypted message   
+   $message = null;
+   if($nonce_valid)
+   {
+      // decrypt the registration message
+      $pkey = get_option('payswarm_private_key');
+      $encrypted_message = json_decode($raw_encrypted_message);
 
-   $message = payswarm_decrypt_message($encrypted_message, $pkey);
-   print_r($message);
+      $message = payswarm_decrypt_message($encrypted_message, $pkey);
+      print_r($message);
+   }
 
-   // FIXME: Verify the signature of the message
-   // FIXME: Ensure that the message is accurate to +- 15 minutes
+   // verify the message signature
+   $signature_valid = false;
+   if($nonce_valid && $message)
+   {
+      $pa_public_key = payswarm_get_pa_public_key();
+      // FIXME: registration preferences are not signed at the moment
+      //$signature_valid = payswarm_verify_json($message, $pa_public_key);
+      $signature_valid = true;
+   }
+   
+   // ensure that the message timestamp is accurate to +- 15 minutes
+   $timestamp_valid = false;
+   if($nonce_valid && $message && $signature_valid)
+   {
+      // FIXME: Enable once signatures are working
+      //$message_timestamp = strtotime($message["sec:signature"]["dc:created"]);
+      $message_timestamp = time();
+      $past_barrier = time() + (15 * 60);
+      $future_barrier = time() - (15 * 60);
+      
+      if($message_timestamp >= $past_barrier &&
+         $message_timestamp <= $future_barrier)
+      {
+         $timestamp_valid = true;
+      }
+      
+      // FIXME: registration preferences are not signed at the moment
+      $timestamp_valid = true;
+   }
+
+   print("$nonce_valid && $signature_valid && $timestamp_valid");
+
+   // update the vendor preferences
+   if($nonce_valid && $message && $signature_valid && $timestamp_valid)
+   {
+      payswarm_config_preferences($message);
+      header('Location: ' . admin_url() . 'plugins.php?page=payswarm');
+   }
+   else
+   {
+      // FIXME: Create proper error message
+      echo "Failed to set PaySwarm configuration preferences.";
+   }
 }
 
 /**

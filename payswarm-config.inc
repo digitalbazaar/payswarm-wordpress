@@ -87,11 +87,17 @@ function payswarm_config_endpoints($jsonld)
          $client_config, "ps:vendorRegistrationService", 
          'payswarm_registration_url') &&
       payswarm_config_set_value(
+         $client_config, "ps:publicKey", 'payswarm_authority_public_key_url') &&
+      payswarm_config_set_value(
          $client_config, "ps:contractsService", 'payswarm_contracts_url') &&
       payswarm_config_set_value(
          $client_config, "ps:licenseService", 'payswarm_licenses_url') &&
       payswarm_config_set_value(
          $client_config, "ps:publicKeyService", 'payswarm_keys_url');
+
+   // reset the PaySwarm Authority public key information
+   delete_option('payswarm_authority_public_key_expiration');
+   delete_option('payswarm_authority_public_key');
 
    return $rval;
 }
@@ -123,34 +129,31 @@ function payswarm_config_keys($keys)
  * @package payswarm
  * @since 1.0
  *
- * @param array $jsonld The preferences JSON-LD markup received from the
- *    PaySwarm preferences webservice.
+ * @param array $preferences An associative array of preferences returned by
+ *                           the registration service.
  *
  * @return true if the update was successful, false otherwise.
  */
-function payswarm_config_preferences($jsonld)
+function payswarm_config_preferences($preferences)
 {
    $rval = true;
-   $preferences = (array)jsonld_expand(json_decode($jsonld));
-
-   $currency_url = "http://purl.org/payswarm/preferences#currency";
-   $account_url = "http://purl.org/payswarm#account";
-   $license_url = "http://purl.org/payswarm/preferences#license";
-   $license_hash_url = "http://purl.org/payswarm#licenseHash";
 
    $rval =
       ($preferences !== NULL) &&
       payswarm_config_set_value(
-         $preferences[$license_url][0],
-         '@subject', 'payswarm_default_license_url') &&
+         $preferences, 'ps:license', 'payswarm_default_license_url') &&
       payswarm_config_set_value(
-         $preferences[$license_url][0],
-         $license_hash_url, 'payswarm_default_license_hash') &&
+         $preferences, 'ps:licenseHash', 'payswarm_default_license_hash') &&
       payswarm_config_set_value(
-         $preferences, $currency_url, 'payswarm_default_currency') &&
+         $preferences, 'com:currency', 'payswarm_default_currency') &&
       payswarm_config_set_value(
-         $preferences[$account_url][0],
-         '@subject', 'payswarm_destination_account');
+         $preferences, 'com:minimumAmount', 'payswarm_default_price') &&
+      payswarm_config_set_value(
+         $preferences, 'com:destination', 'payswarm_destination_account') &&
+      payswarm_config_set_value(
+         $preferences, 'com:maximumRate', 'payswarm_default_auth_rate') &&
+      payswarm_config_set_value(
+         $preferences, 'sec:publicKey', 'payswarm_public_key_url');
 
    return $rval;
 }
