@@ -1,46 +1,28 @@
 <?php
 
 /**
- * Retrieves the PaySwarm Authority public key from the network or the 
+ * Retrieves the PaySwarm Authority public key from the network or the
  * cache. The public key expires exactly 24 hours after it is retrieved in
  * order to ensure that a fairly recent public key is used.
  *
- * @return A PEM-encoded public key for the PaySwarm Authority.
+ * @return string a PEM-encoded public key for the PaySwarm Authority.
  */
 function payswarm_get_pa_public_key()
 {
-   $rval = null;
-   $refresh_key = false;
-   
-   // check to see if the PaySwarm Authority public key should be refreshed
-   if(!get_option('payswarm_authority_public_key_expiration') ||
-      !get_option('payswarm_authority_public_key'))
+   $rval = get_transient('payswarm_authority_public_key');
+
+   // PaySwarm Authority public key should be refreshed
+   if($rval === false)
    {
-      $refresh_key = true;
-   }
-   else
-   {
-      $expiration = 
-         intval(get_option('payswarm_authority_public_key_expiration'));
-      if(time() >= $expiration)
-      {
-         $refresh_key = true;
-      }
-   }
-   
-   // if the key should be refreshed, fetch if from the network
-   if($refresh_key)
-   {
-      $public_key = "";
-      $pa_public_key_url = get_option('payswarm_authority_public_key_url');
-      $response = wp_remote_get($pa_public_key_url, array(
+      $url = get_option('payswarm_authority_public_key_url');
+      $response = wp_remote_get($url, array(
          'sslverify' => PAYSWARM_SSL_ENABLED,
          'headers' => array('Accept' => 'application/ld+json')));
-         
+
       if(!is_wp_error($response))
       {
          // FIXME: Extract the key from the JSON-LD response
-         $public_key = <<<PUBLIC_KEY
+         $rval = <<<PUBLIC_KEY
 -----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqMbYknpvLLx6+ZQ3IucP
 l6dsEdSj82CBw9Xd7GQIsD7qYIzE18LKe9I+SroxHhDDpBuwTZREV9kOwyvOcvbD
@@ -53,14 +35,65 @@ kQIDAQAB
 PUBLIC_KEY;
 
          // key expires in one day
-         update_option('payswarm_authority_public_key_expiration', 
-            time() + (24 * 60 * 60));
-         update_option('payswarm_authority_public_key', $public_key);
+         set_transient('payswarm_authority_public_key', $rval, 24*60*60);
       }
    }
 
-   // read the public key from the database
-   $rval = get_option('payswarm_authority_public_key');
+   return $rval;
+}
+
+/**
+ * Creates a nonce to be given to a PaySwarm Authority so it can
+ * be returned in a signed and encrypted message.
+ *
+ * @return string the nonce to use.
+ */
+function payswarm_create_message_nonce()
+{
+   // get the current payswarm session
+   $session = payswarm_get_session();
+
+   // generate a unique 20-digit pseudo-random nonce
+   do
+   {
+      $rval =
+         base_convert(mt_rand(), 10, 36) .
+         base_convert(mt_rand(), 10, 36);
+
+      // save the nonce in the database with a 15 minute timeout
+      if(get_transient($rval) === false)
+      {
+         set_transient($rval, $session, 15*60);
+      }
+   }
+   while(get_transient($rval) !== $session);
+
+   return $rval;
+}
+
+/**
+ * Checks a message nonce. If the nonce exists and its associated payswarm
+ * session matches the current payswarm session, then it is valid.
+ *
+ * @param string the nonce to check.
+ *
+ * @return true if the nonce is valid, false if not.
+ */
+function payswarm_check_message_nonce($nonce)
+{
+   if(isset($nonce))
+   {
+      // compare current session w/nonce associated session
+      $rval = (payswarm_get_session() === get_transient($nonce));
+
+      // clean up nonce
+      delete_transient($nonce);
+   }
+   else
+   {
+      // no nonce given
+      $rval = false;
+   }
 
    return $rval;
 }
