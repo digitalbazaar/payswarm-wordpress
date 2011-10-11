@@ -51,59 +51,12 @@ if(!isset($raw_encrypted_message))
 }
 else
 {
-   // FIXME: decrypt the message (and check the nonce)... this should happen
-   // all in a payswarm_client call
-
-   // verify that the nonce is valid
-   $nonce_valid = payswarm_check_message_nonce($raw_nonce);
-
-   // decrypt the encrypted message
-   if($nonce_valid)
-   {
-      // decrypt the registration message
-      $pkey = get_option('payswarm_private_key');
-      $encrypted_message = json_decode($raw_encrypted_message);
-
-      $message = payswarm_decrypt_message($encrypted_message, $pkey);
-      print_r($message);
-   }
-
-   // verify the message signature
-   $signature_valid = false;
-   if($nonce_valid and isset($message))
-   {
-      $pa_public_key = payswarm_get_pa_public_key();
-      // FIXME: registration preferences are not signed at the moment
-      //$signature_valid = payswarm_verify_json($message, $pa_public_key);
-      $signature_valid = true;
-   }
-
-   // ensure that the message timestamp is accurate to +- 15 minutes
-   $timestamp_valid = false;
-   if($nonce_valid && $message && $signature_valid)
-   {
-      // FIXME: Enable once signatures are working
-      //$message_timestamp = strtotime($message["sec:signature"]["dc:created"]);
-      $message_timestamp = time();
-      $past_barrier = time() + (15 * 60);
-      $future_barrier = time() - (15 * 60);
-
-      if($message_timestamp >= $past_barrier &&
-         $message_timestamp <= $future_barrier)
-      {
-         $timestamp_valid = true;
-      }
-
-      // FIXME: registration preferences are not signed at the moment
-      $timestamp_valid = true;
-   }
-
-   print("$nonce_valid && $signature_valid && $timestamp_valid");
+   $msg = payswarm_decode_payswarm_authority_message($raw_encrypted_message);
 
    // update the vendor preferences
-   if($nonce_valid && $message && $signature_valid && $timestamp_valid)
+   if($msg !== false)
    {
-      payswarm_config_preferences($message);
+      payswarm_config_preferences($msg);
       header('Location: ' . admin_url() . 'plugins.php?page=payswarm');
    }
    else

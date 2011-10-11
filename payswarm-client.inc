@@ -111,23 +111,23 @@ function payswarm_decrypt_message($encoded_message, $pem)
    if($encoded_message->{'sec:algorithm'} !== 'rsa-aes-128-cbc')
    {
       $algorithm = $encoded_message->{'sec:algorithm'};
-      throw new Exception('PaySwarm Decryption Exception:' .
-         'Unknown encryption algorithm: ' . $algorithm);
+      throw new Exception('PaySwarm Decryption Exception: ' .
+         'Unknown encryption algorithm "' . $algorithm . '"');
    }
 
    // load private key from PEM
    $pkey = openssl_pkey_get_private($pem);
    if($pkey === false)
    {
-      throw new Exception('PaySwarm Decryption Exception:' .
-         'Failed to load the private key in ');
+      throw new Exception('PaySwarm Decryption Exception: ' .
+         'Failed to load the private key.');
    }
 
    // decrypt symmetric key
    $encryption_key = base64_decode($encoded_message->{'sec:encryptionKey'});
    if(openssl_private_decrypt($encryption_key, $skey, $pkey) === false)
    {
-      throw new Exception('PaySwarm Decryption Exception:' .
+      throw new Exception('PaySwarm Decryption Exception: ' .
          'Failed to decrypt the encryption key.');
    }
 
@@ -135,7 +135,7 @@ function payswarm_decrypt_message($encoded_message, $pem)
    $encIv = base64_decode($encoded_message->{'sec:iv'});
    if(openssl_private_decrypt($encIv, $iv, $pkey) === false)
    {
-      throw new Exception('PaySwarm Decryption Exception:' .
+      throw new Exception('PaySwarm Decryption Exception: ' .
          'Failed to decrypt the initialization vector (IV).');
    }
 
@@ -146,9 +146,9 @@ function payswarm_decrypt_message($encoded_message, $pem)
    $data = openssl_decrypt(
       $encoded_message->{'sec:data'}, 'aes128', $skey, false, $iv);
 
-   if(!$data)
+   if($data === false)
    {
-      throw new Exception('PaySwarm Decryption Exception:' .
+      throw new Exception('PaySwarm Decryption Exception: ' .
          'Failed to decrypt the encrypted message due to an incorrect ' .
          'symmetric key or an invalid initialization vector.');
    }
@@ -157,8 +157,51 @@ function payswarm_decrypt_message($encoded_message, $pem)
    return json_decode($data);
 }
 
-// TODO: methods to use CURL to GET/POST
-// TODO: method to fetch public key IRI and check for PA ownership based on
-// PA IRI from config
+function payswarm_decode_payswarm_authority_message($encoded_message)
+{
+   // decrypt message
+   $pem = get_option('payswarm_public_key');
+   $rval = payswarm_decrypt_message($encoded_message, $pem);
+
+   // FIXME: remove me
+   print_r($rval);
+
+   // verify message
+   $pem = payswarm_get_pa_public_key();
+   if(!payswarm_verify_json($rval, $pem))
+   {
+      // FIXME: remove me/make exception
+      print_r('invalid message signature');
+      $rval = false;
+   }
+   else
+   {
+      // FIXME: do json-ld frame
+      // $rval = jsonld_frame($ctx, $rval);
+
+      // check message nonce
+      $nonce = $rval->{'sec:signature'}->{'sec:nonce'};
+      if(!payswarm_check_message_nonce($nonce))
+      {
+         // FIXME: remove me/make exception
+         print_r('invalid message nonce');
+         $rval = false;
+      }
+      else
+      {
+         // ensure timestamp is +/- 15 minutes
+         $now = time();
+         $time = date_create($rval->{'sec:signature'}->{'dc:created'});
+         if($time < ($now - 15*60) || $time > ($now + 15*60))
+         {
+            // FIXME: remove me/make exception
+            print_r('message timestamp out of range');
+            $rval = false;
+         }
+      }
+   }
+
+   return $rval;
+}
 
 ?>
