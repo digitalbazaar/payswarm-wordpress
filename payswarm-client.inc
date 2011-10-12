@@ -101,16 +101,16 @@ function payswarm_check_message_nonce($nonce)
 /**
  * Decrypts an encrypted PaySwarm message.
  *
- * @param stdClass $encoded_message the message to decrypt.
+ * @param stdClass $encrypted_message the message to decrypt.
  * @param string $pem the PEM-encoded private key to decrypt the message.
  *
  * @return string the decrypted message.
  */
-function payswarm_decrypt_message($encoded_message, $pem)
+function payswarm_decrypt_message($encrypted_message, $pem)
 {
-   if($encoded_message->{'sec:algorithm'} !== 'rsa-aes-128-cbc')
+   if($encrypted_message->{'sec:algorithm'} !== 'rsa-aes-128-cbc')
    {
-      $algorithm = $encoded_message->{'sec:algorithm'};
+      $algorithm = $encrypted_message->{'sec:algorithm'};
       throw new Exception('PaySwarm Decryption Exception: ' .
          'Unknown encryption algorithm "' . $algorithm . '"');
    }
@@ -124,7 +124,7 @@ function payswarm_decrypt_message($encoded_message, $pem)
    }
 
    // decrypt symmetric key
-   $encryption_key = base64_decode($encoded_message->{'sec:encryptionKey'});
+   $encryption_key = base64_decode($encrypted_message->{'sec:encryptionKey'});
    if(openssl_private_decrypt($encryption_key, $skey, $pkey) === false)
    {
       throw new Exception('PaySwarm Decryption Exception: ' .
@@ -132,7 +132,7 @@ function payswarm_decrypt_message($encoded_message, $pem)
    }
 
    // decrypt IV
-   $encIv = base64_decode($encoded_message->{'sec:iv'});
+   $encIv = base64_decode($encrypted_message->{'sec:iv'});
    if(openssl_private_decrypt($encIv, $iv, $pkey) === false)
    {
       throw new Exception('PaySwarm Decryption Exception: ' .
@@ -144,7 +144,7 @@ function payswarm_decrypt_message($encoded_message, $pem)
 
    // decrypt data
    $data = openssl_decrypt(
-      $encoded_message->{'sec:data'}, 'aes128', $skey, false, $iv);
+      $encrypted_message->{'sec:data'}, 'aes128', $skey, false, $iv);
 
    if($data === false)
    {
@@ -157,13 +157,13 @@ function payswarm_decrypt_message($encoded_message, $pem)
    return json_decode($data);
 }
 
-function payswarm_decode_payswarm_authority_message($encoded_message)
+function payswarm_decode_payswarm_authority_message($json_message)
 {
    // convert message from json
-   $msg = json_decode($encoded_message);
+   $msg = json_decode($json_message);
 
    // decrypt message
-   $pem = get_option('payswarm_public_key');
+   $pem = get_option('payswarm_private_key');
    $rval = payswarm_decrypt_message($msg, $pem);
 
    // FIXME: remove me

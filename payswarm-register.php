@@ -3,11 +3,7 @@
 // message if it exists before including wp-config.php
 if(isset($_POST["encrypted-message"]))
 {
-   $raw_encrypted_message = $_POST["encrypted-message"];
-}
-if(isset($_GET["nonce"]))
-{
-   $raw_nonce = $_GET["nonce"];
+   $json_message = $_POST["encrypted-message"];
 }
 
 // NOTE: When you require wp-config.php, magic quotes is turned on to
@@ -51,7 +47,8 @@ if(!isset($raw_encrypted_message))
 }
 else
 {
-   $msg = payswarm_decode_payswarm_authority_message($raw_encrypted_message);
+   // decode json-encoded, encrypted message
+   $msg = payswarm_decode_payswarm_authority_message($json_message);
 
    // update the vendor preferences
    if($msg !== false)
