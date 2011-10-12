@@ -13,7 +13,7 @@ require_once('payswarm-utils.inc');
 require_once('payswarm-client.inc');
 
 // FIXME: Perform registration redirect
-if(!isset($raw_encrypted_message))
+if(!isset($json_message))
 {
    $keys = array();
    if(!get_option('payswarm_public_key') ||
