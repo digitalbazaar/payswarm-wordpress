@@ -159,9 +159,12 @@ function payswarm_decrypt_message($encoded_message, $pem)
 
 function payswarm_decode_payswarm_authority_message($encoded_message)
 {
+   // convert message from json
+   $msg = json_decode($encoded_message);
+
    // decrypt message
    $pem = get_option('payswarm_public_key');
-   $rval = payswarm_decrypt_message($encoded_message, $pem);
+   $rval = payswarm_decrypt_message($msg, $pem);
 
    // FIXME: remove me
    print_r($rval);
