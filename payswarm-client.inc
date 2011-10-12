@@ -171,7 +171,12 @@ function payswarm_decode_payswarm_authority_message($json_message)
 
    // verify message
    $pem = payswarm_get_pa_public_key();
-   if(!payswarm_verify_json($rval, $pem))
+   if($pem === false)
+   {
+      print_r('could not fetch PA public key');
+      $rval = false;
+   }
+   else if(!payswarm_verify_json($rval, $pem))
    {
       // FIXME: remove me/make exception
       print_r('invalid message signature');
