@@ -1,4 +1,5 @@
 <?php
+
 // NOTE: DO not move this block of code, we need to extract the encrypted
 // message if it exists before including wp-config.php
 if(isset($_POST["encrypted-message"]))
@@ -10,32 +11,18 @@ if(isset($_POST["encrypted-message"]))
 // modify POST parameters
 require_once('../../../wp-config.php');
 require_once('payswarm-utils.inc');
-require_once('payswarm-client.inc');
+require_once('payswarm-security.inc');
 
-// if no message was posted, redirect to PA for registration
+// if no message was posted, redirect to PaySwarm Authority for registration
 if(!isset($json_message))
 {
-   // generate/fetch public key
-   $keys = array();
-   if(!get_option('payswarm_public_key') ||
-      get_option('payswarm_key_overwrite') === 'true')
-   {
-      // generate the public/private keypair
-      $keys = payswarm_generate_keypair(false);
-      payswarm_config_keys($keys);
-   }
-   else
-   {
-      $keys["public"] = get_option('payswarm_public_key');
-   }
+   // get the key pair to be registered
+   $keys = payswarm_get_key_pair();
 
-   // register the keypair with the PaySwarm Authority
-   $reg_base_url = get_option('payswarm_registration_url');
-
-   // generate the registration re-direct URL
+   // generate the PA registration re-direct URL
    $callback_url = plugins_url() . '/payswarm/payswarm-register.php' .
-      "?nonce=" . payswarm_create_message_nonce();
-   $registration_url = $reg_base_url .
+      "?response-nonce=" . payswarm_create_message_nonce();
+   $registration_url = get_option('payswarm_registration_url') .
       '?public-key=' . urlencode($keys['public']) .
       '&registration-callback=' . urlencode($callback_url);
 
@@ -43,23 +30,15 @@ if(!isset($json_message))
    header("HTTP/1.1 303 See Other");
    header("Location: $registration_url");
 }
-// handle posted message
+// handle posted registration response message
 else
 {
    // decode json-encoded, encrypted message
    $msg = payswarm_decode_payswarm_authority_message($json_message);
 
    // update the vendor preferences
-   if($msg !== false)
-   {
-      payswarm_config_preferences($msg);
-      header('Location: ' . admin_url() . 'plugins.php?page=payswarm');
-   }
-   else
-   {
-      // FIXME: Create proper error message
-      echo "Failed to set PaySwarm configuration preferences.";
-   }
+   payswarm_config_preferences($msg);
+   header('Location: ' . admin_url() . 'plugins.php?page=payswarm');
 }
 
 /**
@@ -67,6 +46,7 @@ else
  *
  * @param array $options the PaySwarm OAuth options.
  */
+// FIXME: deprecated, remove me
 function payswarm_registration_config($options)
 {
    // FIXME: consider moving into payswarm oauth function(s)?
@@ -218,56 +198,45 @@ function payswarm_access_denied($options)
 }
 
 /**
- * Generates a public-private X509 encoded keys or gets an existing pair.
+ * Gets the public-private X.509 PEM-encoded key pair, generating it if
+ * necessary or if requested by the payswarm_key_overwrite option.
  *
  * @package payswarm
  * @since 1.0
  *
- * @param Boolean reuse true to reuse the existing keypair from the config,
- *           false not to.
- *
  * @return Array containing two keys 'public' and 'private' each with the
- *    public and private keys encoded in PEM X509 format, and 'public_key_url'
- *    will either be set to '' for new keys or the old URL if reusing keys.
+ *    public and private keys encoded in PEM X.509 format, and 'public_key_url'
+ *    will either be set to '' for new keys or the existing URL if reusing keys.
  */
-function payswarm_generate_keypair($reuse)
+function payswarm_get_key_pair()
 {
-   $rval = array();
-
-   // reuse existing key, do not keygen
-   if($reuse)
+   // generate key pair if one does not exist or overwrite requested
+   if(get_option('payswarm_private_key') === false or
+      get_option('payswarm_public_key') === false or
+      get_option('payswarm_key_overwrite') === 'true')
    {
-      $rval['public'] = get_option('payswarm_public_key');
-      $rval['private'] = get_option('payswarm_private_key');
-      $rval['public_key_url'] = get_option('payswarm_public_key_url');
-      if($rval['public'] === '' or $rval['private'] === '' or
-         $rval['public_key_url'] === '')
-      {
-         $reuse = false;
-      }
-   }
-
-   if(!$reuse)
-   {
-      // Create the keypair
+      // generate the key pair
       $keypair = openssl_pkey_new();
 
-      // Get private key
+      // get private key and public key in PEM format
       openssl_pkey_export($keypair, $privkey);
-
-      // Get public key
       $pubkey = openssl_pkey_get_details($keypair);
-      $pubkey = $pubkey["key"];
+      $pubkey = $pubkey['key'];
 
-      // free the keypair
+      // free the key pair
       openssl_free_key($keypair);
 
-      $rval['public'] = $pubkey;
-      $rval['private'] = $privkey;
-      $rval['public_key_url'] = '';
+      // store PEM keys
+      update_option('payswarm_private_key', $privkey);
+      update_option('payswarm_public_key', $pubkey);
    }
 
-   return $rval;
+   // return PEM keys and URL
+   return array(
+      'private' => get_option('payswarm_private_key'),
+      'public' => get_option('payswarm_public_key'),
+      'public_key_url' => get_option('payswarm_public_key_url', '')
+   );
 }
 
 ?>

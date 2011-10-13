@@ -1,6 +1,7 @@
 <?php
 require_once('../../../wp-config.php');
 require_once('payswarm-utils.inc');
+require_once('payswarm-security.inc');
 require_once('payswarm-article.inc');
 
 // get post to access
@@ -46,7 +47,7 @@ function payswarm_purchase_form($contracts_url, $info)
 <input type="hidden" name="message" value="$purchase_request" />
 <input type="submit" value="Yes" />
 <input type="button" value="No" />
-<p><em>If you have previously purchased, this item you won't be charged twice 
+<p><em>If you have previously purchased, this item you won't be charged twice
 for it.</em></p>
 </form>
 </html>

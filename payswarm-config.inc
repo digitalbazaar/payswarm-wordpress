@@ -84,7 +84,7 @@ function payswarm_config_endpoints($jsonld)
    $rval =
       ($client_config !== NULL) &&
       payswarm_config_set_value(
-         $client_config, "ps:vendorRegistrationService", 
+         $client_config, "ps:vendorRegistrationService",
          'payswarm_registration_url') &&
       payswarm_config_set_value(
          $client_config, "ps:publicKey", 'payswarm_authority_public_key_url') &&
@@ -98,27 +98,6 @@ function payswarm_config_endpoints($jsonld)
    // reset the PaySwarm Authority public key information
    delete_option('payswarm_authority_public_key_expiration');
    delete_option('payswarm_authority_public_key');
-
-   return $rval;
-}
-
-/**
- * Updates the PaySwarm public/private key information associated with this
- * installation of WordPress.
- *
- * @package payswarm
- * @since 1.0
- *
- * @param array $keys The public/private keypair that was registered. The
- *    associative array should have to keys in it - 'public' and 'private' for
- *    the public key and the private key, respectively.
- *
- * @return true if the update was successful, false otherwise.
- */
-function payswarm_config_keys($keys)
-{
-   update_option('payswarm_public_key', $keys['public']);
-   update_option('payswarm_private_key', $keys['private']);
 
    return $rval;
 }

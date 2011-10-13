@@ -39,6 +39,7 @@ define('PAYSWARM_PLUGIN_URL', site_url() . '/wp-content/plugins/' .
 define('PAYSWARM_SSL_ENABLED', false);
 
 require_once('payswarm-utils.inc');
+require_once('payswarm-security.inc');
 require_once('payswarm-database.inc');
 require_once('payswarm-config.inc');
 require_once('payswarm-admin.inc');
