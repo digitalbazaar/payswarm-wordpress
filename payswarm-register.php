@@ -12,9 +12,10 @@ require_once('../../../wp-config.php');
 require_once('payswarm-utils.inc');
 require_once('payswarm-client.inc');
 
-// FIXME: Perform registration redirect
+// if no message was posted, redirect to PA for registration
 if(!isset($json_message))
 {
+   // generate/fetch public key
    $keys = array();
    if(!get_option('payswarm_public_key') ||
       get_option('payswarm_key_overwrite') === 'true')
@@ -31,20 +32,18 @@ if(!isset($json_message))
    // register the keypair with the PaySwarm Authority
    $reg_base_url = get_option('payswarm_registration_url');
 
-   // get a message nonce
-   $nonce = payswarm_create_message_nonce();
-
    // generate the registration re-direct URL
    $callback_url = plugins_url() . '/payswarm/payswarm-register.php' .
-      "?nonce=" . $nonce;
-   $registration_url = $reg_base_url . '?public-key=' .
-      urlencode($keys['public']) . '&registration-callback=' .
-      urlencode($callback_url);
+      "?nonce=" . payswarm_create_message_nonce();
+   $registration_url = $reg_base_url .
+      '?public-key=' . urlencode($keys['public']) .
+      '&registration-callback=' . urlencode($callback_url);
 
    // re-direct the user agent to the PaySwarm Authority registration URL
    header("HTTP/1.1 303 See Other");
    header("Location: $registration_url");
 }
+// handle posted message
 else
 {
    // decode json-encoded, encrypted message
