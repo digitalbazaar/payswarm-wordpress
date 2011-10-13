@@ -181,21 +181,16 @@ function payswarm_get_pa_public_key()
             $response>get_error_message());
       }
 
-      // FIXME: Extract the key from the JSON-LD response
-      $rval = <<<PUBLIC_KEY
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqMbYknpvLLx6+ZQ3IucP
-l6dsEdSj82CBw9Xd7GQIsD7qYIzE18LKe9I+SroxHhDDpBuwTZREV9kOwyvOcvbD
-bp46+ymA7TGIRoScz6L7e8QSCqEPg/z6FBWtsCNpVx+AUF68Ci99IBU0xWKHyPRp
-6ZHpW9ET4150Q3ZFQLcw7xD8pt9lCb7YGbmWcZWYvMysLRZ4ihuYCbbaBzgtTp3i
-QQGmrZ2gcQVwdx898/OcJ8Kj9PNJEyoydoqcIQtVyQtfKev+Ofegy6pfH69i5+Z3
-Oqs2Ochr3tVnzPAMIVsvW/eVtnXacyxUsyT+m2uhRtC+e72zlDmobpLPm7RPYGJA
-kQIDAQAB
------END PUBLIC KEY-----
-PUBLIC_KEY;
+      // Extract the key from the JSON-LD response
+      $key = json_decode($response['body']);
 
-      // cache key for one day
-      set_transient('payswarm_authority_public_key', $rval, 24*60*60);
+      if($key !== NULL && isset($key->{'sec:publicKeyPem'}))
+      {
+         $rval = $key->{'sec:publicKeyPem'};
+         
+         // cache key for one day
+         set_transient('payswarm_authority_public_key', $rval, 24*60*60);
+      }
    }
 
    return $rval;
@@ -340,9 +335,9 @@ function payswarm_verify_message($obj, $pem)
          'sec:nonce' => new stdClass()
       )
    );
-   $obj = jsonld_frame($frame, $obj);
-
-   if($obj->{'sec:signature'})
+   $obj = jsonld_frame($obj, $frame);
+   
+   if($obj === NULL || !isset($obj->{'sec:signature'}))
    {
       throw new Exception('PaySwarm Security Exception: ' .
          'The message is not digitally signed.');
@@ -350,7 +345,7 @@ function payswarm_verify_message($obj, $pem)
 
    // save signature property and remove from object
    $sprop = $obj->{'sec:signature'};
-   unset($sprop->{'sec:signature'});
+   unset($obj->{'sec:signature'});
 
    // check the message nonce
    if(!payswarm_check_message_nonce($sprop->{'sec:nonce'}))
@@ -361,7 +356,7 @@ function payswarm_verify_message($obj, $pem)
 
    // ensure signature timestamp is +/- 15 minutes
    $now = time();
-   $time = date_create($sprop->{'dc:created'});
+   $time = date_create($sprop->{'dc:created'})->getTimestamp();
    if($time < ($now - 15*60) || $time > ($now + 15*60))
    {
       throw new Exception('PaySwarm Security Exception: ' .
