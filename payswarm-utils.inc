@@ -22,7 +22,7 @@ function payswarm_create_default_jsonld_context()
       'vcard' => 'http://www.w3.org/2006/vcard/ns#',
       'xsd' => 'http://www.w3.org/2001/XMLSchema#',
       '@coerce' => (object)array(
-         'xsd:anyURI' => array(
+         '@iri' => array(
             'com:destination',
             'com:destinationOwnerType',
             'com:payee',
