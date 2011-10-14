@@ -42,16 +42,22 @@ function updateAuthorityConfigUrl(event)
    // if a valid value was found, update the configuration URL
    if(hostPort != null)
    {
+      // build base URL
+      var baseUrl = "https://" + hostPort[2] + "/";
+
       // build config URL
-      var configUrl = "https://" + hostPort[2] + "/payswarm-v1-config";
+      var configUrl = baseUrl + "payswarm-v1-config";
 
       // update display on the screen and form element
       var configDisplay = 
          document.getElementById("payswarm_config_url_display");
       var config = 
          document.getElementById("payswarm_config_url");
+      var base = 
+         document.getElementById("payswarm_authority_base_url");
       configDisplay.innerText = configUrl;
       config.value = configUrl;
+      base.value = baseUrl;
    }
 }
 

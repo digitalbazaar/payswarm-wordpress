@@ -103,7 +103,8 @@ function payswarm_config_endpoints($jsonld)
 }
 
 /**
- * Updates the PaySwarm preferences associated with this WordPress installation.
+ * Updates the PaySwarm Authority defined preferences associated with this 
+ * WordPress installation.
  *
  * @package payswarm
  * @since 1.0
@@ -120,17 +121,9 @@ function payswarm_config_preferences($preferences)
    $rval =
       ($preferences !== NULL) &&
       payswarm_config_set_value(
-         $preferences, 'ps:license', 'payswarm_default_license_url') &&
-      payswarm_config_set_value(
-         $preferences, 'ps:licenseHash', 'payswarm_default_license_hash') &&
-      payswarm_config_set_value(
          $preferences, 'com:currency', 'payswarm_default_currency') &&
       payswarm_config_set_value(
-         $preferences, 'com:minimumAmount', 'payswarm_default_price') &&
-      payswarm_config_set_value(
          $preferences, 'com:destination', 'payswarm_destination_account') &&
-      payswarm_config_set_value(
-         $preferences, 'com:maximumRate', 'payswarm_default_auth_rate') &&
       payswarm_config_set_value(
          $preferences, 'sec:publicKey', 'payswarm_public_key_url');
 

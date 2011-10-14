@@ -37,6 +37,8 @@ define('PAYSWARM_PLUGIN_URL', site_url() . '/wp-content/plugins/' .
    str_replace(basename(__FILE__), '', plugin_basename(__FILE__)));
 // FIXME: Enable this for production. It should be 'false' for development
 define('PAYSWARM_SSL_ENABLED', false);
+// FIXME: This should be a commercial site once we get out of alpha
+define('PAYSWARM_AUTHORITY_BASE_URL', 'https://dev.payswarm.com/');
 
 require_once('payswarm-utils.inc');
 require_once('payswarm-security.inc');
