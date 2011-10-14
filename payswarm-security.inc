@@ -181,13 +181,13 @@ function payswarm_get_pa_public_key()
             $response>get_error_message());
       }
 
-      // Extract the key from the JSON-LD response
+      // extract the key from the JSON-LD response
       $key = json_decode($response['body']);
 
-      if($key !== NULL && isset($key->{'sec:publicKeyPem'}))
+      if($key !== NULL and property_exists($key, 'sec:publicKeyPem'))
       {
          $rval = $key->{'sec:publicKeyPem'};
-         
+
          // cache key for one day
          set_transient('payswarm_authority_public_key', $rval, 24*60*60);
       }
@@ -336,8 +336,8 @@ function payswarm_verify_message($obj, $pem)
       )
    );
    $obj = jsonld_frame($obj, $frame);
-   
-   if($obj === NULL || !isset($obj->{'sec:signature'}))
+
+   if($obj === null or $obj->{'sec:signature'} === null)
    {
       throw new Exception('PaySwarm Security Exception: ' .
          'The message is not digitally signed.');
@@ -357,7 +357,7 @@ function payswarm_verify_message($obj, $pem)
    // ensure signature timestamp is +/- 15 minutes
    $now = time();
    $time = date_create($sprop->{'dc:created'})->getTimestamp();
-   if($time < ($now - 15*60) || $time > ($now + 15*60))
+   if($time < ($now - 15*60) or $time > ($now + 15*60))
    {
       throw new Exception('PaySwarm Security Exception: ' .
          'The message digital signature timestamp is out of range.');
