@@ -408,6 +408,11 @@ function payswarm_decode_payswarm_authority_message($json_message)
 {
    // convert message from json
    $msg = json_decode($json_message);
+   if($msg === NULL)
+   {
+      throw new Exception('PaySwarm Security Exception: ' .
+         'The message contains malformed JSON.');
+   }
 
    // decrypt message
    $pem = get_option('payswarm_private_key');

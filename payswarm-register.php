@@ -5,6 +5,12 @@
 if(isset($_POST["encrypted-message"]))
 {
    $json_message = $_POST["encrypted-message"];
+
+   // make sure to remove magic quotes if in use
+   if(get_magic_quotes_gpc())
+   {
+      $json_message = stripcslashes($json_message);
+   }
 }
 
 // NOTE: When you require wp-config.php, magic quotes is turned on to
@@ -25,7 +31,7 @@ if(!isset($json_message))
       '?response-nonce=' . payswarm_create_message_nonce() .
       '&public-key=' . urlencode($keys['public']) .
       '&registration-callback=' . urlencode($callback_url);
-   
+
    // re-direct the user agent to the PaySwarm Authority registration URL
    header('HTTP/1.1 303 See Other');
    header("Location: $registration_url");
