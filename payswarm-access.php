@@ -1,30 +1,54 @@
 <?php
+
+// NOTE: DO not move this block of code, we need to extract the encrypted
+// message if it exists before including wp-config.php
+if(isset($_POST["encrypted-message"]))
+{
+   $json_message = $_POST["encrypted-message"];
+
+   // make sure to remove magic quotes if in use
+   if(get_magic_quotes_gpc())
+   {
+      $json_message = stripcslashes($json_message);
+   }
+}
+
 require_once('../../../wp-config.php');
 require_once('payswarm-utils.inc');
 require_once('payswarm-security.inc');
 require_once('payswarm-article.inc');
 
-// get post to access
-$post_id = $_GET['p'];
+// if no message was posted, show purchase request form
+if(!isset($json_message))
+{
+   // get post to access
+   $post_id = $_GET['p'];
 
-// PURCHASE REQUEST
+   // TODO: UI to select the PaySwarm Authority if one isn't already selected
+   // get the contracts URL for the PaySwarm Authority
+   $contracts_url = get_option("payswarm_contracts_url");
 
-// TODO: UI to select the PaySwarm Authority if one isn't already selected
-// get the contracts URL for the PaySwarm Authority
-$contracts_url = get_option("payswarm_contracts_url");
+   // FIXME: we want to do this via a GET redirect to the PA instead of a POST
 
-// create the purchase request
-$info = payswarm_get_post_info($post_id);
+   // create the purchase request
+   $info = payswarm_get_post_info($post_id);
 
-// FIXME: Should this be digitally signed, no reason to if over SSL, right?
-// create a POST form including the purchase request targeted at the PA
-//print_r($info);
-echo payswarm_purchase_form($contracts_url, $info);
+   // create a POST form including the purchase request targeted at the PA
+   echo payswarm_purchase_form($contracts_url, $info);
+}
+// handle posted message
+else
+{
+   payswarm_handle_purchase_response($json_message);
+}
 
 /**
  * Generates the purchase form given a post information object.
  *
+ * @param string $contracts_url the PA contracts URL.
  * @param array $info the information about the particular post.
+ *
+ * @return string the purchase form.
  */
 function payswarm_purchase_form($contracts_url, $info)
 {
@@ -34,7 +58,9 @@ function payswarm_purchase_form($contracts_url, $info)
       '@context' => 'http://purl.org/payswarm/v1',
       'ps:listing' => $info['listing_url'],
       'ps:listingHash' => $info['listing_hash']);
-   $purchase_request = htmlspecialchars(payswarm_json_encode($purchase_request));
+   // FIXME: add callback URL^
+   $purchase_request = htmlspecialchars(
+      payswarm_json_encode($purchase_request));
 
    $rval = <<<FORM
 <html>
@@ -47,7 +73,7 @@ function payswarm_purchase_form($contracts_url, $info)
 <input type="hidden" name="message" value="$purchase_request" />
 <input type="submit" value="Yes" />
 <input type="button" value="No" />
-<p><em>If you have previously purchased, this item you won't be charged twice
+<p><em>If you have previously purchased this item you won't be charged twice
 for it.</em></p>
 </form>
 </html>
@@ -56,89 +82,49 @@ FORM;
    return $rval;
 }
 
-// TODO: PURCHASE RESPONSE
-
-// accept the response from the PA and decrypt it
-
-// decrypt the response, and if it is valid, approve access to the article
-
-// store session ID for person from purchase response.
-
 /**
- * Requests the purchase of a post with the PaySwarm authority.
+ * Handles the purchase response.
  *
- * @param array $options the PaySwarm OAuth options.
+ * @param string $json_message the POSTED purchase response.
  */
-function payswarm_access_purchase_post($options)
+function payswarm_handle_purchase_response($json_message)
 {
-   global $post_id;
+   // decode json-encoded, encrypted message
+   $msg = payswarm_decode_payswarm_authority_message($json_message);
 
-   // build options for purchasing post
-   $info = payswarm_get_post_info($post_id);
-   $options['contracts_params'] = array(
-      'listing' => $info['listing_url'],
-      'listing_hash' => $info['listing_hash']
-   );
-   $options['authorize_params'] = array(
-      'balance' => get_post_meta($post_id, 'payswarm_price', true)
-   );
-   $options['contracts_url'] = get_option('payswarm_contracts_url');
-   $options['success'] = 'payswarm_access_post_authorized';
-   // FIXME: keep same denial handler?
-   //$options['denied'] = 'payswarm_access_post_denied';
-
-   try
+   // check message type
+   if($msg->{'@type'} === 'err:Error')
    {
-      // purchase post
-      payswarm_oauth1_purchase_post($options);
+      // FIXME: call access denied instead of exception?
+      //payswarm_access_denied();
+      throw new Exception('PaySwarm Registration Exception: ' .
+         $msg->{'err:message'});
    }
-   catch(OAuthException $E)
+   else if($msg->{'@type'} !== 'ps:Contract')
    {
-      // FIXME: handle this error within payswarm-oauth function(s)?
-      // FIXME: can this produce an infinite redirect problem?
-      throw $E;
-
-      // if there is an error, check to see if the token has been revoked
-      $error = $E->lastResponse;
-      $invalidToken = strpos($error, 'payswarm.database.NotFound');
-
-      // if the token is invalid, start the process over
-      if($invalidToken !== false)
-      {
-         // clear the session and redirect to the current page
-         payswarm_clear_session();
-         header('Location: ' . payswarm_get_current_url());
-      }
-      else
-      {
-         // re-raise
-         throw $E;
-      }
+      throw new Exception('PaySwarm Registration Exception: ' .
+         'Invalid purchase response from PaySwarm Authority.');
    }
-}
-
-/**
- * Called when access to a post has been authorized.
- *
- * @param array $options the PaySwarm OAuth options.
- */
-function payswarm_access_post_authorized($options)
-{
-   global $post_id;
 
    // authorize the post and redirect to it
-   payswarm_database_authorize_post($options['token'], $post_id);
-   header('Location: ' . get_permalink($post_id));
-   exit(0);
+   $post_id = payswarm_database_authorize_post($msg);
+   if($post_id === false)
+   {
+      throw new Exception('PaySwarm Purchase Exception: ' .
+         'Invalid PaySwarm contract.');
+   }
+   else
+   {
+      header('Location: ' . get_permalink($post_id));
+      exit(0);
+   }
 }
 
 /**
- * Prints out an appropriate error when getting an access token was denied
+ * Prints out an appropriate error when getting an access to a post was denied
  * by the PaySwarm authority.
- *
- * @param array $options the PaySwarm OAuth options.
  */
-function payswarm_access_denied($options)
+function payswarm_access_denied()
 {
    global $post_id;
 

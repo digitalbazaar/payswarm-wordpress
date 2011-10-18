@@ -288,31 +288,45 @@ function payswarm_database_is_post_authorized($payswarm_token, $post_id)
 }
 
 /**
- * Authorizes a post to be viewed for a particular customer ID. If the given
- * token does not contain a customer ID, the post will not be authorized.
+ * Authorizes a post to be viewed for a particular customer. If the given
+ * contract is invalid, the post will not be authorized.
  *
  * @package payswarm
  * @since 1.0
  *
- * @param Array $payswarm_token an associative array containing the token info.
- * @param Integer $post_id the post identifier.
+ * @param Array $contract a short-form PaySwarm contract.
  *
- * @return boolean true if the post was authorized, false if not.
+ * @return the ID of the post that was authority, false on error.
  */
-function payswarm_database_authorize_post($payswarm_token, $post_id)
+function payswarm_database_authorize_post($contract)
 {
    $rval = false;
    global $wpdb;
 
-   // see if a customer ID is set on the token
-   if(isset($payswarm_token['details']['customer_id']))
+   // validate contract
+   if(property_exists($contract, 'ps:assetAcquirer') and
+      property_exists($contract, 'ps:asset') and
+      property_exists($contract, 'ps:license'))
    {
-      $customer_id = $payswarm_token['details']['customer_id'];
+      $customer_id = $contract->{'ps:assetAcquirer'};
+      $asset = $contract->{'ps:asset'};
+      $license = $contract->{'ps:license'};
+
+      // FIXME: check license URL
+      //$rval = ($license === get_option('payswarm_license_url'));
+
+      // get post ID from asset URL
+      $post_id = payswarm_database_get_post_id($asset);
+
+      // update database
       $rval = $wpdb->query($wpdb->prepare(
          'INSERT IGNORE INTO ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' ' .
          '(customer_id, post_id) VALUES (%s, %s)',
          $customer_id, $post_id));
-      $rval = ($rval !== false);
+      if($rval !== false)
+      {
+         $rval = $post_id;
+      }
    }
 
    return $rval;

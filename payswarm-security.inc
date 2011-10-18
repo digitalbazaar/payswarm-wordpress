@@ -165,6 +165,9 @@ function payswarm_sign_json($obj, $pem, $sig_date)
  */
 function payswarm_get_pa_public_key()
 {
+   // FIXME: the cache ID should include the PA IRI since more than one
+   // PA could be used... it's the customer's PA's public key that is
+   // typically retrieved
    $rval = get_transient('payswarm_authority_public_key');
 
    // PaySwarm Authority public key should be refreshed

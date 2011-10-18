@@ -42,6 +42,18 @@ else
    // decode json-encoded, encrypted message
    $msg = payswarm_decode_payswarm_authority_message($json_message);
 
+   // check message type
+   if($msg->{'@type'} === 'err:Error')
+   {
+      throw new Exception('PaySwarm Registration Exception: ' .
+         $msg->{'err:message'});
+   }
+   else if($msg->{'@type'} !== 'ps:Preferences')
+   {
+      throw new Exception('PaySwarm Registration Exception: ' .
+         'Invalid registration response from PaySwarm Authority.');
+   }
+
    // update the vendor preferences
    payswarm_config_preferences($msg);
    header('Location: ' . admin_url() . 'plugins.php?page=payswarm');
