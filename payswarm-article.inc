@@ -44,7 +44,7 @@ function payswarm_generate_asset_object($info, $includeSignature)
    {
       $asset += array(
          'sec:signature' => (object)array(
-            '@type' => 'sec:JsonldSignature',
+            '@type' => 'sec:JsonLdSignature',
             'dc:created' => $info['asset_signature_created'],
             'dc:creator' => $info['public_key_url'],
             'sec:signatureValue' => $info['asset_signature'])
@@ -108,7 +108,7 @@ function payswarm_generate_listing_object($info, $includeSignature)
    {
       $listing += array(
          'sec:signature' => (object)array(
-            '@type' => 'sec:JsonldSignature',
+            '@type' => 'sec:JsonLdSignature',
             'dc:created' => $info['listing_signature_created'],
             'dc:creator' => $info['public_key_url'],
             'sec:signatureValue' => $info['listing_signature']
@@ -468,7 +468,7 @@ function payswarm_asset_information_rdfa($post_id)
                datatype=\"xsd:dateTime\">tomorrow</abbr>.
             </span>
             <span rel=\"sec:signature\">
-               <span typeof=\"sec:JsonldSignature\">
+               <span typeof=\"sec:JsonLdSignature\">
                   This <a href=\"" . $info['asset_url'] . "\">asset</a>
                   was <abbr property=\"sec:signatureValue\"
                   content=\"" . $info['asset_signature'] . "\" title=\"" . $info['asset_signature'] . "\">digitally signed</abbr>
@@ -488,7 +488,7 @@ function payswarm_asset_information_rdfa($post_id)
                  </span>
               </span>
               <span rel=\"sec:signature\">
-                 <span typeof=\"sec:JsonldSignature\">
+                 <span typeof=\"sec:JsonLdSignature\">
                     This <a href=\"" . $info['post_url'] . "#listing\">listing</a> was
                     <abbr property=\"sec:signatureValue\"
                     content=\"" . $info['listing_signature'] . "\" title=\"" . $info['listing_signature'] . "\">digitally signed</abbr>
