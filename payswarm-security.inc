@@ -3,15 +3,89 @@
 require_once('jsonld.php');
 
 /**
+ * Creates a new PaySwarm session if one doesn't already exist. If one does
+ * exist, it will be updated with the given profile ID if it hasn't already
+ * been set.
+ *
+ * The PaySwarm session is stored in a cookie 'payswarm-session'. This session
+ * is used to associate the visitor with a PaySwarm identity if one is
+ * ever retrieved for the visitor.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param profile_id the profile IRI to associate with the session.
+ *
+ * @return string the session ID for the active PaySwarm session.
+ */
+function payswarm_create_session($profile_id = null)
+{
+   global $_COOKIE;
+
+   // try to get existing session
+   $session = payswarm_get_session($profile_id);
+
+   // no session exists, create a new one
+   if($session === false)
+   {
+      // session ID length must be <= 20 to use set_transient API below
+      $now = time();
+      $random_value = rand(0, 100000);
+      $session = array(
+         'id' => md5("$now$random_value"),
+         'ip' => $_SERVER['REMOTE_ADDR'],
+         'profile_id' => $profile_id);
+      $timeout = 0;
+   }
+   // get timeout cookie value
+   else if(array_key_exists('payswarm-session-timeout', $_COOKIE))
+   {
+      $timeout = $_COOKIE['payswarm-session-timeout'];
+   }
+
+   // only update cookie every 5 minutes since it requires a write
+   // (timeout is 0 for new sessions, so always write in that case)
+   $now = time();
+   if($now - 300 > $timeout)
+   {
+      // get client IP address
+      $ip = $_SERVER['REMOTE_ADDR'];
+
+      // update session (updates expiration time and profile ID)
+      $timeout = $now + 3600;
+      set_transient('payswarm_session_' . $session['id'], $session, 3600);
+
+      // FIXME: if get_option("payswarm_ssl_on") then use https
+      // cookie, else security is handled in a different way, so set
+      // cookie to non-https
+      $secure = true;
+
+      // update cookies
+      global $_SERVER;
+      setcookie(
+         'payswarm-session', $session['id'], $timeout, '/',
+         $_SERVER['HTTP_HOST'], $secure);
+      setcookie(
+         'payswarm-timeout', $timeout, $timeout, '/',
+         $_SERVER['HTTP_HOST'], $secure);
+   }
+
+   return $session;
+}
+
+/**
  * Gets the PaySwarm session that is being tracked on the site.
  *
  * @package payswarm
  * @since 1.0
  *
- * @return mixed the session ID for the active payswarm session or false if
- *         no such session exists.
+ * @param profile_id the profile IRI to check against the session, null for
+ *           no check.
+ *
+ * @return mixed the active PaySwarm session or false if no such session
+ *         exists.
  */
-function payswarm_get_session()
+function payswarm_get_session($profile_id = null)
 {
    global $_COOKIE;
    $session = false;
@@ -19,78 +93,20 @@ function payswarm_get_session()
    // check to see if the payswarm-session cookie exists
    if(array_key_exists('payswarm-session', $_COOKIE))
    {
-      $session = $_COOKIE['payswarm-session'];
-   }
-
-   return $session;
-}
-
-/**
- * Creates a new PaySwarm session if one doesn't already exist. If one does
- * exist, it updates it if the "update" flag is set to true.
- *
- * The PaySwarm session is stored in a cookie 'payswarm-session'. This session
- * is used to associate the visitor with a PaySwarm Payment Token if one is
- * ever retrieved for the visitor.
- *
- * @package payswarm
- * @since 1.0
- *
- * @param update true to update the PaySwarm session if already exists.
- *
- * @return string the session ID for the active PaySwarm session.
- */
-function payswarm_create_session($update = true)
-{
-   global $_COOKIE;
-
-   // try to get existing session
-   $session = payswarm_get_session();
-
-   // update cookie value if it doesn't exist
-   if($session === false)
-   {
-      $update = true;
-   }
-
-   if($update)
-   {
-      $now = time();
-      $timeout = 0;
-
-      // no session exists, create new one
-      if($session === false)
+      $session_id = $_COOKIE['payswarm-session'];
+      $session = get_transient('payswarm_session_' . $session_id);
+      if($session !== false)
       {
-         $random_value = rand(0, 100000);
-         $session = sha1("$now$random_value");
-      }
-      // get timeout cookie
-      else if(array_key_exists('payswarm-session-timeout', $_COOKIE))
-      {
-         $timeout = $_COOKIE['payswarm-session-timeout'];
-      }
-
-      // only update the cookie every 5 minutes since it requires a database
-      // write (allows purging of expired sessions from the database)
-      $now = time();
-      if($now - 300 > $timeout)
-      {
-         // update session in database (updates expiration time)
-         $timeout = $now + 3600;
-         payswarm_database_update_session($session);
-
-         // FIXME: if get_option("payswarm_ssl_on") then use https cookie, else
-         // security is handled in a different way, so set cookie to non-https
-         $secure = true;
-
-         // update cookies
-         global $_SERVER;
-         setcookie(
-            'payswarm-session', $session, $timeout, '/',
-            $_SERVER['HTTP_HOST'], $secure);
-         setcookie(
-            'payswarm-timeout', $timeout, $timeout, '/',
-            $_SERVER['HTTP_HOST'], $secure);
+         // ensure client IP address and profile ID match
+         $ip = $_SERVER['REMOTE_ADDR'];
+         if($session['ip'] !== $ip or
+            ($profile_id !== $session['profile_id'] and
+            $session['profile_id'] !== null))
+         {
+            // invalid session, clear cookie only
+            payswarm_clear_session_cookie();
+            $session = false;
+         }
       }
    }
 
@@ -98,16 +114,37 @@ function payswarm_create_session($update = true)
 }
 
 /**
- * Clears a PaySwarm session.
- *
- * Removes the 'payswarm-session' cookie by setting the value to empty
- * and setting the time an hour in the past.
+ * Clears a PaySwarm session. Removes cookies and server-side state.
  *
  * @package payswarm
  * @since 1.0
  */
 function payswarm_clear_session()
 {
+   // clear existing stored session
+   $session = payswarm_get_session();
+   if($session !== false)
+   {
+      delete_transient('payswarm_session_' . $session['id']);
+   }
+
+   // clear cookie
+   payswarm_clear_session_cookie();
+}
+
+/**
+ * Clears a PaySwarm session cookie (does not clear the server-side session
+ * state).
+ *
+ * Removes any session cookies by setting their values to empty and their
+ * expiration time to an hour in the past.
+ *
+ * @package payswarm
+ * @since 1.0
+ */
+function payswarm_clear_session_cookie()
+{
+   // clear cookies
    // FIXME: if get_option("payswarm_ssl_on") then use https cookie, else
    // security is handled in a different way, so set cookie to non-https
    $secure = true;
@@ -207,23 +244,24 @@ function payswarm_get_pa_public_key()
  */
 function payswarm_create_message_nonce()
 {
-   // get the current payswarm session
-   $session = payswarm_get_session();
+   // get client IP address
+   $ip = $_SERVER['REMOTE_ADDR'];
 
-   // generate a unique 20-digit pseudo-random nonce
    do
    {
+      // generate a unique 20-digit pseudo-random nonce
       $rval =
          base_convert(mt_rand(), 10, 36) .
          base_convert(mt_rand(), 10, 36);
+      $key = 'payswarm_nonce_' . $rval;
 
       // save the nonce in the database with a 15 minute timeout
-      if(get_transient($rval) === false)
+      if(get_transient($key) === false)
       {
-         set_transient($rval, $session, 15*60);
+         set_transient($key, $ip, 60*15);
       }
    }
-   while(get_transient($rval) !== $session);
+   while(get_transient($key) !== $ip);
 
    return $rval;
 }
@@ -238,10 +276,11 @@ function payswarm_create_message_nonce()
  */
 function payswarm_check_message_nonce($nonce)
 {
-   if(isset($nonce) and $nonce !== null)
+   if(isset($nonce))
    {
-      // compare current session w/nonce associated session
-      $rval = (payswarm_get_session() === get_transient($nonce));
+      // compare current IP w/nonce IP
+      $nonce = 'payswarm_nonce_' . $nonce;
+      $rval = ($_SERVER['REMOTE_ADDR'] === get_transient($nonce));
 
       // clean up nonce
       delete_transient($nonce);

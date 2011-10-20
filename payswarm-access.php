@@ -97,27 +97,44 @@ function payswarm_handle_purchase_response($json_message)
    {
       // FIXME: call access denied instead of exception?
       //payswarm_access_denied();
-      throw new Exception('PaySwarm Registration Exception: ' .
+      throw new Exception('PaySwarm Purchase Exception: ' .
          $msg->{'err:message'});
    }
    else if($msg->{'@type'} !== 'ps:Contract')
    {
-      throw new Exception('PaySwarm Registration Exception: ' .
+      throw new Exception('PaySwarm Purchase Exception: ' .
          'Invalid purchase response from PaySwarm Authority.');
    }
 
-   // authorize the post and redirect to it
-   $post_id = payswarm_database_authorize_post($msg);
-   if($post_id === false)
+   // validate contract
+   if(!property_exists($msg, 'ps:assetAcquirer') or
+      !property_exists($msg, 'ps:asset') or
+      !property_exists($msg, 'ps:license'))
    {
       throw new Exception('PaySwarm Purchase Exception: ' .
-         'Invalid PaySwarm contract.');
+         'Unknown Contract format.');
    }
-   else
+
+   // get contract info
+   $profile_id = $msg->{'ps:assetAcquirer'};
+   $asset = $msg->{'ps:asset'};
+   $license = $msg->{'ps:license'};
+
+   // get post ID from asset URL
+   $post_id = url_to_postid($asset);
+   if($post_id === 0)
    {
-      header('Location: ' . get_permalink($post_id));
-      exit(0);
+      throw new Exception('PaySwarm Purchase Exception: ' .
+         'The Asset in the Contract could not be matched to a post.');
    }
+
+   // create/update payswarm session
+   $session = payswarm_create_session($profile_id);
+
+   // authorize the post and redirect to it
+   payswarm_database_authorize_post($profile_id, $post_id, $license);
+   header('Location: ' . get_permalink($post_id));
+   exit(0);
 }
 
 /**

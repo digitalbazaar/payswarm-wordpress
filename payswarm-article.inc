@@ -309,7 +309,7 @@ function payswarm_get_post_info($post_id, $resign = false)
       $rval['asset_hash'] = $asset_hash;
 
       // generate new listing signature
-      $listing_signature = 
+      $listing_signature =
          payswarm_sign_listing($rval, $private_key, $sig_created);
       $rval['listing_signature'] = $listing_signature;
       $rval['listing_signature_created'] = $sig_created;
@@ -591,19 +591,7 @@ function payswarm_filter_paid_content($content)
    $purchased = false;
    $post_id = $post->ID;
    $session = payswarm_get_session();
-   // FIXME: if you are viewing multiple articles on a page, for example on the
-   // main blogroll, the page displays an error about content
-   // already being sent before this cookie is set
-
-   // FIXME: if you are viewing multiple articles on a page, for example on the
-   // main blogroll, the page displays an error about content
-   // already being sent before this cookie is set
-
-   $ptoken = payswarm_database_get_token($session, 'payswarm-payment');
-   if($ptoken !== NULL)
-   {
-      $purchased = payswarm_database_is_post_authorized($ptoken, $post_id);
-   }
+   $purchased = payswarm_database_is_post_authorized($session, $post_id);
 
    // remove any spurious paragraph and break tags
    $content = str_replace(
