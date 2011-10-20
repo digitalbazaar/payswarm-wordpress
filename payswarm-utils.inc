@@ -22,27 +22,25 @@ function payswarm_create_default_jsonld_context()
       'vcard' => 'http://www.w3.org/2006/vcard/ns#',
       'xsd' => 'http://www.w3.org/2001/XMLSchema#',
       '@coerce' => (object)array(
-         '@iri' => array(
-            'com:destination',
-            'com:destinationOwnerType',
-            'com:payee',
-            'com:rateContext',
-            'com:rateType',
-            'com:source',
-            'dc:creator',
-            'ps:asset',
-            'ps:assetProvider',
-            'ps:authority',
-            'ps:contentUrl',
-            'ps:license',
-            'sec:signer'),
-         'xsd:integer' => 'com:payeePosition',
-         'xsd:dateTime' => array(
-            'dc:created',
-            'com:date',
-            'ps:validFrom',
-            'ps:validUntil'),
-         'rdf:XMLLiteral' => 'ps:licenseTemplate')
+         'com:destination' => '@iri',
+         'com:destinationOwnerType' => '@iri',
+         'com:payee' => '@iri',
+         'com:rateContext' => '@iri',
+         'com:rateType' => '@iri',
+         'com:source' => '@iri',
+         'dc:creator' => '@iri',
+         'ps:asset' => '@iri',
+         'ps:assetProvider' => '@iri',
+         'ps:authority' => '@iri',
+         'ps:contentUrl' => '@iri',
+         'ps:license' => '@iri',
+         'sec:signer' => '@iri',
+         'com:payeePosition' => 'xsd:integer',
+         'dc:created' => 'xsd:dateTime',
+         'com:date' => 'xsd:dateTime',
+         'ps:validFrom' => 'xsd:dateTime',
+         'ps:validUntil' => 'xsd:dateTime',
+         'ps:licenseTemplate' => 'rdf:XMLLiteral')
    );
 
    return $ctx;
