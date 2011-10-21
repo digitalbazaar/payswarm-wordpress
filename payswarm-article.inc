@@ -409,7 +409,7 @@ function payswarm_asset_information_rdfa($post_id)
            xmlns:gr=\"http://purl.org/goodrelations/v1#\"
            xmlns:ps=\"http://purl.org/payswarm#\"
            xmlns:rdfs=\"http://www.w3.org/2000/01/rdf-schema#\"
-           xmlns:sig=\"http://purl.org/signature#\"
+           xmlns:sec=\"http://purl.org/security#\"
            xmlns:xsd=\"http://www.w3.org/2001/XMLSchema#\"
            about=\"" . $info['asset_url'] . "\" typeof=\"ps:Asset ps:WebPage\"
            class=\"asset-info\">
