@@ -212,26 +212,18 @@ function payswarm_get_post_info($post_id, $resign = false)
    $rval['asset_url'] = $rval['post_url'] . '#asset';
 
    // license
-   $default_license = get_option('payswarm_default_license_url');
-   $license = get_post_meta($post_id, 'payswarm_content_license_url', true);
-   $license_hash = get_post_meta(
-      $post_id, 'payswarm_content_license_hash', true);
-
-   // if the license URL for the post and the default license are the same,
-   // then require the hash to be the same (update it to the default hash and
-   // resign if there is a difference)
-   if($default_license === $license)
+   $use_default_license = get_post_meta(
+      $post_id, 'payswarm_use_default_license', true);
+   if($use_default_license === 'false')
    {
-      // FIXME: make using the updated default license hash an option in
-      // the future instead of requiring it
-      $default_license_hash = get_option('payswarm_default_license_hash');
-      if($license_hash !== $default_license_hash)
-      {
-         $license_hash = $default_license_hash;
-         update_post_meta(
-            $post_id, 'payswarm_content_license_hash', $license_hash);
-         $resign = true;
-      }
+      $license = get_post_meta($post_id, 'payswarm_content_license_url', true);
+      $license_hash = get_post_meta(
+         $post_id, 'payswarm_content_license_hash', true);
+   }
+   else
+   {
+      $license = get_option('payswarm_default_license_url');
+      $license_hash = get_option('payswarm_default_license_hash');
    }
    $rval['license_url'] = $license;
    $rval['license_hash'] = $license_hash;
@@ -680,6 +672,24 @@ function payswarm_create_meta_box()
    $price = get_post_meta($post->ID, 'payswarm_price', true);
    $auth_rate = get_post_meta($post->ID, 'payswarm_auth_rate', true);
    $currency_symbol = "$";
+   $use_default_license = get_post_meta(
+      $post->ID, 'payswarm_use_default_license', true);
+   if($use_default_license === '')
+   {
+      $use_default_license = 'true';
+   }
+   if($use_default_license === 'false')
+   {
+      $license = get_post_meta(
+         $post->ID, 'payswarm_content_license_url', true);
+      $hash = get_post_meta(
+         $post->ID, 'payswarm_content_license_hash', true);
+   }
+   else
+   {
+      $license = get_option('payswarm_default_license_url');
+      $hash = get_option('payswarm_default_license_hash');
+   }
 
    // dump the HTML contents
    echo '<div><strong><label for="payswarm_price_field">' .
@@ -698,16 +708,21 @@ function payswarm_create_meta_box()
       'name="payswarm_auth_rate" value="'. $auth_rate . '" size="6" />' .
       '<span>The percentage to permit the PaySwarm authority to charge.</span>';
    echo '</div>';
+   echo '<div><strong><label for="payswarm_use_default_license">' .
+      __("Use Default Content License") .
+      ' </label></strong>';
+   echo '<input type="text" ' .
+      'id="payswarm_use_default_license" name="payswarm_use_default_license" ' .
+      'value="' . $use_default_license . '"/>';
    echo '<div><strong><label for="payswarm_content_license_url_field">' .
       __("Content License") .
       ' </label></strong>';
    echo '<select id="payswarm_content_license_url_field" ' .
       'name="payswarm_content_license_url">' .
-      '      <option value="' . get_option('payswarm_default_license_url') .
-      '">' . get_option('payswarm_default_license_url') . '</option>' .
+      '      <option value="' . $license . '">' . $license . '</option>' .
       '</select>' .
       '<input type="hidden" name="payswarm_content_license_hash" ' .
-      'value="' . get_option('payswarm_default_license_hash') . '"/>' .
+      'value="' . $license_hash . '"/>' .
       '<span>The license to associate with the content when it is sold.' .
       '</span></div>';
 }
@@ -757,26 +772,42 @@ function payswarm_save_post_data($post_id)
       {
          $price = $_POST['payswarm_price'];
          $auth_rate = $_POST['payswarm_auth_rate'];
-         $license = $_POST['payswarm_content_license_url'];
-         $hash = $_POST['payswarm_content_license_hash'];
+         $use_default_license = isset($_POST['use_default_license']) ?
+            'true' : 'false';
+         if($use_default_license === 'false')
+         {
+            $license = $_POST['payswarm_content_license_url'];
+            $hash = $_POST['payswarm_content_license_hash'];
+         }
       }
       // invalid nonce, get existing post data
       else
       {
          $price = get_post_meta($post_id, 'payswarm_price', true);
          $auth_rate = get_post_meta($post_id, 'payswarm_auth_rate', true);
-         $license = get_post_meta(
-            $post_id, 'payswarm_content_license_url', true);
-         $hash = get_post_meta($post_id, 'payswarm_content_license_hash', true);
+         $use_default_license = get_post_meta(
+            $post_id, 'payswarm_use_default_license', true);
+         if($use_default_license === 'false')
+         {
+            $license = get_post_meta(
+               $post_id, 'payswarm_content_license_url', true);
+            $hash = get_post_meta(
+               $post_id, 'payswarm_content_license_hash', true);
+         }
       }
 
       // validate and update post meta data
       payswarm_update_post_meta($post_id, 'payswarm_price', $price);
       payswarm_update_post_meta($post_id, 'payswarm_auth_rate', $auth_rate);
       payswarm_update_post_meta(
-         $post_id, 'payswarm_content_license_url', $license);
-      payswarm_update_post_meta(
-         $post_id, 'payswarm_content_license_hash', $hash);
+         $post_id, 'payswarm_use_default_license', $use_default_license);
+      if($use_default_license === 'false')
+      {
+         payswarm_update_post_meta(
+            $post_id, 'payswarm_content_license_url', $license);
+         payswarm_update_post_meta(
+            $post_id, 'payswarm_content_license_hash', $hash);
+      }
 
       // force resigning of post info
       payswarm_get_post_info($post_id, true);

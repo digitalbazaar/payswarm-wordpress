@@ -233,7 +233,7 @@ function payswarm_settings_page()
       // set a default for the PaySwarm base URL
       if(!get_option('payswarm_authority_base_url'))
       {
-         update_option('payswarm_authority_base_url', 
+         update_option('payswarm_authority_base_url',
             PAYSWARM_AUTHORITY_BASE_URL);
       }
 
@@ -252,14 +252,14 @@ function payswarm_settings_page()
       // set the default license URL
       if(!get_option('payswarm_default_license_url'))
       {
-         update_option('payswarm_default_license_url', 
+         update_option('payswarm_default_license_url',
             'http://purl.org/payswarm/licenses/blogging');
       }
 
       // set the default license URL hash
       if(!get_option('payswarm_default_license_hash'))
       {
-         update_option('payswarm_default_license_hash', 
+         update_option('payswarm_default_license_hash',
             '961ec496092bf6ee08d6255d96069b5186332689');
       }
    }
@@ -273,7 +273,7 @@ PaySwarm enables you to sell your articles, photos and other content directly
 to your website visitors without requiring them to fill in any of their credit
 card or banking details. You can charge as little as a penny per article,
 or up to hundreds of dollars for your content.
-To use PaySwarm, you must first create an account on a 
+To use PaySwarm, you must first create an account on a
 <a href="http://dev.payswarm.com/">PaySwarm Authority</a>.
 </p>
 
@@ -284,8 +284,8 @@ To use PaySwarm, you must first create an account on a
         <tr valign="top">
           <td scope="row" colspan="2">
             <h3><?php _e('Basic PaySwarm Settings') ?></h3>
-            <p>After you have created an account on a 
-              <a href="http://dev.payswarm.com/">PaySwarm Authority</a>, 
+            <p>After you have created an account on a
+              <a href="http://dev.payswarm.com/">PaySwarm Authority</a>,
               enter the website for the PaySwarm Authority below. For example:
               <code>http://dev.payswarm.com/</code>.
             </p>
@@ -295,7 +295,7 @@ To use PaySwarm, you must first create an account on a
         <tr valign="top">
         <th scope="row"><?php _e('PaySwarm Authority') ?></th>
         <td>
-          <input id="payswarm_authority_base_url" type="hidden" 
+          <input id="payswarm_authority_base_url" type="hidden"
              name="payswarm_authority_base_url"
              value="<?php echo get_option('payswarm_authority_base_url'); ?>" />
           <input type="text" size="64"
@@ -303,11 +303,11 @@ To use PaySwarm, you must first create an account on a
           onkeyup="javascript:updateAuthorityConfigUrl();"
           onblur="javascript:updateAuthorityConfigUrl();"
           value="<?php echo get_option('payswarm_authority_base_url'); ?>" />
-           <p>Configuration: 
+           <p>Configuration:
               <span id="payswarm_config_url_display">
                 <?php echo get_option('payswarm_authority_base_url') ?>payswarm-v1-config</span>
-              <input type="hidden" id="payswarm_config_url" 
-                name="payswarm_config_url" 
+              <input type="hidden" id="payswarm_config_url"
+                name="payswarm_config_url"
                 value="<?php echo get_option('payswarm_authority_base_url') ?>payswarm-v1-config" />
            </p>
         </td>
@@ -365,13 +365,6 @@ To use PaySwarm, you must first create an account on a
         <td><input type="text" size="64"
           id="payswarm_public_key_url" name="payswarm_public_key_url"
           value="<?php echo get_option('payswarm_public_key_url'); ?>" /></td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Private Key') ?></th>
-        <td><textarea cols="90" rows="6"
-          id="payswarm_private_key" name="payswarm_private_key"
-          ><?php echo get_option('payswarm_private_key'); ?></textarea></td>
         </tr>
 
         <tr valign="top">
