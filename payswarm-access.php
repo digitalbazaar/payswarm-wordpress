@@ -25,10 +25,8 @@ if(!isset($json_message))
    $post_id = $_GET['p'];
 
    // TODO: UI to select the PaySwarm Authority if one isn't already selected
-   // get the contracts URL for the PaySwarm Authority
+   // get the payment URL for the PaySwarm Authority
    $payment_url = get_option("payswarm_payment_url");
-
-   // FIXME: we want to do this via a GET redirect to the PA instead of a POST
 
    // create the purchase request
    $info = payswarm_get_post_info($post_id);
