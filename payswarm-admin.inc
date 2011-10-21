@@ -58,6 +58,7 @@ function payswarm_register_settings()
    register_setting('payswarm-option-group', 'payswarm_public_key_url');
    register_setting('payswarm-option-group', 'payswarm_private_key');
    register_setting('payswarm-option-group', 'payswarm_key_overwrite');
+   register_setting('payswarm-option-group', 'payswarm_vendor_url');
 }
 
 /**
@@ -163,7 +164,8 @@ function payswarm_admin_warnings()
       !get_option('payswarm_contracts_url') ||
       !get_option('payswarm_public_key') ||
       !get_option('payswarm_public_key_url') ||
-      !get_option('payswarm_private_key');
+      !get_option('payswarm_private_key') ||
+      !get_option('payswarm_vendor_url');
    $options_invalid = strlen(get_option('payswarm_authority_base_url')) < 1 ||
       strlen(get_option('payswarm_config_url')) < 1 ||
       strlen(get_option('payswarm_default_auth_rate')) < 1 ||
@@ -175,7 +177,8 @@ function payswarm_admin_warnings()
       strlen(get_option('payswarm_contracts_url')) < 1 ||
       strlen(get_option('payswarm_public_key')) < 1 ||
       strlen(get_option('payswarm_public_key_url')) < 1 ||
-      strlen(get_option('payswarm_private_key')) < 1;
+      strlen(get_option('payswarm_private_key')) < 1 ||
+      strlen(get_option('payswarm_vendor_url')) < 1;
 
    // output a warning if any part of the PaySwarm configuration is not set
    if(($options_nonexistant && $options_not_being_set) || $options_invalid)
@@ -217,7 +220,8 @@ function payswarm_settings_page()
          'payswarm_default_price',
          'payswarm_destination_account',
          'payswarm_default_license_url',
-         'payswarm_default_license_hash'));
+         'payswarm_default_license_hash',
+         'payswarm_vendor_url'));
       // special case checkboxes
       if(isset($_POST['payswarm_key_overwrite']))
       {
@@ -259,8 +263,8 @@ function payswarm_settings_page()
       // set the default license URL hash
       if(!get_option('payswarm_default_license_hash'))
       {
-         update_option('payswarm_default_license_hash',
-            '961ec496092bf6ee08d6255d96069b5186332689');
+         update_option('payswarm_default_license_hash', 
+            'd697a98573f3f2eed746084bdf64389d9d3a923b');
       }
    }
 
@@ -351,6 +355,20 @@ To use PaySwarm, you must first create an account on a
         <td><input type="text" size="64"
           id="payswarm_contracts_url" name="payswarm_contracts_url"
           value="<?php echo get_option('payswarm_contracts_url'); ?>" /></td>
+        </tr>
+
+        <tr valign="top">
+        <th scope="row"><?php _e('Payment Service') ?></th>
+        <td><input type="text" size="64"
+          id="payswarm_payment_url" name="payswarm_payment_url"
+          value="<?php echo get_option('payswarm_payment_url'); ?>" /></td>
+        </tr>
+
+        <tr valign="top">
+        <th scope="row"><?php _e('Vendor ID') ?></th>
+        <td><input type="text" size="64"
+          id="payswarm_vendor_url" name="payswarm_vendor_url"
+          value="<?php echo get_option('payswarm_vendor_url'); ?>" /></td>
         </tr>
 
         <tr valign="top">

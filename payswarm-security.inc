@@ -181,7 +181,7 @@ function payswarm_generate_json_hash($obj)
  *
  * @param stdClass $obj The JSON-LD object to sign.
  * @param string $pem the PEM-encoded private key to sign with.
- * @param string $sig_date the ISO8601-formatted signature creation date.
+ * @param string $sig_date the W3C-formatted signature creation date.
  *
  * @return The base64-encoded signature of the encoded JSON data.
  */
