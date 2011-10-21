@@ -26,15 +26,15 @@ if(!isset($json_message))
 
    // TODO: UI to select the PaySwarm Authority if one isn't already selected
    // get the contracts URL for the PaySwarm Authority
-   $contracts_url = get_option("payswarm_contracts_url");
+   $payment_url = get_option("payswarm_payment_url");
 
    // FIXME: we want to do this via a GET redirect to the PA instead of a POST
 
    // create the purchase request
    $info = payswarm_get_post_info($post_id);
 
-   // create a POST form including the purchase request targeted at the PA
-   echo payswarm_purchase_form($contracts_url, $info);
+   // create a GET form including the purchase request targeted at the PA
+   echo payswarm_purchase_form($payment_url, $info);
 }
 // handle posted message
 else
@@ -45,22 +45,18 @@ else
 /**
  * Generates the purchase form given a post information object.
  *
- * @param string $contracts_url the PA contracts URL.
+ * @param string $payment_url the PA payment URL.
  * @param array $info the information about the particular post.
  *
  * @return string the purchase form.
  */
-function payswarm_purchase_form($contracts_url, $info)
+function payswarm_purchase_form($payment_url, $info)
 {
    $title = $info['post_title'];
    $author = $info['post_author'];
-   $purchase_request = array(
-      '@context' => 'http://purl.org/payswarm/v1',
-      'ps:listing' => $info['listing_url'],
-      'ps:listingHash' => $info['listing_hash']);
-   // FIXME: add callback URL^
-   $purchase_request = htmlspecialchars(
-      payswarm_json_encode($purchase_request));
+   $listing_url = $info['listing_url'];
+   $listing_hash = $info['listing_hash'];
+   $callback_url = plugins_url() . '/payswarm/payswarm-access.php';
 
    $rval = <<<FORM
 <html>
@@ -69,8 +65,10 @@ function payswarm_purchase_form($contracts_url, $info)
 </head>
 <h1>Purchase $title by $author</h1>
 <p>Do you want to purchase $title by $author?</p>
-<form method="POST" action="$contracts_url">
-<input type="hidden" name="message" value="$purchase_request" />
+<form method="GET" action="$payment_url">
+<input type="hidden" name="listing" value="$listing_url" />
+<input type="hidden" name="listing-hash" value="$listing_hash" />
+<input type="hidden" name="callback" value="$callback_url" />
 <input type="submit" value="Yes" />
 <input type="button" value="No" />
 <p><em>If you have previously purchased this item you won't be charged twice

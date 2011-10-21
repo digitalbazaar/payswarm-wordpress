@@ -83,17 +83,25 @@ function payswarm_config_endpoints($jsonld)
 
    $rval =
       ($client_config !== NULL) &&
+      // Form endpoints
       payswarm_config_set_value(
-         $client_config, "ps:vendorRegistrationService",
+         $client_config, 'ps:paymentService',
+         'payswarm_payment_url') &&
+      payswarm_config_set_value(
+         $client_config, 'ps:vendorRegistrationService',
          'payswarm_registration_url') &&
+
+      // Authority details
       payswarm_config_set_value(
-         $client_config, "ps:publicKey", 'payswarm_authority_public_key_url') &&
+         $client_config, 'ps:publicKey', 'payswarm_authority_public_key_url') &&
+
+      // API services
       payswarm_config_set_value(
-         $client_config, "ps:contractsService", 'payswarm_contracts_url') &&
+         $client_config, 'ps:contractsService', 'payswarm_contracts_url') &&
       payswarm_config_set_value(
-         $client_config, "ps:licenseService", 'payswarm_licenses_url') &&
+         $client_config, 'ps:licensesService', 'payswarm_licenses_url') &&
       payswarm_config_set_value(
-         $client_config, "ps:publicKeyService", 'payswarm_keys_url');
+         $client_config, 'ps:publicKeysService', 'payswarm_keys_url');
 
    // reset the PaySwarm Authority public key information
    delete_option('payswarm_authority_public_key_expiration');
@@ -120,6 +128,8 @@ function payswarm_config_preferences($preferences)
 
    $rval =
       ($preferences !== NULL) &&
+      payswarm_config_set_value(
+         $preferences, 'ps:owner', 'payswarm_vendor_url');
       payswarm_config_set_value(
          $preferences, 'com:currency', 'payswarm_default_currency') &&
       payswarm_config_set_value(

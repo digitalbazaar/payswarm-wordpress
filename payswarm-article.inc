@@ -37,7 +37,6 @@ function payswarm_generate_asset_object($info, $includeSignature)
          'foaf:name' => $info['post_author']),
       'dc:title' => $info['post_title'],
       'ps:assetProvider' => $info['asset_provider'],
-      'ps:authority' => $info['payswarm_authority'],
       'ps:contentUrl' => $info['post_url']);
 
    if($includeSignature)
@@ -175,8 +174,6 @@ function payswarm_check_validity_period($valid_from, $valid_until)
  *    post_author The name of the author of the post.
  *    asset_provider The URL that uniquely identifies the entity
  *       that is providing the asset for sale.
- *    payswarm_authority The authority that should provide all
- *       transaction records.
  *    content_url The URL where the content resides for the asset.
  *    // FIXME: add the rest
  *
@@ -202,8 +199,7 @@ function payswarm_get_post_info($post_id, $resign = false)
    // basics
    $rval['post_title'] = $post->post_title;
    $rval['post_author'] = get_userdata($post->post_author)->display_name;
-   $rval['asset_provider'] = get_option('payswarm_webid_url');
-   $rval['payswarm_authority'] = get_option('payswarm_authority');
+   $rval['asset_provider'] = get_option('payswarm_vendor_url');
 
    // FIXME: The symbol needs to match the default currency
    $rval['currency_symbol'] = '$';
@@ -446,10 +442,7 @@ function payswarm_asset_information_rdfa($post_id)
                "</span>
             </span>.
             Offered by
-            <a rel=\"ps:assetProvider\" href=\"" . $info['asset_provider'] . "\">us</a>
-            via our
-            <a rel=\"ps:authority\"
-               href=\"" . $info['payswarm_authority'] . "\">PaySwarm provider</a>.
+            <a rel=\"ps:assetProvider\" href=\"" . $info['asset_provider'] . "\">us</a>.
             <span about=\"" . $info['listing_url'] . "\">The offer to get access to this
             <span property=\"ps:assetHash\" content=\"" . $info['asset_hash'] . "\">post</span>
             under
