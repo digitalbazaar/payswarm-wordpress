@@ -116,8 +116,8 @@ function payswarm_handle_purchase_response($json_message)
    $asset = $msg->{'ps:asset'};
    $license = $msg->{'ps:license'};
 
-   // get post ID from asset URL
-   $post_id = url_to_postid($asset);
+   // get post ID from asset URL (strip after hash)
+   $post_id = url_to_postid(preg_replace('/#.*/', '', $asset));
    if($post_id === 0)
    {
       throw new Exception('PaySwarm Purchase Exception: ' .
