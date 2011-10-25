@@ -177,6 +177,30 @@ function payswarm_set_payment_url_cookie($payment_url)
 }
 
 /**
+ * Gets the value of the customer's PaySwarm Authority payment URL that is
+ * being tracked on the site.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @return mixed the customer's PaySwarm Authority payment URL or false if no
+ *         such value exists.
+ */
+function payswarm_get_payment_url_cookie()
+{
+   global $_COOKIE;
+   $payment_url = false;
+
+   // check to see if the payment-url cookie exists
+   if(array_key_exists('payment-url', $_COOKIE))
+   {
+      $payment_url = $_COOKIE['payment_url'];
+   }
+
+   return $payment_url;
+}
+
+/**
  * Clears the payment-url cookie.
  *
  * @package payswarm
