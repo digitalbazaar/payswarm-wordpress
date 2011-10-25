@@ -87,6 +87,47 @@ function payswarm_uninstall_database()
 }
 
 /**
+ * Authorizes a post to be viewed for a particular profile. If the given
+ * contract is invalid, the post will not be authorized.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string $profile_id the ID of the user on the site.
+ * @param Integer $post_id the post identifier.
+ * @param string $license the URL of the license that was authorized.
+ *
+ * @return boolean true if the post was authorized, false if not.
+ */
+function payswarm_database_authorize_post($profile_id, $post_id, $license)
+{
+   $rval = false;
+   global $wpdb;
+
+   // TODO: add support for different authorizations based on license
+   // FIXME: check post meta data against license URL for now?
+
+   // insert profile ID
+   $rval = $wpdb->query($wpdb->prepare(
+      'INSERT IGNORE INTO ' . PAYSWARM_PROFILES_TABLE_NAME . ' ' .
+      '(profile_id) VALUES (%s)',
+      $profile_id));
+   if($rval)
+   {
+      // insert authorized post entry
+      $profile_hash = md5($profile_id);
+      $rval = $wpdb->query($wpdb->prepare(
+         'INSERT IGNORE INTO ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' ' .
+         '(profile_key,post_id) VALUES (' .
+         '(SELECT profile_key FROM ' . PAYSWARM_PROFILES_TABLE_NAME . ' ' .
+         ' WHERE profile_hash=%s AND profile_id=%s),%s)',
+         $profile_id, $post_id));
+   }
+
+   return $rval;
+}
+
+/**
  * Checks to see if a post is authorized using the given session. A post is
  * authorized if the profile ID in the session has been granted access to
  * view the post.
@@ -116,47 +157,6 @@ function payswarm_database_is_post_authorized($session, $post_id)
             ' p.profile_id=%s AND ap.post_id=%s LIMIT 1',
             $session['profile_id'], $post_id), ARRAY_A);
       $rval = (is_array($rval) && count($rval) === 1);
-   }
-
-   return $rval;
-}
-
-/**
- * Authorizes a post to be viewed for a particular profile. If the given
- * contract is invalid, the post will not be authorized.
- *
- * @package payswarm
- * @since 1.0
- *
- * @param string $profile_id the ID of the user on the site, false for none.
- * @param Integer $post_id the post identifier.
- * @param string $license the URL of the license that was authorized.
- *
- * @return boolean true if the post was authorized, false if not.
- */
-function payswarm_database_authorize_post($profile_id, $post_id, $license)
-{
-   $rval = false;
-   global $wpdb;
-
-   // TODO: add support for different authorizations based on license
-   // FIXME: check post meta data against license URL for now?
-
-   // insert profile ID
-   $rval = $wpdb->query($wpdb->prepare(
-      'INSERT IGNORE INTO ' . PAYSWARM_PROFILES_TABLE_NAME . ' ' .
-      '(profile_id) VALUES (%s)',
-      $profile_id));
-   if($rval)
-   {
-      // insert authorized post entry
-      $profile_hash = md5($profile_id);
-      $rval = $wpdb->query($wpdb->prepare(
-         'INSERT IGNORE INTO ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' ' .
-         '(profile_key,post_id) VALUES (' .
-         '(SELECT profile_key FROM ' . PAYSWARM_PROFILES_TABLE_NAME . ' ' .
-         ' WHERE profile_hash=%s AND profile_id=%s),%s)',
-         $profile_id, $post_id));
    }
 
    return $rval;

@@ -39,6 +39,7 @@ if(!isset($json_message))
 // handle posted registration response message
 else
 {
+   // FIXME: catch exceptions and show appropriate errors to user
    // decode json-encoded, encrypted message
    $msg = payswarm_decode_payswarm_authority_message($json_message);
 

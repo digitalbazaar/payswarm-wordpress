@@ -12,17 +12,17 @@
  */
 function toggleAssetInformation(postId)
 {
-   var assetInfo = document.getElementById("payswarm-asset-info-" + postId);
-   var className = assetInfo.getAttribute("class");
+   var assetInfo = document.getElementById('payswarm-asset-info-' + postId);
+   var className = assetInfo.getAttribute('"class');
 
    // toggle the hidden CSS state for the attribute
-   if(className == "hidden")
+   if(className === 'hidden')
    {
-      assetInfo.setAttribute("class", "");
+      assetInfo.setAttribute('class', '');
    }
    else
    {
-      assetInfo.setAttribute("class", "hidden");
+      assetInfo.setAttribute('class', 'hidden');
    }
 }
 
@@ -33,31 +33,25 @@ function toggleAssetInformation(postId)
  */
 function updateAuthorityConfigUrl(event)
 {
-   var authority = document.getElementById("payswarm_authority").value;
-   var hostPortRegex = /(http:\/\/|https:\/\/)?([^/]+)\/?/i;
-
    // extract host and port information
-   var hostPort = authority.match(hostPortRegex);
+   var authority = document.getElementById('payswarm_authority').value;
+   var hostPort = authority.match(/(http:\/\/|https:\/\/)?([^/]+)\/?/i);
 
    // if a valid value was found, update the configuration URL
    if(hostPort != null)
    {
       // build base URL
-      var baseUrl = "https://" + hostPort[2] + "/";
+      var baseUrl = 'https://' + hostPort[2] + '/';
 
       // build config URL
-      var configUrl = baseUrl + "payswarm-v1-config";
+      var configUrl = baseUrl + 'payswarm-v1-config';
 
       // update display on the screen and form element
       var configDisplay = 
-         document.getElementById("payswarm_config_url_display");
-      var config = 
-         document.getElementById("payswarm_config_url");
+         document.getElementById('payswarm_config_url_display');
       var base = 
-         document.getElementById("payswarm_authority_base_url");
+         document.getElementById('payswarm_authority_base_url');
       configDisplay.innerText = configUrl;
-      config.value = configUrl;
       base.value = baseUrl;
    }
 }
-

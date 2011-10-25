@@ -25,6 +25,11 @@ if(!isset($json_message))
    $post_id = $_GET['p'];
 
    // TODO: UI to select the PaySwarm Authority if one isn't already selected
+   //$pa_url = 'GET THIS FROM THE UI';
+   //$config_url = payswarm_config_get_pa_config_url($pa_url);
+   //$cfg = payswarm_config_get_pa_config($config_url);
+
+   // FIXME: use the payment URL for the customer, not the merchant
    // get the payment URL for the PaySwarm Authority
    $payment_url = get_option("payswarm_payment_url");
 

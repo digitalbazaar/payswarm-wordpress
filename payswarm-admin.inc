@@ -46,7 +46,6 @@ function payswarm_register_settings()
 {
    // whitelist the PaySwarm options
    register_setting('payswarm-option-group', 'payswarm_authority_base_url');
-   register_setting('payswarm-option-group', 'payswarm_config_url');
    register_setting('payswarm-option-group', 'payswarm_default_auth_rate');
    register_setting('payswarm-option-group', 'payswarm_default_currency');
    register_setting('payswarm-option-group', 'payswarm_default_price');
@@ -74,17 +73,13 @@ function payswarm_redirect_registration()
    {
       // if the PaySwarm options are updated successfully, attempt to perform
       // a registration
-      if(payswarm_config_update(
-         array('payswarm_authority_base_url', 'payswarm_config_url')))
+      if(payswarm_config_update(array('payswarm_authority_base_url')))
       {
-         // Get the PaySwarm Authority config information
-         $config_url = get_option('payswarm_config_url');
-
-         // Fetch the PA config information
-         $response = wp_remote_get(
-            $config_url, array('sslverify' => PAYSWARM_SSL_ENABLED));
-
-         if(is_wp_error($response))
+         // get the PaySwarm Authority configuration
+         $pa_url = get_option('payswarm_authority_base_url');
+         $config_url = payswarm_config_get_pa_config_url($pa_url);
+         $cfg = payswarm_config_get_pa_config($config_url);
+         if($cfg === false)
          {
             payswarm_admin_warning(
                'There was an error fetching the PaySwarm Authority ' .
@@ -94,7 +89,7 @@ function payswarm_redirect_registration()
                'PaySwarm Authority configuration URL specified was incorrect ' .
                'or because the PaySwarm Authority you specified is down.');
          }
-         else if(!payswarm_config_endpoints($response["body"]))
+         else if(!payswarm_config_endpoints($cfg))
          {
             payswarm_admin_warning(
                'The PaySwarm Authority Configuration that was retrieved ' .
@@ -154,7 +149,6 @@ function payswarm_admin_warnings()
    $options_not_being_set = !isset($_POST['payswarm_register_button']) ||
       !isset($_POST['payswarm_update_button']);
    $options_nonexistant = !get_option('payswarm_authority_base_url') ||
-      !get_option('payswarm_config_url') ||
       !get_option('payswarm_default_auth_rate') ||
       !get_option('payswarm_default_currency') ||
       !get_option('payswarm_default_price') ||
@@ -167,7 +161,6 @@ function payswarm_admin_warnings()
       !get_option('payswarm_private_key') ||
       !get_option('payswarm_vendor_url');
    $options_invalid = strlen(get_option('payswarm_authority_base_url')) < 1 ||
-      strlen(get_option('payswarm_config_url')) < 1 ||
       strlen(get_option('payswarm_default_auth_rate')) < 1 ||
       strlen(get_option('payswarm_default_currency')) < 1 ||
       strlen(get_option('payswarm_default_price')) < 1 ||
@@ -207,7 +200,6 @@ function payswarm_settings_page()
       check_admin_referer('payswarm-save-config', 'payswarm-nonce');
       payswarm_config_update(array(
          'payswarm_authority_base_url',
-         'payswarm_config_url',
          'payswarm_keys_url',
          'payswarm_registration_url',
          'payswarm_licenses_url',
@@ -263,7 +255,7 @@ function payswarm_settings_page()
       // set the default license URL hash
       if(!get_option('payswarm_default_license_hash'))
       {
-         update_option('payswarm_default_license_hash', 
+         update_option('payswarm_default_license_hash',
             'd697a98573f3f2eed746084bdf64389d9d3a923b');
       }
    }
@@ -310,9 +302,6 @@ To use PaySwarm, you must first create an account on a
            <p>Configuration:
               <span id="payswarm_config_url_display">
                 <?php echo get_option('payswarm_authority_base_url') ?>payswarm-v1-config</span>
-              <input type="hidden" id="payswarm_config_url"
-                name="payswarm_config_url"
-                value="<?php echo get_option('payswarm_authority_base_url') ?>payswarm-v1-config" />
            </p>
         </td>
         </tr>

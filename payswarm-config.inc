@@ -1,4 +1,5 @@
 <?php
+
 require_once('jsonld.php');
 
 /**
@@ -65,53 +66,107 @@ function payswarm_config_set_value($config, $property, $option)
 }
 
 /**
- * Updates the PaySwarm client configuration given a blob of JSON text.
+ * Gets the config URL for the given PaySwarm Authority config URL.
  *
  * @package payswarm
  * @since 1.0
  *
- * @param string $jsonld A blob of JSON text that is encoded in JSON-LD format,
- *    usually returned by the PaySwarm Authority after hitting the
- *    configuration URL.
+ * @param string $pa_url the base URL to the PaySwarm Authority.
  *
- * @return true if the update was successful, false otherwise.
+ * @return string the PaySwarm Authority config URL.
  */
-function payswarm_config_endpoints($jsonld)
+function payswarm_config_get_pa_config_url($pa_url)
 {
-   $rval = true;
-   $client_config = json_decode($jsonld);
+   preg_match('@(http://|https://)?([^/]+)@i', $pa_url, $matches);
+   $hostPort = $matches[2];
+   return "https://$hostPort/payswarm-v1-config";
+}
 
-   $rval =
-      ($client_config !== NULL) &&
-      // Form endpoints
-      payswarm_config_set_value(
-         $client_config, 'ps:paymentService',
-         'payswarm_payment_url') &&
-      payswarm_config_set_value(
-         $client_config, 'ps:vendorRegistrationService',
-         'payswarm_registration_url') &&
+/**
+ * Fetches the config for the given PaySwarm Authority config URL.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string $config_url the config URL for the PaySwarm Authority.
+ *
+ * @return string the JSON-LD config object returned by the PaySwarm Authority
+ *         or false if an error occurred.
+ */
+function payswarm_config_get_pa_config($config_url)
+{
+   $rval = false;
 
-      // Authority details
-      payswarm_config_set_value(
-         $client_config, 'ps:publicKey', 'payswarm_authority_public_key_url') &&
-
-      // API services
-      payswarm_config_set_value(
-         $client_config, 'ps:contractsService', 'payswarm_contracts_url') &&
-      payswarm_config_set_value(
-         $client_config, 'ps:licensesService', 'payswarm_licenses_url') &&
-      payswarm_config_set_value(
-         $client_config, 'ps:publicKeysService', 'payswarm_keys_url');
-
-   // reset the PaySwarm Authority public key information
-   delete_option('payswarm_authority_public_key_expiration');
-   delete_option('payswarm_authority_public_key');
+   // fetch the PA config information
+   $response = wp_remote_get(
+      $config_url, array('sslverify' => PAYSWARM_SSL_ENABLED));
+   if(!is_wp_error($response) and
+      ($cfg = json_decode($response['body'])) !== null)
+   {
+      // FIXME: uncomment once remote @context URLs are supported in jsonld
+      /*
+      require_once('payswarm-utils.inc');
+      $frame = (object)array(
+         '@context' => payswarm_create_default_jsonld_context(),
+         'ps:paymentService' => '',
+         'ps:vendorRegistrationService' => '',
+         'ps:publicKey' => '',
+         'ps:contractsService' => '',
+         'ps:licensesService' => '',
+         'ps:publicKeysService' => ''
+      );
+      $rval = jsonld_frame($cfg, $frame);
+      */
+      $rval = $cfg;
+      if($rval === null)
+      {
+         $rval = false;
+      }
+   }
 
    return $rval;
 }
 
 /**
- * Updates the PaySwarm Authority defined preferences associated with this 
+ * Updates the PaySwarm client configuration.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string $cfg a JSON-LD config object returned by the PaySwarm
+ *           Authority after hitting the configuration URL.
+ *
+ * @return true if the update was successful, false otherwise.
+ */
+function payswarm_config_endpoints($cfg)
+{
+   $rval = true;
+
+   $rval =
+      ($cfg !== NULL) &&
+      // Form endpoints
+      payswarm_config_set_value(
+         $cfg, 'ps:paymentService',
+         'payswarm_payment_url') &&
+      payswarm_config_set_value(
+         $cfg, 'ps:vendorRegistrationService',
+         'payswarm_registration_url') &&
+      // Authority details
+      payswarm_config_set_value(
+         $cfg, 'ps:publicKey', 'payswarm_authority_public_key_url') &&
+      // API services
+      payswarm_config_set_value(
+         $cfg, 'ps:contractsService', 'payswarm_contracts_url') &&
+      payswarm_config_set_value(
+         $cfg, 'ps:licensesService', 'payswarm_licenses_url') &&
+      payswarm_config_set_value(
+         $cfg, 'ps:publicKeysService', 'payswarm_keys_url');
+
+   return $rval;
+}
+
+/**
+ * Updates the PaySwarm Authority defined preferences associated with this
  * WordPress installation.
  *
  * @package payswarm

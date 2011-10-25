@@ -30,7 +30,7 @@ function payswarm_create_session($profile_id = null)
    {
       // session ID length must be <= 20 to use set_transient API below
       $now = time();
-      $random_value = rand(0, 100000);
+      $random_value = mt_rand(0, 100000);
       $session = array(
          'id' => md5("$now$random_value"),
          'ip' => $_SERVER['REMOTE_ADDR'],
@@ -55,10 +55,8 @@ function payswarm_create_session($profile_id = null)
       $timeout = $now + 3600;
       set_transient('payswarm_session_' . $session['id'], $session, 3600);
 
-      // FIXME: if get_option("payswarm_ssl_on") then use https
-      // cookie, else security is handled in a different way, so set
-      // cookie to non-https
-      $secure = true;
+      // set cookie security based on option
+      $secure = (get_option('payswarm_ssl_on') === 'true');
 
       // update cookies
       global $_SERVER;
@@ -144,16 +142,51 @@ function payswarm_clear_session()
  */
 function payswarm_clear_session_cookie()
 {
-   // clear cookies
-   // FIXME: if get_option("payswarm_ssl_on") then use https cookie, else
-   // security is handled in a different way, so set cookie to non-https
-   $secure = true;
+   // set cookie security based on option
+   $secure = (get_option('payswarm_ssl_on') === 'true');
 
    global $_SERVER;
    $expires = time() - 3600;
    setcookie('payswarm-session', '', $expires, '/',
       $_SERVER['HTTP_HOST'], $secure);
    setcookie('payswarm-timeout', '', $expires, '/',
+      $_SERVER['HTTP_HOST'], $secure);
+}
+
+/**
+ * Sets the payswarm-authority cookie.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string $pa_url the URL to the customer's payswarm authority.
+ */
+function payswarm_set_pa_cookie($pa_url)
+{
+   // set cookie security based on option
+   $secure = (get_option('payswarm_ssl_on') === 'true');
+
+   global $_SERVER;
+   $timeout = time() + 3600;
+   setcookie(
+      'payswarm-authority', $pa_url, $timeout, '/',
+      $_SERVER['HTTP_HOST'], $secure);
+}
+
+/**
+ * Clears the payswarm-authority cookie.
+ *
+ * @package payswarm
+ * @since 1.0
+ */
+function payswarm_clear_pa_cookie()
+{
+   // set cookie security based on option
+   $secure = (get_option('payswarm_ssl_on') === 'true');
+
+   global $_SERVER;
+   $expires = time() - 3600;
+   setcookie('payswarm-authority', '', $expires, '/',
       $_SERVER['HTTP_HOST'], $secure);
 }
 
