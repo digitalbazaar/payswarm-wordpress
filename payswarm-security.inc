@@ -151,17 +151,20 @@ function payswarm_clear_session_cookie()
       $_SERVER['HTTP_HOST'], $secure);
    setcookie('payswarm-timeout', '', $expires, '/',
       $_SERVER['HTTP_HOST'], $secure);
+
+   // clear payment URL cookie as well
+   payswarm_clear_payment_url_cookie();
 }
 
 /**
- * Sets the payswarm-authority cookie.
+ * Sets the payment-url cookie.
  *
  * @package payswarm
  * @since 1.0
  *
- * @param string $pa_url the URL to the customer's payswarm authority.
+ * @param string $payment_url the customer's PaySwarm Authority payment URL.
  */
-function payswarm_set_pa_cookie($pa_url)
+function payswarm_set_payment_url_cookie($payment_url)
 {
    // set cookie security based on option
    $secure = (get_option('payswarm_ssl_on') === 'true');
@@ -169,24 +172,24 @@ function payswarm_set_pa_cookie($pa_url)
    global $_SERVER;
    $timeout = time() + 3600;
    setcookie(
-      'payswarm-authority', $pa_url, $timeout, '/',
+      'payment-url', $payment_url, $timeout, '/',
       $_SERVER['HTTP_HOST'], $secure);
 }
 
 /**
- * Clears the payswarm-authority cookie.
+ * Clears the payment-url cookie.
  *
  * @package payswarm
  * @since 1.0
  */
-function payswarm_clear_pa_cookie()
+function payswarm_clear_payment_url_cookie()
 {
    // set cookie security based on option
    $secure = (get_option('payswarm_ssl_on') === 'true');
 
    global $_SERVER;
    $expires = time() - 3600;
-   setcookie('payswarm-authority', '', $expires, '/',
+   setcookie('payment-url', '', $expires, '/',
       $_SERVER['HTTP_HOST'], $secure);
 }
 
