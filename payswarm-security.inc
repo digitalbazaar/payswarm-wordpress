@@ -1,6 +1,7 @@
 <?php
 
 require_once('jsonld.php');
+require_once('payswarm-utils.inc');
 
 /**
  * Creates a new PaySwarm session if one doesn't already exist. If one does
@@ -28,7 +29,7 @@ function payswarm_create_session($profile_id = null)
    // no session exists, create a new one
    if($session === false)
    {
-      // session ID length must be <= 20 to use set_transient API below
+      // session ID length must be <= 20 to use transient API below
       $now = time();
       $random_value = mt_rand(0, 100000);
       $session = array(
@@ -254,42 +255,38 @@ function payswarm_sign_json($obj, $pem, $sig_date)
 }
 
 /**
- * Retrieves the PaySwarm Authority public key from the network or the
- * cache. The public key expires exactly 24 hours after it is retrieved in
- * order to ensure that a fairly recent public key is used.
+ * Retrieves a public key from the network or the cache. The public key expires
+ * 24 hours after it is retrieved in order to ensure that a fairly recent
+ * public key is used.
  *
- * @return string a PEM-encoded public key for the PaySwarm Authority.
+ * @param string $url the URL to the public key to fetch.
+ *
+ * @return string a PEM-encoded public key.
  */
-function payswarm_get_pa_public_key()
+function payswarm_get_public_key($url)
 {
-   // FIXME: the cache ID should include the PA IRI since more than one
-   // PA could be used... it's the customer's PA's public key that is
-   // typically retrieved
-   $rval = get_transient('payswarm_authority_public_key');
-
-   // PaySwarm Authority public key should be refreshed
+   // get the key from the cache
+   $id = 'payswarm_pk_cache_' . md5($url);
+   $rval = get_transient($id);
    if($rval === false)
    {
-      $url = get_option('payswarm_authority_public_key_url');
       $response = wp_remote_get($url, array(
          'sslverify' => PAYSWARM_SSL_ENABLED,
          'headers' => array('Accept' => 'application/ld+json')));
-
       if(is_wp_error($response))
       {
-         throw new Exception('Could not get PaySwarm Authority Public Key: ' .
+         throw new Exception('Could not get public key: ' .
             $response>get_error_message());
       }
 
       // extract the key from the JSON-LD response
-      $key = json_decode($response['body']);
-
+      $key = payswarm_jsonld_decode($response['body']);
       if($key !== NULL and property_exists($key, 'sec:publicKeyPem'))
       {
          $rval = $key->{'sec:publicKeyPem'};
 
-         // cache key for one day
-         set_transient('payswarm_authority_public_key', $rval, 24*60*60);
+         // update cache
+         set_transient($id, $rval, 60*60*24);
       }
    }
 
@@ -410,7 +407,7 @@ function payswarm_decrypt_message($encrypted_message, $pem)
    }
 
    // decode JSON message
-   return json_decode($data);
+   return payswarm_jsonld_decode($data);
 }
 
 /**
@@ -433,6 +430,7 @@ function payswarm_verify_message($obj, $pem)
       '@context' => payswarm_create_default_jsonld_context(),
       'sec:signature' => (object)array(
          'dc:created' => new stdClass(),
+         'dc:creator' => new stdClass(),
          'sec:signatureValue' => new stdClass(),
          'sec:nonce' => new stdClass()
       )
@@ -463,6 +461,13 @@ function payswarm_verify_message($obj, $pem)
    {
       throw new Exception('PaySwarm Security Exception: ' .
          'The message digital signature timestamp is out of range.');
+   }
+
+   // fetch the public key for the signature
+   if($pem !== payswarm_get_public_key($sprop->{'dc:creator'}))
+   {
+      throw new Exception('PaySwarm Security Exception: ' .
+         'The message is not signed by a recognized public key.');
    }
 
    // normalize and serialize the object
@@ -509,7 +514,7 @@ function payswarm_verify_message($obj, $pem)
 function payswarm_decode_payswarm_authority_message($json_message)
 {
    // convert message from json
-   $msg = json_decode($json_message);
+   $msg = payswarm_jsonld_decode($json_message);
    if($msg === NULL)
    {
       throw new Exception('PaySwarm Security Exception: ' .
@@ -520,8 +525,9 @@ function payswarm_decode_payswarm_authority_message($json_message)
    $pem = get_option('payswarm_private_key');
    $rval = payswarm_decrypt_message($msg, $pem);
 
-   // verify message
-   $pem = payswarm_get_pa_public_key();
+   // verify message came from PA
+   $pa_url = get_option('payswarm_authority_public_key_url');
+   $pem = payswarm_get_public_key($pa_url);
    payswarm_verify_message($rval, $pem);
 
    return $rval;

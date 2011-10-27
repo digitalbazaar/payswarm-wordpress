@@ -1,6 +1,7 @@
 <?php
 
 require_once('jsonld.php');
+require_once('payswarm-utils.inc');
 
 /**
  * Updates the given options that exist and are valid in the $_POST environment.
@@ -101,11 +102,10 @@ function payswarm_config_get_pa_config($config_url)
    $response = wp_remote_get(
       $config_url, array('sslverify' => PAYSWARM_SSL_ENABLED));
    if(!is_wp_error($response) and
-      ($cfg = json_decode($response['body'])) !== null)
+      ($cfg = payswarm_jsonld_decode($response['body'])) !== null)
    {
-      // FIXME: uncomment once remote @context URLs are supported in jsonld
+      // FIXME: uncomment once remote @context URL is defined
       /*
-      require_once('payswarm-utils.inc');
       $frame = (object)array(
          '@context' => payswarm_create_default_jsonld_context(),
          'ps:paymentService' => '',

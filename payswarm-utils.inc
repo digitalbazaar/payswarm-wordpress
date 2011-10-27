@@ -75,6 +75,57 @@ function payswarm_json_encode($data)
 }
 
 /**
+ * Decodes a serialized JSON-LD object and resolves any @context URLs.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string @input the JSON-LD input.
+ *
+ * @return mixed the resolved JSON-LD object, null on error.
+ */
+function payswarm_jsonld_decode($input)
+{
+   // JSON-decode
+   $rval = json_decode($input);
+   if($rval !== null)
+   {
+      // resolve any @context URLs
+      // FIXME: uncomment once @context URLs are defined
+      /*
+      $rval = jsonld_resolve($rval, function($url)
+      {
+         // get @context URL from cache
+         $id = 'payswarm_jsonld_ctx_' . md5($url);
+         $ctx = get_transient($id);
+         if($ctx === false)
+         {
+            $response = wp_remote_get($url, array(
+               'sslverify' => PAYSWARM_SSL_ENABLED,
+               'headers' => array('Accept' => 'application/ld+json')));
+            if(is_wp_error($response))
+            {
+               throw new Exception("Could not get @context from '$url': " .
+                  $response>get_error_message());
+            }
+
+            // JSON-decode and update cache
+            $ctx = json_decode($response['body']);
+            if($ctx === null)
+            {
+               throw new Exception("Could not get $context from '$url': " .
+                  'Malformed JSON.');
+            }
+            set_transient($id, $ctx, 60*60*24);
+         }
+         return $ctx;
+      });*/
+   }
+
+   return $rval;
+}
+
+/**
  * Retrieves the current URL being served.
  *
  * @package payswarm
@@ -156,7 +207,7 @@ function payswarm_redirect($url)
  */
 function payswarm_exception($e)
 {
-   $response = json_decode($e->lastResponse);
+   $response = payswarm_jsonld_decode($e->lastResponse);
 
    // FIXME: Unfortunately, this generates a PHP Notice error for
    // WP_Query::$is_paged not being defined. Need to figure out which file
