@@ -44,12 +44,12 @@ else
    $msg = payswarm_decode_payswarm_authority_message($json_message);
 
    // check message type
-   if($msg->{'@type'} === 'err:Error')
+   if(payswarm_jsonld_has_type($msg, 'err:Error'))
    {
       throw new Exception('PaySwarm Registration Exception: ' .
          $msg->{'err:message'});
    }
-   else if($msg->{'@type'} !== 'ps:Preferences')
+   else if(!payswarm_jsonld_has_type($msg, 'ps:Preferences'))
    {
       throw new Exception('PaySwarm Registration Exception: ' .
          'Invalid registration response from PaySwarm Authority.');

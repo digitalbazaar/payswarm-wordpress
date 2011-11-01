@@ -101,14 +101,14 @@ function payswarm_handle_purchase_response($json_message)
    $msg = payswarm_decode_payswarm_authority_message($json_message);
 
    // check message type
-   if($msg->{'@type'} === 'err:Error')
+   if(payswarm_jsonld_has_type($msg, 'err:Error'))
    {
       // FIXME: call access denied instead of exception?
       //payswarm_access_denied();
       throw new Exception('PaySwarm Purchase Exception: ' .
          $msg->{'err:message'});
    }
-   else if($msg->{'@type'} !== 'ps:Contract')
+   else if(!payswarm_jsonld_has_type($msg, 'ps:Contract'))
    {
       throw new Exception('PaySwarm Purchase Exception: ' .
          'Invalid purchase response from PaySwarm Authority.');

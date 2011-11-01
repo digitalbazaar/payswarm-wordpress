@@ -231,4 +231,33 @@ function payswarm_exception($e)
    get_footer();
 }
 
+/**
+ * Check if a JSON-LD object has a specific type.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param object @obj the JSON-LD object.
+ * @param string @type the type to check for.
+ *
+ * @return true if type found, false if not.
+ */
+function payswarm_jsonld_has_type($obj, $type)
+{
+   $rval = false;
+   
+   if(property_exists($obj, '@type'))
+   {
+      $types = is_array($obj->{'@type'}) ?
+         $obj->{'@type'} : array($obj->{'@type'});
+      $length = count($types);
+      for($t = 0; $t < $length and !$rval; ++$t)
+      {
+         $rval = ($types[$t] == $type);
+      }
+   }
+
+   return $rval;
+}
+
 ?>
