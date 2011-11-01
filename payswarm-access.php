@@ -65,6 +65,7 @@ function payswarm_purchase_form($payment_url, $info)
    $listing_url = $info['listing_url'];
    $listing_hash = $info['listing_hash'];
    $callback_url = plugins_url() . '/payswarm/payswarm-access.php';
+   $response_nonce = payswarm_create_message_nonce();
 
    $rval = <<<FORM
 <html>
@@ -77,6 +78,7 @@ function payswarm_purchase_form($payment_url, $info)
 <input type="hidden" name="listing" value="$listing_url" />
 <input type="hidden" name="listing-hash" value="$listing_hash" />
 <input type="hidden" name="callback" value="$callback_url" />
+<input type="hidden" name="response-nonce" value="$response_nonce" />
 <input type="submit" value="Yes" />
 <input type="button" value="No" />
 <p><em>If you have previously purchased this item you won't be charged twice
