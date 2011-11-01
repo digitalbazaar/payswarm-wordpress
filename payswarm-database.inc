@@ -108,20 +108,20 @@ function payswarm_database_authorize_post($profile_id, $post_id, $license)
    // FIXME: check post meta data against license URL for now?
 
    // insert profile ID
+   $profile_hash = md5($profile_id);
    $rval = $wpdb->query($wpdb->prepare(
       'INSERT IGNORE INTO ' . PAYSWARM_PROFILES_TABLE_NAME . ' ' .
-      '(profile_id) VALUES (%s)',
-      $profile_id));
+      '(profile_hash, profile_id) VALUES (%s,%s)',
+      $profile_hash, $profile_id));
    if($rval)
    {
       // insert authorized post entry
-      $profile_hash = md5($profile_id);
       $rval = $wpdb->query($wpdb->prepare(
          'INSERT IGNORE INTO ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' ' .
          '(profile_key,post_id) VALUES (' .
          '(SELECT profile_key FROM ' . PAYSWARM_PROFILES_TABLE_NAME . ' ' .
          ' WHERE profile_hash=%s AND profile_id=%s),%s)',
-         $profile_id, $post_id));
+         $profile_hash, $profile_id, $post_id));
    }
 
    return $rval;
@@ -155,7 +155,7 @@ function payswarm_database_is_post_authorized($session, $post_id)
             ' ON ap.profile_key=p.profile_key' .
             ' WHERE p.profile_hash=%s AND' .
             ' p.profile_id=%s AND ap.post_id=%s LIMIT 1',
-            $session['profile_id'], $post_id), ARRAY_A);
+            $profile_hash, $session['profile_id'], $post_id), ARRAY_A);
       $rval = (is_array($rval) && count($rval) === 1);
    }
 
