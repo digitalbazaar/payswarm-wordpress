@@ -25,18 +25,18 @@ function payswarm_create_session($profile_id = null)
 
    // try to get existing session
    $session = payswarm_get_session($profile_id);
+   $timeout = 0;
 
    // no session exists, create a new one
    if($session === false)
    {
-      // session ID length must be <= 20 to use transient API below
+      // session ID length must be <= 32 to use transient API below
       $now = time();
       $random_value = mt_rand(0, 100000);
       $session = array(
          'id' => md5("$now$random_value"),
          'ip' => $_SERVER['REMOTE_ADDR'],
          'profile_id' => $profile_id);
-      $timeout = 0;
    }
    // get timeout cookie value
    else if(array_key_exists('payswarm-session-timeout', $_COOKIE))
@@ -54,7 +54,7 @@ function payswarm_create_session($profile_id = null)
 
       // update session (updates expiration time and profile ID)
       $timeout = $now + 3600;
-      set_transient('payswarm_session_' . $session['id'], $session, 3600);
+      set_transient('ps_sess_' . $session['id'], $session, 3600);
 
       // set cookie security based on option
       $secure = (get_option('payswarm_ssl_on') === 'true');
@@ -93,14 +93,14 @@ function payswarm_get_session($profile_id = null)
    if(array_key_exists('payswarm-session', $_COOKIE))
    {
       $session_id = $_COOKIE['payswarm-session'];
-      $session = get_transient('payswarm_session_' . $session_id);
+      $session = get_transient('ps_sess_' . $session_id);
       if($session !== false)
       {
          // ensure client IP address and profile ID match
          $ip = $_SERVER['REMOTE_ADDR'];
          if($session['ip'] !== $ip or
             ($profile_id !== $session['profile_id'] and
-            $session['profile_id'] !== null))
+            $profile_id !== null))
          {
             // invalid session, clear cookie only
             payswarm_clear_session_cookie();
@@ -124,7 +124,7 @@ function payswarm_clear_session()
    $session = payswarm_get_session();
    if($session !== false)
    {
-      delete_transient('payswarm_session_' . $session['id']);
+      delete_transient('ps_sess_' . $session['id']);
    }
 
    // clear cookie
@@ -143,18 +143,21 @@ function payswarm_clear_session()
  */
 function payswarm_clear_session_cookie()
 {
-   // set cookie security based on option
-   $secure = (get_option('payswarm_ssl_on') === 'true');
+   if(!headers_sent())
+   {
+      // set cookie security based on option
+      $secure = (get_option('payswarm_ssl_on') === 'true');
 
-   global $_SERVER;
-   $expires = time() - 3600;
-   setcookie('payswarm-session', '', $expires, '/',
-      $_SERVER['HTTP_HOST'], $secure);
-   setcookie('payswarm-timeout', '', $expires, '/',
-      $_SERVER['HTTP_HOST'], $secure);
+      global $_SERVER;
+      $expires = time() - 3600;
+      setcookie('payswarm-session', '', $expires, '/',
+         $_SERVER['HTTP_HOST'], $secure);
+      setcookie('payswarm-timeout', '', $expires, '/',
+         $_SERVER['HTTP_HOST'], $secure);
 
-   // clear payment URL cookie as well
-   payswarm_clear_payment_url_cookie();
+      // clear payment URL cookie as well
+      payswarm_clear_payment_url_cookie();
+   }
 }
 
 /**
@@ -209,13 +212,16 @@ function payswarm_get_payment_url_cookie()
  */
 function payswarm_clear_payment_url_cookie()
 {
-   // set cookie security based on option
-   $secure = (get_option('payswarm_ssl_on') === 'true');
+   if(!headers_sent())
+   {
+      // set cookie security based on option
+      $secure = (get_option('payswarm_ssl_on') === 'true');
 
-   global $_SERVER;
-   $expires = time() - 3600;
-   setcookie('payment-url', '', $expires, '/',
-      $_SERVER['HTTP_HOST'], $secure);
+      global $_SERVER;
+      $expires = time() - 3600;
+      setcookie('payment-url', '', $expires, '/',
+         $_SERVER['HTTP_HOST'], $secure);
+   }
 }
 
 /**
@@ -266,7 +272,7 @@ function payswarm_sign_json($obj, $pem, $sig_date)
 function payswarm_get_public_key($url)
 {
    // get the key from the cache
-   $id = 'payswarm_pk_cache_' . md5($url);
+   $id = 'ps_pkc_' . md5($url);
    $rval = get_transient($id);
    if($rval === false)
    {
@@ -310,7 +316,7 @@ function payswarm_create_message_nonce()
       $rval =
          base_convert(mt_rand(), 10, 36) .
          base_convert(mt_rand(), 10, 36);
-      $key = 'payswarm_nonce_' . $rval;
+      $key = 'ps_nonce_' . $rval;
 
       // save the nonce in the database with a 15 minute timeout
       if(get_transient($key) === false)
@@ -336,7 +342,7 @@ function payswarm_check_message_nonce($nonce)
    if(isset($nonce))
    {
       // compare current IP w/nonce IP
-      $nonce = 'payswarm_nonce_' . $nonce;
+      $nonce = 'ps_nonce_' . $nonce;
       $rval = ($_SERVER['REMOTE_ADDR'] === get_transient($nonce));
 
       // clean up nonce

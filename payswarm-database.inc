@@ -42,9 +42,9 @@ function payswarm_install_database()
       // very picky when it comes to what it allows.
       $posts_sql = 'CREATE TABLE ' . PAYSWARM_PROFILES_TABLE_NAME . ' (
          profile_key INTEGER UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-         profile_hash VARCHAR(20) NOT NULL,
+         profile_hash VARCHAR(36) NOT NULL,
          profile_id TEXT NOT NULL,
-         INDEX(profile_hash));';
+         UNIQUE(profile_hash));';
 
       require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
       dbDelta($posts_sql);
@@ -87,6 +87,19 @@ function payswarm_uninstall_database()
 }
 
 /**
+ * Generates a profile hash.
+ *
+ * @param string $profile_id the ID of a profile.
+ *
+ * @return string the profile hash.
+ */
+function payswarm_database_hash_profile_id($profile_id)
+{
+   // do md5 hash + length of profile
+   return md5($profile_id) . sprintf('%04x', strlen($profile_id));
+}
+
+/**
  * Authorizes a post to be viewed for a particular profile. If the given
  * contract is invalid, the post will not be authorized.
  *
@@ -108,7 +121,7 @@ function payswarm_database_authorize_post($profile_id, $post_id, $license)
    // FIXME: check post meta data against license URL for now?
 
    // insert profile ID
-   $profile_hash = md5($profile_id);
+   $profile_hash = payswarm_database_hash_profile_id($profile_id);
    $rval = $wpdb->query($wpdb->prepare(
       'INSERT IGNORE INTO ' . PAYSWARM_PROFILES_TABLE_NAME . ' ' .
       '(profile_hash, profile_id) VALUES (%s,%s)',
@@ -147,7 +160,8 @@ function payswarm_database_is_post_authorized($session, $post_id)
 
    if($session !== false and $session['profile_id'] !== null)
    {
-      $profile_hash = md5($session['profile_id']);
+      $profile_hash = payswarm_database_hash_profile_id(
+         $session['profile_id']);
       $rval = $wpdb->get_row($wpdb->prepare(
             'SELECT ap.post_id as post_id FROM ' .
             PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' ap ' .
