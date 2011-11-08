@@ -391,6 +391,19 @@ function payswarm_asset_information_rdfa($post_id)
 
    // FIXME: This text chunk needs to be internationalized
    $rval = "
+      <script type=\"text/javascript\">
+      function target_popup(form) {
+         var width = 700;
+         var height = 600;
+         var popup = window.open('', 'formpopup',
+            'left=' + ((screen.width-width)/2) +
+            ',top=' + ((screen.height-height)/2) +
+            ',width=' + width +
+            ',height=' + height +
+            ',resizeable,scrollbars');
+         form.target = 'formpopup';
+      }
+      </script>
       <div xmlns:com=\"http://purl.org/commerce#\"
            xmlns:dc=\"http://purl.org/dc/terms/\"
            xmlns:foaf=\"http://xmlns.com/foaf/0.1/\"
@@ -402,7 +415,7 @@ function payswarm_asset_information_rdfa($post_id)
            about=\"" . $info['asset_url'] . "\" typeof=\"ps:Asset ps:WebPage\"
            class=\"asset-info\">
          <div about=\"" . $info['post_url'] . "#listing\" typeof=\"ps:Listing gr:Offering\">
-            <form action=\"$access_url\" method=\"post\">
+            <form action=\"$access_url\" method=\"post\" onsubmit=\"target_popup(this)\">
                <button class=\"purchase-button\">
                   <img alt=\"". __('Access') ."\" src=\"$pslogo_url\" />" .
                   __('Access') . "</button>

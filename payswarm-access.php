@@ -139,9 +139,25 @@ function payswarm_handle_purchase_response($json_message)
    // create/update payswarm session
    $session = payswarm_create_session($profile_id);
 
-   // authorize the post and redirect to it
+   // authorize the post
    payswarm_database_authorize_post($profile_id, $post_id, $license);
-   header('Location: ' . get_permalink($post_id));
+
+   // output javascript to close popup and redirect parent
+   $post_url = get_permalink($post_id);
+   echo "
+      <html><body>
+      <script type=\"text/javascript\">
+      if(window.opener === null)
+      {
+         window.location = '$post_url';
+      }
+      else
+      {
+         window.close();
+         window.opener.location = '$post_url';
+      }
+      </script>
+      </body></html>";
    exit(0);
 }
 
