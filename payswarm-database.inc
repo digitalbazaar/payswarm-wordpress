@@ -119,22 +119,24 @@ function payswarm_database_authorize_post($profile_id, $post_id, $license)
 
    // TODO: add support for different authorizations based on license
    // FIXME: check post meta data against license URL for now?
-
+   
    // insert profile ID
    $profile_hash = payswarm_database_hash_profile_id($profile_id);
    $rval = $wpdb->query($wpdb->prepare(
       'INSERT IGNORE INTO ' . PAYSWARM_PROFILES_TABLE_NAME . ' ' .
       '(profile_hash, profile_id) VALUES (%s,%s)',
       $profile_hash, $profile_id));
-   if($rval)
+   
+   if($rval !== false)
    {
       // insert authorized post entry
-      $rval = $wpdb->query($wpdb->prepare(
+      // important: 'false' check is necessary because the query can return 0
+      $rval = ($wpdb->query($wpdb->prepare(
          'INSERT IGNORE INTO ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' ' .
          '(profile_key,post_id) VALUES (' .
          '(SELECT profile_key FROM ' . PAYSWARM_PROFILES_TABLE_NAME . ' ' .
          ' WHERE profile_hash=%s AND profile_id=%s),%s)',
-         $profile_hash, $profile_id, $post_id));
+         $profile_hash, $profile_id, $post_id)) !== false);
    }
 
    return $rval;

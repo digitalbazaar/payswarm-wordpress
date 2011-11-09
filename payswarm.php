@@ -66,7 +66,7 @@ add_action('updated_postmeta', 'payswarm_updated_postmeta');
 
 // this hook gets called before any page content is generated and on every
 // page, so it makes sure a PaySwarm session gets created or updated
-add_action('sanitize_comment_cookies', 'payswarm_create_session');
+//add_action('sanitize_comment_cookies', 'payswarm_create_session');
 
 // add filters for text that the PaySwarm plugin will modify
 add_filter('the_content', 'payswarm_filter_paid_content');

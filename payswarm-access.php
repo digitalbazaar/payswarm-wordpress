@@ -135,12 +135,16 @@ function payswarm_handle_purchase_response($json_message)
       throw new Exception('PaySwarm Purchase Exception: ' .
          'The Asset in the Contract could not be matched to a post.');
    }
-
+   
    // create/update payswarm session
    $session = payswarm_create_session($profile_id);
 
    // authorize the post
-   payswarm_database_authorize_post($profile_id, $post_id, $license);
+   if(!payswarm_database_authorize_post($profile_id, $post_id, $license))
+   {
+      throw new Exception('PaySwarm Purchase Exception: ' .
+         'A record of the purchase could not be written to the database.');
+   }
 
    // output javascript to close popup and redirect parent
    $post_url = get_permalink($post_id);
