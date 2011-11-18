@@ -57,7 +57,24 @@ else
 
    // update the vendor preferences
    payswarm_config_preferences($msg);
-   header('Location: ' . admin_url() . 'plugins.php?page=payswarm');
+
+   // show admin page
+   $url = admin_url() . 'plugins.php?page=payswarm';
+   echo "
+      <html><body>
+      <script type=\"text/javascript\">
+      if(window.opener === null)
+      {
+         window.location = '$url';
+      }
+      else
+      {
+         window.close();
+         window.opener.location = '$url';
+      }
+      </script>
+      </body></html>";
+   exit(0);
 }
 
 /**

@@ -21,7 +21,7 @@ function payswarm_add_admin_pages()
 
       // admin actions
       add_action('admin_init', 'payswarm_register_settings');
-      add_action('admin_init', 'payswarm_redirect_registration');
+      add_action('admin_init', 'payswarm_popup_registration');
       add_action('admin_menu', 'payswarm_create_menu');
 
       // admin javascript callbacks
@@ -61,13 +61,12 @@ function payswarm_register_settings()
 }
 
 /**
- * Performs a re-direct when a PaySwarm Authority registration attempt is
- * detected.
+ * Shows a PaySwarm Authority registration pop up.
  *
  * @package payswarm
  * @since 1.0
  */
-function payswarm_redirect_registration()
+function payswarm_popup_registration()
 {
    if(isset($_POST['payswarm_register_button']))
    {
@@ -100,7 +99,20 @@ function payswarm_redirect_registration()
          }
          else
          {
-            wp_redirect(plugins_url() . '/payswarm/payswarm-register.php');
+            $url = plugins_url() . '/payswarm/payswarm-register.php';
+            echo "
+               <script type=\"text/javascript\">
+               (function show_popup() {
+                 var width = 700;
+                 var height = 600;
+                 var popup = window.open('$url', 'registerpopup',
+                   'left=' + ((screen.width-width)/2) +
+                   ',top=' + ((screen.height-height)/2) +
+                   ',width=' + width +
+                   ',height=' + height +
+                   ',resizeable,scrollbars');
+               })();
+               </script>";
          }
       }
    }
