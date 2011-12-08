@@ -287,13 +287,15 @@ function payswarm_get_public_key($url)
 
       // extract the key from the JSON-LD response
       $key = payswarm_jsonld_decode($response['body']);
-      if($key !== NULL and property_exists($key, 'sec:publicKeyPem'))
+      if($key === NULL or !property_exists($key, 'sec:publicKeyPem'))
       {
-         $rval = $key->{'sec:publicKeyPem'};
-
-         // update cache
-         set_transient($id, $rval, 60*60*24);
+         throw new Exception('Could not get public key. Unknown format.');
       }
+
+      $rval = $key->{'sec:publicKeyPem'};
+
+      // update cache
+      set_transient($id, $rval, 60*60*24);
    }
 
    return $rval;
