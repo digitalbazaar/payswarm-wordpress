@@ -72,6 +72,7 @@ function payswarm_handle_registration()
    {
       // if the PaySwarm options are updated successfully, attempt to perform
       // a registration
+      $error = false;
       if(payswarm_config_update(array('payswarm_authority_base_url')))
       {
          // get the PaySwarm Authority configuration
@@ -80,22 +81,11 @@ function payswarm_handle_registration()
          $cfg = payswarm_config_get_pa_config($config_url);
          if($cfg === false)
          {
-            payswarm_admin_warning(
-               'There was an error fetching the PaySwarm Authority ' .
-               'Configuration (' .
-               htmlentities($config_url) .
-               '). This may have happened because the ' .
-               'PaySwarm Authority configuration URL specified was incorrect ' .
-               'or because the PaySwarm Authority you specified is down.');
+            $error = 'config_url';
          }
          else if(!payswarm_config_endpoints($cfg))
          {
-            payswarm_admin_warning(
-               'The PaySwarm Authority Configuration that was retrieved ' .
-               'does not contain the necessary information required to ' .
-               'complete the registration process. Please check the ' .
-               'PaySwarm Authority you entered and its corresponding ' .
-               'configuration URL.');
+            $error = 'endpoints';
          }
          else
          {
@@ -104,6 +94,49 @@ function payswarm_handle_registration()
             header('HTTP/1.1 303 See Other');
             header("Location: $url");
          }
+
+         // show errors in parent window
+         if($error !== false)
+         {
+            $url = $_SERVER['REQUEST_URI'];
+            $query = http_build_query(array('error' => $error));
+            $url .= (strstr($url, '?') !== false) ? "&$query" : "?$query";
+            echo "
+               <script type=\"text/javascript\">
+               if(window.opener === null)
+               {
+                  window.location = '$url';
+               }
+               else
+               {
+                  window.close();
+                  window.opener.location = '$url';
+               }
+               </script>";
+         }
+      }
+   }
+   else if(isset($_GET['error']))
+   {
+      $pa_url = get_option('payswarm_authority_base_url');
+      $config_url = payswarm_config_get_pa_config_url($pa_url);
+      if($_GET['error'] === 'config_url')
+      {
+         payswarm_admin_warning(
+            'There was an error fetching the PaySwarm Authority ' .
+            'Configuration (' . htmlentities($config_url) . '). ' .
+            'This may have happened because the ' .
+            'PaySwarm Authority configuration URL specified was incorrect ' .
+            'or because the PaySwarm Authority you specified is down.');
+      }
+      else if($_GET['error'] === 'endpoints')
+      {
+         payswarm_admin_warning(
+            'The PaySwarm Authority Configuration that was retrieved ' .
+            'does not contain the necessary information required to ' .
+            'complete the registration process. Please check the ' .
+            'PaySwarm Authority you entered and its corresponding ' .
+            'configuration URL.');
       }
    }
 }
