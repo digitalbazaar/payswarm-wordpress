@@ -21,7 +21,7 @@ function payswarm_add_admin_pages()
 
       // admin actions
       add_action('admin_init', 'payswarm_register_settings');
-      add_action('admin_init', 'payswarm_popup_registration');
+      add_action('admin_init', 'payswarm_handle_registration');
       add_action('admin_menu', 'payswarm_create_menu');
 
       // admin javascript callbacks
@@ -61,12 +61,12 @@ function payswarm_register_settings()
 }
 
 /**
- * Shows a PaySwarm Authority registration pop up.
+ * Handlers PaySwarm Authority registration.
  *
  * @package payswarm
  * @since 1.0
  */
-function payswarm_popup_registration()
+function payswarm_handle_registration()
 {
    if(isset($_POST['payswarm_register_button']))
    {
@@ -99,20 +99,10 @@ function payswarm_popup_registration()
          }
          else
          {
+            // redirect to payswarm register
             $url = plugins_url() . '/payswarm/payswarm-register.php';
-            echo "
-               <script type=\"text/javascript\">
-               (function show_popup() {
-                 var width = 700;
-                 var height = 600;
-                 var popup = window.open('$url', 'registerpopup',
-                   'left=' + ((screen.width-width)/2) +
-                   ',top=' + ((screen.height-height)/2) +
-                   ',width=' + width +
-                   ',height=' + height +
-                   ',resizeable,scrollbars');
-               })();
-               </script>";
+            header('HTTP/1.1 303 See Other');
+            header("Location: $url");
          }
       }
    }
@@ -273,6 +263,21 @@ function payswarm_settings_page()
    }
 
 ?>
+
+<script type="text/javascript">
+function showPopup() {
+  var width = 700;
+  var height = 600;
+  var popup = window.open('', 'registerpopup',
+    'left=' + ((screen.width-width)/2) +
+    ',top=' + ((screen.height-height)/2) +
+    ',width=' + width +
+    ',height=' + height +
+    ',resizeable,scrollbars');
+  document.getElementById('register').target = 'registerpopup';
+};
+</script>
+
 <div class="wrap">
 <h2>PaySwarm Configuration</h2>
 
@@ -285,7 +290,7 @@ To use PaySwarm, you must first create an account on a
 <a href="http://dev.payswarm.com/">PaySwarm Authority</a>.
 </p>
 
-<form method="post" action="">
+<form id="register" method="post" action="">
     <?php settings_fields('payswarm-settings-group'); ?>
     <table class="form-table">
 
@@ -322,7 +327,8 @@ To use PaySwarm, you must first create an account on a
         <td scope="row" colspan="2">
            <input type="submit" class="button-secondary"
               name="payswarm_register_button"
-              value="<?php _e('Register this site') ?>" />
+              value="<?php _e('Register this site') ?>"
+              onclick="showPopup()" />
         </td>
         </tr>
 
