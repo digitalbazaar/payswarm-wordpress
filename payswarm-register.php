@@ -28,14 +28,12 @@ if(!isset($json_message))
    // generate the PA registration re-direct URL
    $callback_url = plugins_url() . '/payswarm/payswarm-register.php';
    $registration_url = get_option('payswarm_registration_url');
-   $query = http_build_query(array(
+   $registration_url = payswarm_add_query_vars(
+      $registration_url, array(
       'response-nonce' => payswarm_create_message_nonce(),
       'public-key' => $keys['public'],
       'registration-callback' => $callback_url
    ));
-   $registration_url .= (parse_url($registration_url, PHP_URL_QUERY) === NULL) ?
-      '?' : '&';
-   $registration_url .= $query;
 
    // re-direct the user agent to the PaySwarm Authority registration URL
    header('HTTP/1.1 303 See Other');

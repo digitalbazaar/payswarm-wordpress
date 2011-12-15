@@ -200,7 +200,7 @@ function payswarm_redirect($url)
  * This function is called when the website using the payswarm plugin
  * receives an exception that it doesn't know how to handle.
  *
- * @param e the exception.
+ * @param $e the exception.
  *
  * @package payswarm
  * @since 1.0
@@ -237,15 +237,15 @@ function payswarm_exception($e)
  * @package payswarm
  * @since 1.0
  *
- * @param object @obj the JSON-LD object.
- * @param string @type the type to check for.
+ * @param object $obj the JSON-LD object.
+ * @param string $type the type to check for.
  *
  * @return true if type found, false if not.
  */
 function payswarm_jsonld_has_type($obj, $type)
 {
    $rval = false;
-   
+
    if(property_exists($obj, '@type'))
    {
       $types = is_array($obj->{'@type'}) ?
@@ -258,6 +258,48 @@ function payswarm_jsonld_has_type($obj, $type)
    }
 
    return $rval;
+}
+
+/**
+ * Add query variables to an existing url.
+ *
+ * @param string $url the url to add the query vars to.
+ * @param array $qvars the query variables to add, eg: array('foo' => 'bar').
+ *
+ * @return the updated url.
+ */
+function payswarm_add_query_vars($url, $qvars)
+{
+   $parsed = parse_url($url);
+   if(isset($parsed['query']))
+   {
+      parse_str($parsed['query'], $query);
+      $query = array_merge($query, $qvars);
+   }
+   else
+   {
+      $query = $qvars;
+   }
+   $scheme = isset($parsed['scheme']) ? $parsed['scheme'] . '://' : '';
+   $host = isset($parsed['host']) ? $parsed['host'] : '';
+   $port = isset($parsed['port']) ? ':' . $parsed['port'] : '';
+   $path = isset($parsed['path']) ? $parsed['path'] : '';
+   $query = (count($query) > 0) ? '?' . http_build_query($query) : '';
+   $fragment = isset($parsed['fragment']) ? $parsed['fragment'] : '';
+   return "$scheme$host$port$path$query$fragment";
+}
+
+/**
+ * Get query variables from a url.
+ *
+ * @param string $url the url to add the query vars to.
+ *
+ * @return an array of the query vars.
+ */
+function payswarm_get_query_vars($url)
+{
+   parse_str(parse_url($url, PHP_URL_QUERY), $query);
+   return $query;
 }
 
 ?>

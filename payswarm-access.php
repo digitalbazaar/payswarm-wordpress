@@ -62,10 +62,19 @@ function payswarm_purchase_form($payment_url, $info)
 {
    $title = $info['post_title'];
    $author = $info['post_author'];
-   $listing_url = $info['listing_url'];
-   $listing_hash = $info['listing_hash'];
-   $callback_url = plugins_url() . '/payswarm/payswarm-access.php';
-   $response_nonce = payswarm_create_message_nonce();
+   $query = array(
+      'listing' => $info['listing_url'],
+      'listing-hash' => $info['listing_hash'],
+      'callback' => plugins_url() . '/payswarm/payswarm-access.php',
+      'response-nonce' => payswarm_create_message_nonce());
+
+   // create input fields
+   $input = '';
+   $query = array_merge(payswarm_get_query_vars($payment_url), $query);
+   foreach($query as $k => $v)
+   {
+      $input .= "<input type=\"hidden\" name=\"$k\" value=\"$v\" />\n";
+   }
 
    $rval = <<<FORM
 <html>
@@ -75,10 +84,7 @@ function payswarm_purchase_form($payment_url, $info)
 <h1>Purchase $title by $author</h1>
 <p>Do you want to purchase $title by $author?</p>
 <form method="GET" action="$payment_url">
-<input type="hidden" name="listing" value="$listing_url" />
-<input type="hidden" name="listing-hash" value="$listing_hash" />
-<input type="hidden" name="callback" value="$callback_url" />
-<input type="hidden" name="response-nonce" value="$response_nonce" />
+$input
 <input type="submit" value="Yes" />
 <input type="button" value="No" />
 <p><em>If you have previously purchased this item you won't be charged twice
@@ -135,7 +141,7 @@ function payswarm_handle_purchase_response($json_message)
       throw new Exception('PaySwarm Purchase Exception: ' .
          'The Asset in the Contract could not be matched to a post.');
    }
-   
+
    // create/update payswarm session
    $session = payswarm_create_session($profile_id);
 

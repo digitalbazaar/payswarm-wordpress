@@ -98,9 +98,8 @@ function payswarm_handle_registration()
          // show errors in parent window
          if($error !== false)
          {
-            $url = $_SERVER['REQUEST_URI'];
-            $query = http_build_query(array('error' => $error));
-            $url .= (strstr($url, '?') !== false) ? "&$query" : "?$query";
+            $url = payswarm_add_query_vars(
+               $_SERVER['REQUEST_URI'], array('error' => $error));
             echo "
                <script type=\"text/javascript\">
                if(window.opener === null)
