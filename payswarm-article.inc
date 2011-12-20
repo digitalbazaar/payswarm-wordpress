@@ -31,7 +31,7 @@ function payswarm_generate_asset_object($info, $includeSignature)
 {
    $asset = array(
       '@context' => payswarm_create_default_jsonld_context(),
-      '@subject' => $info['asset_url'],
+      '@id' => $info['asset_url'],
       '@type' => array('ps:Asset', 'ps:WebPage'),
       'dc:creator' => (object)array(
          'foaf:name' => $info['post_author']),
@@ -83,7 +83,7 @@ function payswarm_generate_asset_hash($info)
 function payswarm_generate_listing_object($info, $includeSignature)
 {
    $listing = array(
-      '@subject' => $info['listing_url'],
+      '@id' => $info['listing_url'],
       '@type' => array('gr:Offering', 'ps:Listing'),
       'com:payee' => $info['listing_payee']['id'],
       'com:payeeRule' => (object)array(
@@ -117,11 +117,11 @@ function payswarm_generate_listing_object($info, $includeSignature)
 
    return (object)array(
       '@context' => payswarm_create_default_jsonld_context(),
-      '@subject' => array(
+      '@id' => array(
          (object)$listing,
          // payee
          (object)array(
-            '@subject' => $info['listing_payee']['id'],
+            '@id' => $info['listing_payee']['id'],
             '@type' => 'com:Payee',
             'com:currency' => $info['listing_payee']['com:currency'],
             'com:destination' => $info['listing_payee']['com:destination'],

@@ -290,7 +290,7 @@ function payswarm_settings_page()
       if(!get_option('payswarm_default_license_hash'))
       {
          update_option('payswarm_default_license_hash',
-            '33aeb477cd346c79e38473862c92ae5bd12ea0e2');
+            'a0c33e3ebbe46e6e0adf9ebc6fbfb5c609375a9b');
       }
    }
 
