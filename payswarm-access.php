@@ -38,16 +38,62 @@ if(!isset($json_message))
    // get the payment URL for the PaySwarm Authority
    $payment_url = get_option("payswarm_payment_url");
 
-   // create the purchase request
+   // generate the query parameters for the purchase call
    $info = payswarm_get_post_info($post_id);
+   $query = array(
+      'listing' => $info['listing_url'],
+      'listing-hash' => $info['listing_hash'],
+      'callback' => plugins_url() . '/payswarm/payswarm-access.php',
+      'response-nonce' => payswarm_create_message_nonce());
+
+   // create the purchase request
+   $purchase_url = payswarm_build_purchase_url($payment_url, $info, $query);
+
+   // Automatically re-direct the browser to the purchase URL
+   header("Location: $purchase_url");
 
    // create a GET form including the purchase request targeted at the PA
-   echo payswarm_purchase_form($payment_url, $info);
+   echo payswarm_purchase_form($payment_url, $info, query);
 }
 // handle posted message
 else
 {
    payswarm_handle_purchase_response($json_message);
+}
+
+/**
+ * Generates the purchase URL that will be used to initiate the purchase 
+ * request.
+ *
+ * @param string $payment_url the PA payment URL.
+ * @param array $info the information about the particular post.
+ *
+ * @return string the payment URL.
+ */
+function payswarm_build_purchase_url($payment_url, $info, $query) 
+{
+   $rval = $payment_url;
+
+   // add the appropriate URL query parameter separator to the end of the URL
+   if(strpos($payment_url, '?') === False)
+   {
+      $rval .= '?';
+   }
+   else
+   {
+      $rval .= '&';
+   }
+
+   // generate the additional query parameters to place at the end of the URL
+   $values = array();
+   foreach($query as $k => $v)
+   {
+      array_push($values, $k .'='. urlencode($v));
+   }
+
+   $rval .= implode('&', $values);
+
+   return $rval;
 }
 
 /**
@@ -58,15 +104,10 @@ else
  *
  * @return string the purchase form.
  */
-function payswarm_purchase_form($payment_url, $info)
+function payswarm_purchase_form($payment_url, $info, $query)
 {
    $title = $info['post_title'];
    $author = $info['post_author'];
-   $query = array(
-      'listing' => $info['listing_url'],
-      'listing-hash' => $info['listing_hash'],
-      'callback' => plugins_url() . '/payswarm/payswarm-access.php',
-      'response-nonce' => payswarm_create_message_nonce());
 
    // create input fields
    $input = '';
@@ -83,7 +124,7 @@ function payswarm_purchase_form($payment_url, $info)
 </head>
 <h1>Purchase $title by $author</h1>
 <p>Do you want to purchase $title by $author?</p>
-<form method="GET" action="$payment_url">
+<form id="purchase" method="GET" action="$payment_url">
 $input
 <input type="submit" value="Yes" />
 <input type="button" value="No" />
