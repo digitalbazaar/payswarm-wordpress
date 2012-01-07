@@ -62,7 +62,7 @@ else
 }
 
 /**
- * Generates the purchase URL that will be used to initiate the purchase 
+ * Generates the purchase URL that will be used to initiate the purchase
  * request.
  *
  * @param string $payment_url the PA payment URL.
@@ -70,7 +70,7 @@ else
  *
  * @return string the payment URL.
  */
-function payswarm_build_purchase_url($payment_url, $info, $query) 
+function payswarm_build_purchase_url($payment_url, $info, $query)
 {
    $rval = $payment_url;
 
