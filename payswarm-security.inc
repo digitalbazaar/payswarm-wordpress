@@ -5,7 +5,7 @@ require_once('payswarm-utils.inc');
 
 /**
  * Creates a new PaySwarm session if one doesn't already exist. If one does
- * exist, it will be updated with the given profile ID if it hasn't already
+ * exist, it will be updated with the given identity ID if it hasn't already
  * been set.
  *
  * The PaySwarm session is stored in a cookie 'payswarm-session'. This session
@@ -15,16 +15,16 @@ require_once('payswarm-utils.inc');
  * @package payswarm
  * @since 1.0
  *
- * @param profile_id the profile IRI to associate with the session.
+ * @param identity_id the identity IRI to associate with the session.
  *
  * @return string the session ID for the active PaySwarm session.
  */
-function payswarm_create_session($profile_id = null)
+function payswarm_create_session($identity_id = null)
 {
    global $_COOKIE;
 
    // try to get existing session
-   $session = payswarm_get_session($profile_id);
+   $session = payswarm_get_session($identity_id);
    $timeout = 0;
 
    // no session exists, create a new one
@@ -36,7 +36,7 @@ function payswarm_create_session($profile_id = null)
       $session = array(
          'id' => md5("$now$random_value"),
          'ip' => $_SERVER['REMOTE_ADDR'],
-         'profile_id' => $profile_id);
+         'identity_id' => $identity_id);
    }
    // get timeout cookie value
    else if(array_key_exists('payswarm-session-timeout', $_COOKIE))
@@ -52,7 +52,7 @@ function payswarm_create_session($profile_id = null)
       // get client IP address
       $ip = $_SERVER['REMOTE_ADDR'];
 
-      // update session (updates expiration time and profile ID)
+      // update session (updates expiration time and identity ID)
       $timeout = $now + 3600;
       set_transient('ps_sess_' . $session['id'], $session, 3600);
 
@@ -78,13 +78,13 @@ function payswarm_create_session($profile_id = null)
  * @package payswarm
  * @since 1.0
  *
- * @param profile_id the profile IRI to check against the session, null for
+ * @param identity_id the identity IRI to check against the session, null for
  *           no check.
  *
  * @return mixed the active PaySwarm session or false if no such session
  *         exists.
  */
-function payswarm_get_session($profile_id = null)
+function payswarm_get_session($identity_id = null)
 {
    global $_COOKIE;
    $session = false;
@@ -96,11 +96,11 @@ function payswarm_get_session($profile_id = null)
       $session = get_transient('ps_sess_' . $session_id);
       if($session !== false)
       {
-         // ensure client IP address and profile ID match
+         // ensure client IP address and identity ID match
          $ip = $_SERVER['REMOTE_ADDR'];
          if($session['ip'] !== $ip or
-            ($profile_id !== $session['profile_id'] and
-            $profile_id !== null))
+            ($identity_id !== $session['identity_id'] and
+            $identity_id !== null))
          {
             // invalid session, clear cookie only
             payswarm_clear_session_cookie();

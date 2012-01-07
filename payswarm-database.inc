@@ -8,12 +8,12 @@ global $wpdb;
 define('PAYSWARM_SCHEMA_VERSION', '1.0');
 
 /**
- * The name of the table where PaySwarm stores profile IDs.
+ * The name of the table where PaySwarm stores identity IDs.
  * @since 1.0
- * @global string PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME
+ * @global string PAYSWARM_IDENTITY_TABLE_NAME
  */
-define('PAYSWARM_PROFILES_TABLE_NAME',
-   $wpdb->prefix . 'payswarm_profiles');
+define('PAYSWARM_IDENTITY_TABLE_NAME',
+   $wpdb->prefix . 'payswarm_identity');
 
 /**
  * The name of the table where PaySwarm stores which posts have been authorized.
@@ -33,18 +33,18 @@ function payswarm_install_database()
 {
    global $wpdb;
 
-   // check to see if the payswarm profiles table exists
+   // check to see if the payswarm identity table exists
    if($wpdb->get_var(
-      'SHOW TABLES LIKE \''. PAYSWARM_PROFILES_TABLE_NAME .'\'') !==
-      PAYSWARM_PROFILES_TABLE_NAME)
+      'SHOW TABLES LIKE \''. PAYSWARM_IDENTITY_TABLE_NAME .'\'') !==
+      PAYSWARM_IDENTITY_TABLE_NAME)
    {
       // ensure that the formatting below is one field per line, dbDelta is
       // very picky when it comes to what it allows.
-      $posts_sql = 'CREATE TABLE ' . PAYSWARM_PROFILES_TABLE_NAME . ' (
-         profile_key INTEGER UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-         profile_hash VARCHAR(36) NOT NULL,
-         profile_id TEXT NOT NULL,
-         UNIQUE(profile_hash));';
+      $posts_sql = 'CREATE TABLE ' . PAYSWARM_IDENTITY_TABLE_NAME . ' (
+         identity_key INTEGER UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+         identity_hash VARCHAR(36) NOT NULL,
+         identity_id TEXT NOT NULL,
+         UNIQUE(identity_hash));';
 
       require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
       dbDelta($posts_sql);
@@ -59,9 +59,9 @@ function payswarm_install_database()
       // ensure that the formatting below is one field per line, dbDelta is
       // very picky when it comes to what it allows.
       $posts_sql = 'CREATE TABLE ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' (
-         profile_key INTEGER UNSIGNED NOT NULL,
+         identity_key INTEGER UNSIGNED NOT NULL,
          post_id INTEGER NOT NULL,
-         PRIMARY KEY(profile_key,post_id)
+         PRIMARY KEY(identity_key,post_id)
          );';
 
       require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
@@ -87,56 +87,56 @@ function payswarm_uninstall_database()
 }
 
 /**
- * Generates a profile hash.
+ * Generates a identity hash.
  *
- * @param string $profile_id the ID of a profile.
+ * @param string $identity_id the ID of a identity.
  *
- * @return string the profile hash.
+ * @return string the identity hash.
  */
-function payswarm_database_hash_profile_id($profile_id)
+function payswarm_database_hash_identity_id($identity_id)
 {
-   // do md5 hash + length of profile
-   return md5($profile_id) . sprintf('%04x', strlen($profile_id));
+   // do md5 hash + length of identity
+   return md5($identity_id) . sprintf('%04x', strlen($identity_id));
 }
 
 /**
- * Authorizes a post to be viewed for a particular profile. If the given
+ * Authorizes a post to be viewed for a particular identity. If the given
  * contract is invalid, the post will not be authorized.
  *
  * @package payswarm
  * @since 1.0
  *
- * @param string $profile_id the ID of the user on the site.
+ * @param string $identity_id the ID of the user on the site.
  * @param Integer $post_id the post identifier.
  * @param string $license the URL of the license that was authorized.
  *
  * @return boolean true if the post was authorized, false if not.
  */
-function payswarm_database_authorize_post($profile_id, $post_id, $license)
+function payswarm_database_authorize_post($identity_id, $post_id, $license)
 {
    $rval = false;
    global $wpdb;
 
    // TODO: add support for different authorizations based on license
    // FIXME: check post meta data against license URL for now?
-   
-   // insert profile ID
-   $profile_hash = payswarm_database_hash_profile_id($profile_id);
+
+   // insert identity ID
+   $identity_hash = payswarm_database_hash_identity_id($identity_id);
    $rval = $wpdb->query($wpdb->prepare(
-      'INSERT IGNORE INTO ' . PAYSWARM_PROFILES_TABLE_NAME . ' ' .
-      '(profile_hash, profile_id) VALUES (%s,%s)',
-      $profile_hash, $profile_id));
-   
+      'INSERT IGNORE INTO ' . PAYSWARM_IDENTITY_TABLE_NAME . ' ' .
+      '(identity_hash, identity_id) VALUES (%s,%s)',
+      $identity_hash, $identity_id));
+
    if($rval !== false)
    {
       // insert authorized post entry
       // important: 'false' check is necessary because the query can return 0
       $rval = ($wpdb->query($wpdb->prepare(
          'INSERT IGNORE INTO ' . PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' ' .
-         '(profile_key,post_id) VALUES (' .
-         '(SELECT profile_key FROM ' . PAYSWARM_PROFILES_TABLE_NAME . ' ' .
-         ' WHERE profile_hash=%s AND profile_id=%s),%s)',
-         $profile_hash, $profile_id, $post_id)) !== false);
+         '(identity_key,post_id) VALUES (' .
+         '(SELECT identity_key FROM ' . PAYSWARM_IDENTITY_TABLE_NAME . ' ' .
+         ' WHERE identity_hash=%s AND identity_id=%s),%s)',
+         $identity_hash, $identity_id, $post_id)) !== false);
    }
 
    return $rval;
@@ -144,7 +144,7 @@ function payswarm_database_authorize_post($profile_id, $post_id, $license)
 
 /**
  * Checks to see if a post is authorized using the given session. A post is
- * authorized if the profile ID in the session has been granted access to
+ * authorized if the identity ID in the session has been granted access to
  * view the post.
  *
  * @package payswarm
@@ -160,18 +160,18 @@ function payswarm_database_is_post_authorized($session, $post_id)
    $rval = false;
    global $wpdb;
 
-   if($session !== false and $session['profile_id'] !== null)
+   if($session !== false and $session['identity_id'] !== null)
    {
-      $profile_hash = payswarm_database_hash_profile_id(
-         $session['profile_id']);
+      $identity_hash = payswarm_database_hash_identity_id(
+         $session['identity_id']);
       $rval = $wpdb->get_row($wpdb->prepare(
             'SELECT ap.post_id as post_id FROM ' .
             PAYSWARM_AUTHORIZED_POSTS_TABLE_NAME . ' ap ' .
-            ' JOIN ' . PAYSWARM_PROFILES_TABLE_NAME . ' p ' .
-            ' ON ap.profile_key=p.profile_key' .
-            ' WHERE p.profile_hash=%s AND' .
-            ' p.profile_id=%s AND ap.post_id=%s LIMIT 1',
-            $profile_hash, $session['profile_id'], $post_id), ARRAY_A);
+            ' JOIN ' . PAYSWARM_IDENTITY_TABLE_NAME . ' p ' .
+            ' ON ap.identity_key=p.identity_key' .
+            ' WHERE p.identity_hash=%s AND' .
+            ' p.identity_id=%s AND ap.post_id=%s LIMIT 1',
+            $identity_hash, $session['identity_id'], $post_id), ARRAY_A);
       $rval = (is_array($rval) && count($rval) === 1);
    }
 

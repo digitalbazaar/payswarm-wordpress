@@ -171,7 +171,7 @@ function payswarm_handle_purchase_response($json_message)
    }
 
    // get contract info
-   $profile_id = $msg->{'ps:assetAcquirer'};
+   $identity_id = $msg->{'ps:assetAcquirer'};
    $asset = $msg->{'ps:asset'};
    $license = $msg->{'ps:license'};
 
@@ -184,10 +184,10 @@ function payswarm_handle_purchase_response($json_message)
    }
 
    // create/update payswarm session
-   $session = payswarm_create_session($profile_id);
+   $session = payswarm_create_session($identity_id);
 
    // authorize the post
-   if(!payswarm_database_authorize_post($profile_id, $post_id, $license))
+   if(!payswarm_database_authorize_post($identity_id, $post_id, $license))
    {
       throw new Exception('PaySwarm Purchase Exception: ' .
          'A record of the purchase could not be written to the database.');
