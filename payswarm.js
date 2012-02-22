@@ -13,7 +13,7 @@
 function toggleAssetInformation(postId)
 {
    var assetInfo = document.getElementById('payswarm-asset-info-' + postId);
-   var className = assetInfo.getAttribute('"class');
+   var className = assetInfo.getAttribute('class');
 
    // toggle the hidden CSS state for the attribute
    if(className === 'hidden')
