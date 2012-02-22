@@ -383,8 +383,8 @@ function payswarm_asset_information_rdfa($post_id)
 {
    $info = payswarm_get_post_info($post_id);
 
-   // replace first 'http://' with 'https://'
-   $access_url = preg_replace('/^http:\/\/(.*)$/', 'https://$1',
+   // replace first 'https://' with 'http://'
+   $access_url = preg_replace('/^https:\/\/(.*)$/', 'http://$1',
       PAYSWARM_PLUGIN_URL . 'payswarm-access.php');
    $access_url = add_query_arg('p', $post_id, $access_url);
    $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
