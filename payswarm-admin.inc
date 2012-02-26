@@ -1,5 +1,7 @@
 <?php
 
+require_once('payswarm-utils.inc');
+
 /**
  * Adds the administrative pages to the UI if the administrator is logged in.
  *
@@ -220,6 +222,65 @@ function payswarm_admin_warnings()
 }
 
 /**
+ * Caches a license at the PaySwarm Authority and returns the result.
+ *
+ * @param string $id the ID of the license to cache.
+ * @param string $publicId the ID of the public key.
+ * @param string $pem the PEM-encoded private key to sign with.
+ *
+ * @return stdClass the license.
+ */
+function payswarm_cache_license($id, $publicKeyId, $pem)
+{
+   $msg = new stdClass();
+   $msg->{'@context'} = payswarm_create_default_jsonld_context();
+   $msg->{'ps:license'} = $id;
+   $date = date_format(
+      date_create("now", new DateTimeZone('UTC')), DateTime::W3C);
+   $signature = payswarm_sign_json($msg, $pem, $date);
+   $msg->{'sec:signature'} = (object)array(
+      '@type' => 'sec:JsonLdSignature',
+      'dc:created' => $date,
+      'dc:creator' => $publicKeyId,
+      'sec:signatureValue' => $signature
+   );
+
+   $body = payswarm_json_encode($msg);
+   $response = wp_remote_post(
+      get_option('payswarm_licenses_url'), array(
+      'headers' => array(
+         'Content-Type' => 'application/json; charset=utf-8',
+         'Content-Length' => strlen($body),
+         'User-Agent' => 'PaySwarm PHP Client/1.0'),
+      'body' => $body,
+      // FIXME: change for production
+      'sslverify' => false)
+   );
+   if(!$response or is_wp_error($response))
+   {
+      throw new Exception('PaySwarm Exception: ' .
+         'Invalid response when caching license.');
+   }
+   else
+   {
+      $rval = payswarm_jsonld_decode(wp_remote_retrieve_body($response));
+      if(!$rval or !is_object($rval))
+      {
+         throw new Exception('PaySwarm Exception: ' .
+            'Invalid response when caching license.');
+      }
+      else if(is_object($rval) and property_exists($rval, 'type'))
+      {
+         throw new Exception('PaySwarm Exception: ' .
+           'Error while caching license: ' .
+           $rval->{'message'} . ', ' . $rval->{'type'});
+      }
+   }
+
+   return $rval;
+}
+
+/**
  * Displays the PaySwarm settings page to the administrator.
  *
  * @package payswarm
@@ -257,6 +318,21 @@ function payswarm_settings_page()
       {
          delete_option('payswarm_key_overwrite');
       }
+
+      if(!get_option('payswarm_default_license_url'))
+      {
+         update_option('http://purl.org/payswarm/licenses/blogging');
+      }
+
+      // fetch latest payswarm license hash
+      $license = payswarm_cache_license(
+         get_option('payswarm_default_license_url'),
+         get_option('payswarm_public_key_url'),
+         get_option('payswarm_private_key'));
+      update_option('payswarm_default_license_url',
+         'http://purl.org/payswarm/licenses/blogging');
+      update_option('payswarm_default_license_hash',
+         payswarm_generate_json_hash($license));
    }
    else
    {
@@ -279,18 +355,22 @@ function payswarm_settings_page()
          update_option('payswarm_default_price', '0.05');
       }
 
-      // set the default license URL
+      // set the default license URL and hash
       if(!get_option('payswarm_default_license_url'))
       {
-         update_option('payswarm_default_license_url',
-            'http://purl.org/payswarm/licenses/blogging');
+         update_option('http://purl.org/payswarm/licenses/blogging');
       }
-
-      // set the default license URL hash
       if(!get_option('payswarm_default_license_hash'))
       {
+         // fetch latest payswarm license hash
+         $license = payswarm_cache_license(
+            get_option('payswarm_default_license_url'),
+            get_option('payswarm_public_key_url'),
+            get_option('payswarm_private_key'));
+         update_option('payswarm_default_license_url',
+            'http://purl.org/payswarm/licenses/blogging');
          update_option('payswarm_default_license_hash',
-            '7ede2ee1c8e0f3125b7758df2b6b47115dd596ce');
+            payswarm_generate_json_hash($license));
       }
    }
 

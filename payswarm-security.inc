@@ -254,6 +254,12 @@ function payswarm_generate_json_hash($obj)
  */
 function payswarm_sign_json($obj, $pem, $sig_date)
 {
+   if(!$sig_date)
+   {
+      $sig_created = date_format(
+         date_create("now", new DateTimeZone('UTC')), DateTime::W3C);
+   }
+
    // sign and return base64-encoded signature
    $json = payswarm_json_encode(jsonld_normalize($obj));
    openssl_sign($sig_date . $json, $signature, $pem, OPENSSL_ALGO_SHA1);
