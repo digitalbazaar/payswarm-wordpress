@@ -1,7 +1,7 @@
 /*
  * PaySwarm JavaScript library.
  *
- * Copyright 2010-2011 Digital Bazaar, Inc.
+ * Copyright 2010-2012 Digital Bazaar, Inc.
  * License: LGPLv3.
  */
 
@@ -10,20 +10,17 @@
  *
  * @param postId the identifier for the post
  */
-function toggleAssetInformation(postId)
-{
-   var assetInfo = document.getElementById('payswarm-asset-info-' + postId);
-   var className = assetInfo.getAttribute('class');
+function toggleAssetInformation(postId) {
+  var assetInfo = document.getElementById('payswarm-asset-info-' + postId);
+  var className = assetInfo.getAttribute('class');
 
-   // toggle the hidden CSS state for the attribute
-   if(className === 'hidden')
-   {
-      assetInfo.setAttribute('class', '');
-   }
-   else
-   {
-      assetInfo.setAttribute('class', 'hidden');
-   }
+  // toggle the hidden CSS state for the attribute
+  if(className === 'hidden') {
+    assetInfo.setAttribute('class', '');
+  }
+  else {
+    assetInfo.setAttribute('class', 'hidden');
+  }
 }
 
 /**
@@ -31,27 +28,23 @@ function toggleAssetInformation(postId)
  *
  * @param event the event that fires the authority configuration
  */
-function updateAuthorityConfigUrl(event)
-{
-   // extract host and port information
-   var authority = document.getElementById('payswarm_authority').value;
-   var hostPort = authority.match(/(http:\/\/|https:\/\/)?([^/]+)\/?/i);
+function updateAuthorityConfigUrl(event) {
+  // extract host and port information
+  var authority = document.getElementById('payswarm_authority').value;
+  var hostPort = authority.match(/(http:\/\/|https:\/\/)?([^/]+)\/?/i);
 
-   // if a valid value was found, update the configuration URL
-   if(hostPort != null)
-   {
-      // build base URL
-      var baseUrl = 'https://' + hostPort[2] + '/';
+  // if a valid value was found, update the configuration URL
+  if(hostPort !== null) {
+    // build base URL
+    var baseUrl = 'https://' + hostPort[2] + '/';
 
-      // build config URL
-      var configUrl = baseUrl + 'payswarm-v1-config';
+    // build config URL
+    var configUrl = baseUrl + 'payswarm-v1-config';
 
-      // update display on the screen and form element
-      var configDisplay = 
-         document.getElementById('payswarm_config_url_display');
-      var base = 
-         document.getElementById('payswarm_authority_base_url');
-      configDisplay.innerText = configUrl;
-      base.value = baseUrl;
-   }
+    // update display on the screen and form element
+    var configDisplay = document.getElementById('payswarm_config_url_display');
+    var base = document.getElementById('payswarm_authority_base_url');
+    configDisplay.innerText = configUrl;
+    base.value = baseUrl;
+  }
 }
