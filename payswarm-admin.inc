@@ -1,75 +1,156 @@
 <?php
 
-require_once('payswarm-utils.inc');
+require_once('payswarm-client.inc');
+require_once('payswarm-wp-hooks.inc');
 
 /**
- * Adds the administrative pages to the UI if the administrator is logged in.
+ * Called when a user accesses the admin area.
  *
  * @package payswarm
  * @since 1.0
  */
-function payswarm_add_admin_pages()
-{
-   // check to see if the PaySwarm options are being set
-   $options_not_being_set = !isset($_POST['payswarm_register_button']) ||
-      !isset($_POST['payswarm_update_button']);
-
-   // ensure that the administrator is logged in before adding the administrator
-   // menus
-   if(is_admin())
-   {
-      // Force management to happen through SSL
-      payswarm_force_ssl();
-
-      // admin actions
-      add_action('admin_init', 'payswarm_register_settings');
-      add_action('admin_init', 'payswarm_handle_registration');
-      add_action('admin_menu', 'payswarm_create_menu');
-
-      // admin javascript callbacks
-      add_action('wp_ajax_payswarm_get_authority_config',
-         'payswarm_get_authority_config');
-
-      // create a warning if the proper settings are not set.
-      if($options_not_being_set)
-      {
-         payswarm_admin_warnings();
-      }
-   }
+function payswarm_admin_init() {
+  // set up pages
+  payswarm_setup_options_page();
+  payswarm_setup_register_page();
 }
 
 /**
- * Registers all of the PaySwarm options settings.
+ * Add a PaySwarm configuration link to the admin panel.
  *
  * @package payswarm
  * @since 1.0
  */
-function payswarm_register_settings()
-{
-   // whitelist the PaySwarm options
-   register_setting('payswarm-option-group', 'payswarm_authority_base_url');
-   register_setting('payswarm-option-group', 'payswarm_default_auth_rate');
-   register_setting('payswarm-option-group', 'payswarm_default_currency');
-   register_setting('payswarm-option-group', 'payswarm_default_price');
-   register_setting('payswarm-option-group', 'payswarm_destination_account');
-   register_setting('payswarm-option-group', 'payswarm_default_license_url');
-   register_setting('payswarm-option-group', 'payswarm_default_license_hash');
-   register_setting('payswarm-option-group', 'payswarm_contracts_url');
-   register_setting('payswarm-option-group', 'payswarm_public_key');
-   register_setting('payswarm-option-group', 'payswarm_public_key_url');
-   register_setting('payswarm-option-group', 'payswarm_private_key');
-   register_setting('payswarm-option-group', 'payswarm_key_overwrite');
-   register_setting('payswarm-option-group', 'payswarm_vendor_url');
+function payswarm_admin_menu() {
+  if(!current_user_can('manage_options')) {
+    return;
+  }
+
+  // add registration page
+  add_submenu_page(
+    'plugins.php', 'PaySwarm', 'PaySwarm',
+    'administrator', 'payswarm', 'payswarm_render_register_page');
+
+  // add settings page
+  add_options_page(
+    'PaySwarm Settings', 'PaySwarm',
+    'manage_options', 'payswarm', 'payswarm_render_options_page');
 }
 
 /**
- * Handlers PaySwarm Authority registration.
+ * Gets the PaySwarm options.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @return the payswarm options.
+ */
+function payswarm_get_options() {
+  // get default payswarm options
+  return get_option('payswarm_options', array(
+    'default_price' => '0.05',
+    'default_license_id' => 'http://purl.org/payswarm/licenses/blogging',
+    'default_license_hash' => 'Save settings to compute',
+    'default_authority_rate' => '10.0'
+  ));
+}
+
+/**
+ * Sets up the PaySwarm options page.
  *
  * @package payswarm
  * @since 1.0
  */
+function payswarm_setup_options_page() {
+  // get payswarm options
+  $options = payswarm_get_options();
+
+  // add payswarm option section
+  add_settings_section(
+    'payswarm_options_section',
+    'PaySwarm Options',
+    'payswarm_render_options_section',
+    'payswarm');
+
+  // add payswarm option fields
+  add_settings_field(
+    'payswarm_default_price',
+    'Default Paid Content Price',
+    'payswarm_render_default_price',
+    'payswarm',
+    'payswarm_options_section',
+    $options);
+  add_settings_field(
+    'payswarm_default_license_id',
+    'Default Paid Content License',
+    'payswarm_render_default_license_id',
+    'payswarm',
+    'payswarm_options_section',
+    $options);
+  add_settings_field(
+    'payswarm_default_authority_rate',
+    'Default Authority Rate',
+    'payswarm_render_default_authority_rate',
+    'payswarm',
+    'payswarm_options_section',
+    $options);
+
+  // register payswarm options
+  register_setting(
+    'payswarm',
+    'payswarm_options',
+    'payswarm_validate_options');
+}
+
+/**
+ * Sets up the PaySwarm registration page.
+ */
+function payswarm_setup_register_page() {
+  // add payswarm registration section
+  add_settings_section(
+    'payswarm_register_section',
+    'PaySwarm Registration',
+    'payswarm_render_register_section',
+    'payswarm_register');
+
+  // add payswarm register fields
+  add_settings_field(
+    'payswarm_authority_host',
+    'PaySwarm Authority',
+    'payswarm_render_authority_host',
+    'payswarm_register',
+    'payswarm_register_section');
+  add_settings_field(
+    'payswarm_overwrite_key_pair',
+    'Overwrite Existing Key Pair',
+    'payswarm_render_overwrite_key_pair',
+    'payswarm_register',
+    'payswarm_register_section');
+
+  // register payswarm registration settings
+  register_setting(
+    'payswarm_register',
+    'payswarm_authority_host',
+    'payswarm_validate_authority_host');
+  register_setting(
+    'payswarm_register',
+    'payswarm_overwrite_key_pair',
+    'payswarm_validate_overwrite_key_pair');
+}
+
+/**
+ * Handles PaySwarm Authority registration.
+ *
+ * @package payswarm
+ * @since 1.0
+ */
+/*
 function payswarm_handle_registration()
 {
+  //wp_verify_nonce($_POST['name_of_nonce_field'],'name_of_my_action')
+  // TODO: ensure only host:port are given
+
+
    if(isset($_POST['payswarm_register_button']))
    {
       // if the PaySwarm options are updated successfully, attempt to perform
@@ -140,20 +221,7 @@ function payswarm_handle_registration()
             'configuration URL.');
       }
    }
-}
-
-/**
- * Adds a plugin configuration page to the administration panel.
- *
- * @package payswarm
- * @since 1.0
- */
-function payswarm_create_menu()
-{
-   //create new top-level menu
-   add_submenu_page('plugins.php', 'PaySwarm Configuration', 'PaySwarm',
-      'administrator', 'payswarm', 'payswarm_settings_page');
-}
+}*/
 
 /**
  * Adds a warning to the administration page.
@@ -163,7 +231,7 @@ function payswarm_create_menu()
  *
  * @param string $warning The warning to print to the administration page.
  */
-function payswarm_admin_warning($warning)
+/*function payswarm_admin_warning($warning)
 {
    echo "
    <div id='payswarm-admin-warning' class='updated fade'>
@@ -172,122 +240,129 @@ function payswarm_admin_warning($warning)
        '<a href="plugins.php?page=payswarm">configure PaySwarm</a>.') .
    "  </p>
    </div>";
-}
+}*/
 
 /**
- * Generates any administration warnings dealing with PaySwarm configuration.
+ * Displays the PaySwarm registration page to the administrator.
  *
  * @package payswarm
  * @since 1.0
  */
-function payswarm_admin_warnings()
-{
-   $options_not_being_set = !isset($_POST['payswarm_register_button']) ||
-      !isset($_POST['payswarm_update_button']);
-   $options_nonexistant = !get_option('payswarm_authority_base_url') ||
-      !get_option('payswarm_default_auth_rate') ||
-      !get_option('payswarm_default_currency') ||
-      !get_option('payswarm_default_price') ||
-      !get_option('payswarm_destination_account') ||
-      !get_option('payswarm_default_license_url') ||
-      !get_option('payswarm_default_license_hash') ||
-      !get_option('payswarm_contracts_url') ||
-      !get_option('payswarm_public_key') ||
-      !get_option('payswarm_public_key_url') ||
-      !get_option('payswarm_private_key') ||
-      !get_option('payswarm_vendor_url');
-   $options_invalid = strlen(get_option('payswarm_authority_base_url')) < 1 ||
-      strlen(get_option('payswarm_default_auth_rate')) < 1 ||
-      strlen(get_option('payswarm_default_currency')) < 1 ||
-      strlen(get_option('payswarm_default_price')) < 1 ||
-      strlen(get_option('payswarm_destination_account')) < 1 ||
-      strlen(get_option('payswarm_default_license_url')) < 1 ||
-      strlen(get_option('payswarm_default_license_hash')) < 1 ||
-      strlen(get_option('payswarm_contracts_url')) < 1 ||
-      strlen(get_option('payswarm_public_key')) < 1 ||
-      strlen(get_option('payswarm_public_key_url')) < 1 ||
-      strlen(get_option('payswarm_private_key')) < 1 ||
-      strlen(get_option('payswarm_vendor_url')) < 1;
+function payswarm_render_register_page() {
+  ?>
+  <div class="wrap">
+    <?php screen_icon('options-general'); ?>
+      <h2>PaySwarm</h2>
+      <form action="payswarm-register.php" method="post">
+        <?php settings_fields('payswarm_register'); ?>
+        <?php do_settings_sections('payswarm_register'); ?>
+        <p class="submit">
+          <input name="submit" type="submit" class="button-primary"
+            onclick="showRegisterPopup();"
+            value="<?php _e('Register this site'); ?>" />
+        </p>
+      </form>
+    </div>
+  <?php
 
-   // output a warning if any part of the PaySwarm configuration is not set
-   if(($options_nonexistant && $options_not_being_set) || $options_invalid)
-   {
-      function psaw_config()
-      {
-         payswarm_admin_warning(
-            'A number of PaySwarm options are not correct.');
-      }
-      add_action('admin_notices', 'psaw_config');
-   }
+  /*
+  // output warnings
+  if(isset($_GET['error'])) {
+    $host = get_option('payswarm_authority_host');
+    $url = "https://$host/payswarm-v1-config";
+    if($_GET['error'] === 'config_url') {
+      payswarm_admin_warning(
+        'There was an error fetching the PaySwarm Authority ' .
+        'Configuration (' . htmlentities($url) . '). ' .
+        'This may have happened because the ' .
+        'PaySwarm Authority configuration URL specified was incorrect ' .
+        'or because the PaySwarm Authority you specified is not responding.');
+    }
+    else if($_GET['error'] === 'endpoints') {
+      payswarm_admin_warning(
+        'The PaySwarm Authority Configuration that was retrieved ' .
+        'does not contain the necessary information required to ' .
+        'complete the registration process. Please ensure that you ' .
+        'entered the correct PaySwarm Authority.');
+    }
+  }*/
 }
 
 /**
- * Caches a license at the PaySwarm Authority and returns the result.
- *
- * @param string $id the ID of the license to cache.
- * @param string $publicId the ID of the public key.
- * @param string $pem the PEM-encoded private key to sign with.
- *
- * @return stdClass the license.
- */
-function payswarm_cache_license($id, $publicKeyId, $pem)
-{
-   $msg = new stdClass();
-   $msg->{'@context'} = payswarm_create_default_jsonld_context();
-   $msg->{'ps:license'} = $id;
-   $date = date_format(
-      date_create("now", new DateTimeZone('UTC')), DateTime::W3C);
-   $signature = payswarm_sign_json($msg, $pem, $date);
-   $msg->{'sec:signature'} = (object)array(
-      '@type' => 'sec:JsonLdSignature',
-      'dc:created' => $date,
-      'dc:creator' => $publicKeyId,
-      'sec:signatureValue' => $signature
-   );
-
-   $body = payswarm_json_encode($msg);
-   $response = wp_remote_post(
-      get_option('payswarm_licenses_url'), array(
-      'headers' => array(
-         'Content-Type' => 'application/json; charset=utf-8',
-         'Content-Length' => strlen($body),
-         'User-Agent' => 'PaySwarm PHP Client/1.0'),
-      'body' => $body,
-      // FIXME: change for production
-      'sslverify' => false)
-   );
-   if(!$response or is_wp_error($response))
-   {
-      throw new Exception('PaySwarm Exception: ' .
-         'Invalid response when caching license.');
-   }
-   else
-   {
-      $rval = payswarm_jsonld_decode(wp_remote_retrieve_body($response));
-      if(!$rval or !is_object($rval))
-      {
-         throw new Exception('PaySwarm Exception: ' .
-            'Invalid response when caching license.');
-      }
-      else if(is_object($rval) and property_exists($rval, 'type'))
-      {
-         throw new Exception('PaySwarm Exception: ' .
-           'Error while caching license: ' .
-           $rval->{'message'} . ', ' . $rval->{'type'});
-      }
-   }
-
-   return $rval;
-}
-
-/**
- * Displays the PaySwarm settings page to the administrator.
+ * Renders the description for the PaySwarm register section.
  *
  * @package payswarm
  * @since 1.0
  */
-function payswarm_settings_page()
-{
+function payswarm_render_register_section() {
+  ?>
+  <p>PaySwarm enables you to sell your articles, photos, and other content
+    directly to your website visitors without requiring them to create accounts
+    or fill in any of their credit card or banking details. You can charge as
+    little as a penny per article or up to hundreds of dollars for your content.
+    To use PaySwarm, you must first sign up with a
+    <a href="https://dev.payswarm.com/">PaySwarm Authority</a>.
+  </p>
+  </p>After you have created an account on a
+    <a href="https://dev.payswarm.com/">PaySwarm Authority</a>, enter the
+    website for the PaySwarm Authority below. For example:
+    <code>dev.payswarm.com</code>.
+  </p>
+  <?php
+}
+
+/**
+ * Renders the PaySwarm Authority host field.
+ *
+ * @package payswarm
+ * @since 1.0
+ */
+function payswarm_render_authority_host() {
+  $value = get_option('payswarm_authority_host', '');
+  ?>
+  <input type="text" name="payswarm_authority_host"
+    value="<?php echo $value; ?>" />
+  <?php
+}
+
+/**
+ * Renders the overwrite key pair field.
+ *
+ * @package payswarm
+ * @since 1.0
+ */
+function payswarm_render_overwrite_key_pair() {
+  $value = get_option('payswarm_overwrite_key_pair', '');
+  ?>
+  <input type="checkbox" name="payswarm_overwrite_key_pair"
+    value="1" <?php checked($value); ?> />
+  <?php
+}
+
+/**
+ * Displays the PaySwarm options page to the administrator.
+ *
+ * @package payswarm
+ * @since 1.0
+ */
+function payswarm_render_options_page() {
+  ?>
+  <div class="wrap">
+    <?php screen_icon('options-general'); ?>
+      <h2>PaySwarm</h2>
+      <form action="options.php" method="post">
+        <?php settings_fields('payswarm'); ?>
+        <?php do_settings_sections('payswarm'); ?>
+        <p class="submit">
+          <input name="submit" type="submit" class="button-primary"
+            value="<?php _e('Save Changes'); ?>" />
+        </p>
+      </form>
+    </div>
+  <?php
+
+/*
+
    if(isset($_POST['payswarm_update_button']))
    {
       // FIXME: this code does not validate input or ensure amounts use 7
@@ -319,287 +394,153 @@ function payswarm_settings_page()
          delete_option('payswarm_key_overwrite');
       }
 
-      if(!get_option('payswarm_default_license_url'))
-      {
-         update_option('http://purl.org/payswarm/licenses/blogging');
-      }
-
-      // fetch latest payswarm license hash
-      $license = payswarm_cache_license(
-         get_option('payswarm_default_license_url'),
-         get_option('payswarm_public_key_url'),
-         get_option('payswarm_private_key'));
-      update_option('payswarm_default_license_url',
-         'http://purl.org/payswarm/licenses/blogging');
-      update_option('payswarm_default_license_hash',
-         payswarm_generate_json_hash($license));
-   }
-   else
-   {
-      // set a default for the PaySwarm base URL
-      if(!get_option('payswarm_authority_base_url'))
-      {
-         update_option('payswarm_authority_base_url',
-            PAYSWARM_AUTHORITY_BASE_URL);
-      }
-
-      // set reasonable default for the maximum profit the PA can make
-      if(!get_option('payswarm_default_auth_rate'))
-      {
-         update_option('payswarm_default_auth_rate', '10.0');
-      }
-
-      // set a reasonable default for the default price for for-profit posts
-      if(!get_option('payswarm_default_price'))
-      {
-         update_option('payswarm_default_price', '0.05');
-      }
-
-      // set the default license URL and hash
-      if(!get_option('payswarm_default_license_url'))
-      {
-         update_option('http://purl.org/payswarm/licenses/blogging');
-      }
-      if(!get_option('payswarm_default_license_hash'))
-      {
-         // fetch latest payswarm license hash
-         $license = payswarm_cache_license(
-            get_option('payswarm_default_license_url'),
-            get_option('payswarm_public_key_url'),
-            get_option('payswarm_private_key'));
-         update_option('payswarm_default_license_url',
-            'http://purl.org/payswarm/licenses/blogging');
-         update_option('payswarm_default_license_hash',
-            payswarm_generate_json_hash($license));
-      }
-   }
-
-?>
-
-<script type="text/javascript">
-function showPopup() {
-  var width = 700;
-  var height = 600;
-  var popup = window.open('', 'registerpopup',
-    'left=' + ((screen.width-width)/2) +
-    ',top=' + ((screen.height-height)/2) +
-    ',width=' + width +
-    ',height=' + height +
-    ',resizeable,scrollbars');
-  document.getElementById('register').target = 'registerpopup';
-};
-</script>
-
-<div class="wrap">
-<h2>PaySwarm Configuration</h2>
-
-<p>
-PaySwarm enables you to sell your articles, photos and other content directly
-to your website visitors without requiring them to fill in any of their credit
-card or banking details. You can charge as little as a penny per article,
-or up to hundreds of dollars for your content.
-To use PaySwarm, you must first create an account on a
-<a href="http://dev.payswarm.com/">PaySwarm Authority</a>.
-</p>
-
-<form id="register" method="post" action="">
-    <?php settings_fields('payswarm-settings-group'); ?>
-    <table class="form-table">
-
-        <tr valign="top">
-          <td scope="row" colspan="2">
-            <h3><?php _e('Basic PaySwarm Settings') ?></h3>
-            <p>After you have created an account on a
-              <a href="http://dev.payswarm.com/">PaySwarm Authority</a>,
-              enter the website for the PaySwarm Authority below. For example:
-              <code>http://dev.payswarm.com/</code>.
-            </p>
-          </td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('PaySwarm Authority') ?></th>
-        <td>
-          <input id="payswarm_authority_base_url" type="hidden"
-             name="payswarm_authority_base_url"
-             value="<?php echo get_option('payswarm_authority_base_url'); ?>" />
-          <input type="text" size="64"
-          id="payswarm_authority" name="payswarm_authority"
-          onkeyup="javascript:updateAuthorityConfigUrl();"
-          onblur="javascript:updateAuthorityConfigUrl();"
-          value="<?php echo get_option('payswarm_authority_base_url'); ?>" />
-           <p>Configuration:
-              <span id="payswarm_config_url_display">
-                <?php echo get_option('payswarm_authority_base_url') ?>payswarm-v1-config</span>
-           </p>
-        </td>
-        </tr>
-
-        <tr valign="top">
-        <td scope="row" colspan="2">
-           <input type="submit" class="button-secondary"
-              name="payswarm_register_button"
-              value="<?php _e('Register this site') ?>"
-              onclick="showPopup()" />
-        </td>
-        </tr>
-
-        <tr valign="top">
-        <td scope="row" colspan="2">
-          <h3><?php _e('Advanced: PaySwarm Authority Web Services') ?></h3>
-          <p>You can specify different PaySwarm Authority Web Service URLs
-          below. Warning: These are advanced settings and entering the wrong
-          URLs will ensure that your customers will not be able to buy
-          articles on your website.
-          </p>
-        </td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Registration Service') ?></th>
-        <td><input type="text" size="64"
-          id="payswarm_registration_url" name="payswarm_registration_url"
-          value="<?php echo get_option('payswarm_registration_url'); ?>" /></td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('License Service') ?></th>
-        <td><input type="text" size="64"
-          id="payswarm_licenses_url" name="payswarm_licenses_url"
-          value="<?php echo get_option('payswarm_licenses_url'); ?>" /></td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Contracts Service') ?></th>
-        <td><input type="text" size="64"
-          id="payswarm_contracts_url" name="payswarm_contracts_url"
-          value="<?php echo get_option('payswarm_contracts_url'); ?>" /></td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Payment Service') ?></th>
-        <td><input type="text" size="64"
-          id="payswarm_payment_url" name="payswarm_payment_url"
-          value="<?php echo get_option('payswarm_payment_url'); ?>" /></td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Vendor ID') ?></th>
-        <td><input type="text" size="64"
-          id="payswarm_vendor_url" name="payswarm_vendor_url"
-          value="<?php echo get_option('payswarm_vendor_url'); ?>" /></td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Public Key') ?></th>
-        <td><textarea cols="90" rows="6"
-          id="payswarm_public_key" name="payswarm_public_key"
-          ><?php echo get_option('payswarm_public_key'); ?></textarea></td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Public Key Location') ?></th>
-        <td><input type="text" size="64"
-          id="payswarm_public_key_url" name="payswarm_public_key_url"
-          value="<?php echo get_option('payswarm_public_key_url'); ?>" /></td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Overwrite Key Pair') ?></th>
-        <td><input type="checkbox"
-          id="payswarm_key_overwrite" name="payswarm_key_overwrite"
-          value="true"
-          <?php if(get_option('payswarm_key_overwrite')) echo 'checked="checked"'; ?>"/></td>
-        </tr>
-
-        <tr valign="top">
-        <td scope="row" colspan="2">
-          <h3><?php _e('Financial Account and License Defaults') ?></h3>
-          <p>The financial account information below is used to specify
-          default accounts, prices and rates used when selling content from
-          this site. The default price is the amount of money that is charged
-          per article by default. The default Authority rate is the maximum
-          percentage a PaySwarm Authority can take in processing fees.
-          </p>
-        </td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Default Currency') ?></th>
-        <td>
-          <select name="payswarm_default_currency">
-            <option value="USD">$ - Dollars (USD)</option>
-          </select>
-        </td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Default Price') ?></th>
-        <td>
-          <input type="text" size="8" name="payswarm_default_price"
-            value="<?php echo get_option('payswarm_default_price'); ?>" /> USD
-        </td>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Default Authority Rate') ?></th>
-        <td>
-          <input type="text" size="8" name="payswarm_default_auth_rate"
-            value="<?php echo get_option('payswarm_default_auth_rate'); ?>" /> %
-        </td>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Default Financial Account') ?></th>
-        <td>
-          <input type="text" size="64" name="payswarm_destination_account"
-            value="<?php echo get_option('payswarm_destination_account'); ?>" />
-        </td>
-
-        <tr valign="top">
-        <td scope="row" colspan="2">
-          <p>The default article license is used to convey a set of license
-          rights to the people that purchase your articles. The URL listed
-          below should return a plain text file that outlines the permissions of
-          the buyer of the article as well as the responsibilities of the seller
-          of the article.
-          </p>
-        </td>
-        </tr>
-
-        <tr valign="top">
-        <th scope="row"><?php _e('Default License') ?></th>
-        <td><input type="text" size="64"
-          id="payswarm_default_license_url" name="payswarm_default_license_url"
-          value="<?php echo get_option('payswarm_default_license_url'); ?>" />
-        <?php
-        if(get_option('payswarm_default_license_hash') !== false)
-        {
-           echo '<p>Default License Hash: ' .
-           get_option('payswarm_default_license_hash');
-        }
-        ?>
-        </p>
-        </td>
-        </tr>
-
-        <?php wp_nonce_field('payswarm-save-config', 'payswarm-nonce') ?>
-
-    </table>
-
-
-
-    <p class="submit">
-    <input type="submit" class="button-primary"
-       name="payswarm_update_button"
-       value="<?php _e('Save PaySwarm Configuration') ?>" />
-    </p>
-
-</form>
-</div>
-<?php if(!empty($_POST['payswarm_client_id'])) : ?>
-<div id="message" class="updated fade">
-  <p><strong><?php _e('PaySwarm options saved.') ?></strong></p>
-</div>
-<?php endif; ?>
-<?php
 }
-?>
+
+/**
+ * Renders the description for the PaySwarm options section.
+ *
+ * @package payswarm
+ * @since 1.0
+ */
+function payswarm_render_options_section() {
+  ?>
+  <p>This page allows you to configure the default settings used for content
+    your customers must pay for to access. The PaySwarm plugin allows you
+    specify entire posts or just parts of posts that require payment. Below
+    are default settings that only apply to content that you specify must be
+    paid for. You can use settings other than these defaults when editing
+    individual posts, but you may often want to reuse the same settings, so
+    these defaults save you time.</p>
+  <?php
+}
+
+/**
+ * Renders the default price field.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param array $options the payswarm options.
+ */
+function payswarm_render_default_price($options) {
+  ?>
+  <input type="text" size="8" name="payswarm_options[default_price]"
+    value="<?php echo $options['default_price']; ?>" /> USD
+  <p>This is the default price that will be used for any content
+    in a post that you specify must be paid for.</p>
+  <?php
+}
+
+/**
+ * Renders the default license ID field.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param array $options the payswarm options.
+ */
+function payswarm_render_default_license_id($options) {
+  ?>
+  <input type="text" size="64" name="payswarm_options[default_license_id]"
+    value="<?php echo $options['default_license_id']; ?>" />
+  <p>Hash: <?php echo $options['default_license_hash']; ?></p>
+  <p>This is the URL for the default license to use for any
+    content in a post that you specify must be paid for.</p>
+  <?php
+}
+
+/**
+ * Renders the default authority rate field.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param array $options the payswarm options.
+ */
+function payswarm_render_default_authority_rate($options) {
+  ?>
+  <input type="text" size="8" name="payswarm_options[default_authority_rate]"
+    value="<?php echo $options['default_authority_rate']; ?>" />
+  <p>This is the percentage of the price paid by your customers
+    for content that you permit a PaySwarm Authority to collect in
+    exchange for processing payments. If it is too low, a PaySwarm
+    Authority may elect to refuse your business.</p>
+  <?php
+}
+
+/**
+ * Validates payswarm options input.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param array $input the submitted payswarm options.
+ *
+ * @return array the validated payswarm options.
+ */
+function payswarm_validate_options($input) {
+  $options = payswarm_get_options();
+
+  // validate default price
+  if(payswarm_is_decimal($input['default_price']) and
+    floatval($input['default_price']) >= 0) {
+    $options['default_price'] = sprintf('%0.7f', $input['default_price']);
+  }
+  else {
+    add_settings_error(
+      'payswarm_options',
+      'payswarm_default_price_error',
+      __('The default price must be a number greater than or equal to 0 and
+      have the format: x.xx.'));
+  }
+
+  // validate default license
+  try {
+    $authority_host = get_option('payswarm_authority_host');
+    $license_url = $options['default_license_id'];
+    if(wp_kses_bad_protocol($url, array('http', 'https')) !== $url) {
+      throw new Exception('Invalid license ID.');
+    }
+
+    // get license
+    $license = payswarm_authority_cache_license($authority_host, $license_url);
+    $options['default_license_id'] = $license_url;
+    $options['default_license_hash'] = payswarm_hash($license);
+  }
+  catch(Exception $e) {
+    add_settings_error(
+      'payswarm_options',
+      'payswarm_default_license_id_error',
+      __('The default license must be a valid URL that contains a ' .
+      'PaySwarm license.'));
+  }
+
+  // validate default authority rate
+  if(payswarm_is_decimal($input['default_authority_rate']) and
+    floatval($input['default_authority_rate']) >= 0 and
+    floatval($input['default_authority_rate']) <= 100) {
+    $options['default_authority_rate'] = sprintf(
+      '%0.7f', $input['default_authority_rate']);
+  }
+  else {
+    add_settings_error(
+      'payswarm_options',
+      'payswarm_default_authority_rate_error',
+      __('The default authority rate must be a number between 0 and 100.'));
+  }
+
+  return $options;
+}
+
+/**
+ * Returns true if the given input is of the given decimal format.
+ *
+ * @param string @input the input.
+ *
+ * @return true if the format is valid, false if not.
+ */
+function payswarm_is_decimal($input, $format='%.0f') {
+  return sprintf($format, $input) === $input;
+}
+
+/* end of file, omit ?> */
