@@ -24,27 +24,31 @@ function toggleAssetInformation(postId) {
 }
 
 /**
- * Updates the PaySwarm Authority Configuration URL.
- *
- * @param event the event that fires the authority configuration
+ * Shows the PaySwarm Authority registration pop up.
  */
-function updateAuthorityConfigUrl(event) {
-  // extract host and port information
-  var authority = document.getElementById('payswarm_authority').value;
-  var hostPort = authority.match(/(http:\/\/|https:\/\/)?([^/]+)\/?/i);
+function showRegisterPopup() {
+  var width = 700;
+  var height = 600;
+  var popup = window.open('', 'registerpopup',
+    'left=' + ((screen.width-width)/2) +
+    ',top=' + ((screen.height-height)/2) +
+    ',width=' + width +
+    ',height=' + height +
+    ',resizeable,scrollbars');
+  document.getElementById('register').target = 'registerpopup';
+}
 
-  // if a valid value was found, update the configuration URL
-  if(hostPort !== null) {
-    // build base URL
-    var baseUrl = 'https://' + hostPort[2] + '/';
-
-    // build config URL
-    var configUrl = baseUrl + 'payswarm-v1-config';
-
-    // update display on the screen and form element
-    var configDisplay = document.getElementById('payswarm_config_url_display');
-    var base = document.getElementById('payswarm_authority_base_url');
-    configDisplay.innerText = configUrl;
-    base.value = baseUrl;
+/**
+ * Closes any pop up window and loads the given url.
+ *
+ * @param url the URL to load in the parent.
+ */
+function closePopup(url) {
+  if(window.opener === null) {
+    window.location = url;
+  }
+  else {
+    window.close();
+    window.opener.location = url;
   }
 }

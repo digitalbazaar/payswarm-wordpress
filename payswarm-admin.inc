@@ -130,98 +130,94 @@ function payswarm_setup_register_page() {
   // register payswarm registration settings
   register_setting(
     'payswarm_register',
-    'payswarm_authority_host',
-    'payswarm_validate_authority_host');
+    'payswarm_authority_host');
   register_setting(
     'payswarm_register',
-    'payswarm_overwrite_key_pair',
-    'payswarm_validate_overwrite_key_pair');
+    'payswarm_overwrite_key_pair');
 }
 
 /**
- * Handles PaySwarm Authority registration.
+ * Initiates vendor registration with a PaySwarm Authority.
  *
  * @package payswarm
  * @since 1.0
  */
-/*
-function payswarm_handle_registration()
-{
-  //wp_verify_nonce($_POST['name_of_nonce_field'],'name_of_my_action')
-  // TODO: ensure only host:port are given
+function payswarm_init_registration() {
+  // do nonce security check (dies on failure)
+  check_admin_referer('update');
 
+  try {
+     // validate authority host
+     if(!isset($_POST['payswarm_authority_host']) or
+       $_POST['payswarm_authority_host'] === '') {
+       throw new Exception('Invalid PaySwarm Authority host.');
+     }
+     $host = $_POST['payswarm_authority_host'];
 
-   if(isset($_POST['payswarm_register_button']))
-   {
-      // if the PaySwarm options are updated successfully, attempt to perform
-      // a registration
-      $error = false;
-      if(payswarm_config_update(array('payswarm_authority_base_url')))
-      {
-         // get the PaySwarm Authority configuration
-         $pa_url = get_option('payswarm_authority_base_url');
-         $config_url = payswarm_config_get_pa_config_url($pa_url);
-         $cfg = payswarm_config_get_pa_config($config_url);
-         if($cfg === false)
-         {
-            $error = 'config_url';
-         }
-         else if(!payswarm_config_endpoints($cfg))
-         {
-            $error = 'endpoints';
-         }
-         else
-         {
-            // redirect to payswarm register
-            $url = plugins_url() . '/payswarm/payswarm-register.php';
-            header('HTTP/1.1 303 See Other');
-            header("Location: $url");
-         }
+     // sanitize overwrite key pair
+     $overwrite = isset($_POST['payswarm_overwrite_key_pair']);
 
-         // show errors in parent window
-         if($error !== false)
-         {
-            $url = payswarm_add_query_vars(
-               $_SERVER['REQUEST_URI'], array('error' => $error));
-            echo "
-               <script type=\"text/javascript\">
-               if(window.opener === null)
-               {
-                  window.location = '$url';
-               }
-               else
-               {
-                  window.close();
-                  window.opener.location = '$url';
-               }
-               </script>";
-         }
-      }
-   }
-   else if(isset($_GET['error']))
-   {
-      $pa_url = get_option('payswarm_authority_base_url');
-      $config_url = payswarm_config_get_pa_config_url($pa_url);
-      if($_GET['error'] === 'config_url')
-      {
-         payswarm_admin_warning(
-            'There was an error fetching the PaySwarm Authority ' .
-            'Configuration (' . htmlentities($config_url) . '). ' .
-            'This may have happened because the ' .
-            'PaySwarm Authority configuration URL specified was incorrect ' .
-            'or because the PaySwarm Authority you specified is down.');
-      }
-      else if($_GET['error'] === 'endpoints')
-      {
-         payswarm_admin_warning(
-            'The PaySwarm Authority Configuration that was retrieved ' .
-            'does not contain the necessary information required to ' .
-            'complete the registration process. Please check the ' .
-            'PaySwarm Authority you entered and its corresponding ' .
-            'configuration URL.');
-      }
-   }
-}*/
+     // get register vendor url
+     $callback = plugins_url() . '/payswarm/payswarm-register.php';
+     $url = payswarm_get_register_vendor_url($host, $callback, $overwrite);
+
+     // save settings
+     update_option('payswarm_authority_host', $host);
+     update_option('payswarm_overwrite_key_pair', $overwrite);
+
+     // redirect to the PaySwarm Authority registration URL
+     header('HTTP/1.1 303 See Other');
+     header("Location: $url");
+  }
+  catch(Exception $e) {
+    // close the popup and report an error
+    $url = admin_url() . 'plugins.php?page=payswarm&error=config';
+    payswarm_close_register_popup($url);
+  }
+}
+
+/**
+ * Completes vendor registration with a PaySwarm Authority.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string $response the JSON encoded encrypted registration response.
+ */
+function payswarm_complete_registration($response) {
+  echo "<html><body>";
+  try {
+    // get vendor preferences from response
+    $prefs = payswarm_register_vendor($response);
+
+    // save financial account
+    update_option('payswarm_financial_account', $prefs->{'com:destination'});
+
+    // close popup and show admin page
+    $url = admin_url() . 'plugins.php?page=payswarm';
+    payswarm_close_register_popup($url);
+  }
+  catch(Exception $e) {
+    // close the popup and report an error
+    $url = admin_url() . 'plugins.php?page=payswarm&error=authority';
+    payswarm_close_register_popup($url);
+  }
+  echo "</body></html>";
+  exit(0);
+}
+
+/**
+ * A helper function that outputs JavaScript to close the registration
+ * popup.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string $url the URL to load in the parent window.
+ */
+function payswarm_close_register_popup($url) {
+  echo "<script type=\"text/javascript\">closePopup('$url');</script>";
+}
 
 /**
  * Adds a warning to the administration page.
@@ -231,16 +227,15 @@ function payswarm_handle_registration()
  *
  * @param string $warning The warning to print to the administration page.
  */
-/*function payswarm_admin_warning($warning)
-{
-   echo "
-   <div id='payswarm-admin-warning' class='updated fade'>
-      <p>". __($warning) .
-     __(' You still need to ' .
-       '<a href="plugins.php?page=payswarm">configure PaySwarm</a>.') .
-   "  </p>
-   </div>";
-}*/
+function payswarm_admin_warning($warning) {
+  ?>
+  <div id='payswarm-admin-warning' class='updated fade'>
+    <p><?php __($warning); ?>
+    You still need to <a href="plugins.php?page=payswarm">configure PaySwarm</a>
+    </p>
+  </div>
+  <?php
+}
 
 /**
  * Displays the PaySwarm registration page to the administrator.
@@ -265,12 +260,11 @@ function payswarm_render_register_page() {
     </div>
   <?php
 
-  /*
   // output warnings
   if(isset($_GET['error'])) {
     $host = get_option('payswarm_authority_host');
     $url = "https://$host/payswarm-v1-config";
-    if($_GET['error'] === 'config_url') {
+    if($_GET['error'] === 'config') {
       payswarm_admin_warning(
         'There was an error fetching the PaySwarm Authority ' .
         'Configuration (' . htmlentities($url) . '). ' .
@@ -278,14 +272,12 @@ function payswarm_render_register_page() {
         'PaySwarm Authority configuration URL specified was incorrect ' .
         'or because the PaySwarm Authority you specified is not responding.');
     }
-    else if($_GET['error'] === 'endpoints') {
+    else if($_GET['error'] === 'authority') {
       payswarm_admin_warning(
-        'The PaySwarm Authority Configuration that was retrieved ' .
-        'does not contain the necessary information required to ' .
-        'complete the registration process. Please ensure that you ' .
-        'entered the correct PaySwarm Authority.');
+        'The PaySwarm Authority reported an error during registration. ' .
+        'Please try again.');
     }
-  }*/
+  }
 }
 
 /**
@@ -360,40 +352,6 @@ function payswarm_render_options_page() {
       </form>
     </div>
   <?php
-
-/*
-
-   if(isset($_POST['payswarm_update_button']))
-   {
-      // FIXME: this code does not validate input or ensure amounts use 7
-      // decimal places, etc.
-      check_admin_referer('payswarm-save-config', 'payswarm-nonce');
-      payswarm_config_update(array(
-         'payswarm_authority_base_url',
-         'payswarm_keys_url',
-         'payswarm_registration_url',
-         'payswarm_licenses_url',
-         'payswarm_contracts_url',
-         'payswarm_public_key',
-         'payswarm_public_key_url',
-         'payswarm_private_key',
-         'payswarm_default_auth_rate',
-         'payswarm_default_currency',
-         'payswarm_default_price',
-         'payswarm_destination_account',
-         'payswarm_default_license_url',
-         'payswarm_default_license_hash',
-         'payswarm_vendor_url'));
-      // special case checkboxes
-      if(isset($_POST['payswarm_key_overwrite']))
-      {
-         update_option('payswarm_key_overwrite', 'true');
-      }
-      else
-      {
-         delete_option('payswarm_key_overwrite');
-      }
-
 }
 
 /**

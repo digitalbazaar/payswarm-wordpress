@@ -31,7 +31,7 @@ Authorities.
 
 1. Add the PaySwarm Authorities that should be trusted by calling:
 
-  payswarm_add_trusted_authority('https://trustedauthority:port');
+  payswarm_add_trusted_authority('trustedauthority:port');
 
   In this version of the API, any customer's PaySwarm Authority that the vendor
   would like to do business with must be manually added. The vendor's chosen
@@ -41,7 +41,7 @@ Authorities.
 2. Register as a vendor by calling:
 
   $url = payswarm_get_register_vendor_url(
-    'https://myauthority:port',
+    'myauthority:port',
     'http://myserver/myregistercallbackurl.php');
 
   The first parameter is the base URL of the PaySwarm Authority to register
@@ -91,7 +91,7 @@ Authorities.
   Listing, call:
 
   $url = payswarm_get_purchase_url(
-    'https://customersauthority:port',
+    'customersauthority:port',
     $listing_id,
     $listing_hash,
     'https://myserver/mypurchasecallbackurl.php');
@@ -105,7 +105,7 @@ Authorities.
   future, then an automated purchase can be attempted by calling:
 
   payswarm_purchase(
-    'https://customersauthority:port',
+    'customersauthority:port',
     'https://customersauthority:port/i/customer',
     $listing_id,
     $listing_hash);
@@ -435,7 +435,7 @@ function payswarm_create_nonce() {
  *
  * @return true if the nonce is valid, false if not.
  */
-function payswarm_create_nonce() {
+function payswarm_check_nonce($nonce) {
   return call_user_func($payswarm_hooks['check_nonce'], $nonce);
 }
 
@@ -675,31 +675,31 @@ function payswarm_decode_authority_message($json_message) {
  * @package payswarm
  * @since 1.0
  *
- * @param string $url the base URL to the PaySwarm Authority.
+ * @param string $host the PaySwarm Authority host and port.
  *
  * @return stdClass the PaySwarm Authority config.
  */
-function payswarm_get_authority_config($url) {
-  // get config URL
-  preg_match('@(http://|https://)?([^/]+)@i', $url, $matches);
-  $hostPort = $matches[2];
-  $url = "https://$hostPort/payswarm-v1-config";
-
+function payswarm_get_authority_config($host) {
   // get config
-  return payswarm_get_jsonld($url, true);
+  $url = "https://$host/payswarm-v1-config";
+  $config = payswarm_get_jsonld($url, true);
+
+  // TODO: validate config
+
+  return $config;
 }
 
 /**
  * Caches a license at the PaySwarm Authority and returns the result.
  *
- * @param string $url the URL for the PaySwarm Authority.
+ * @param string $host the PaySwarm Authority host and port.
  * @param string $id the ID of the license to cache.
  *
  * @return stdClass the license.
  */
-function payswarm_authority_cache_license($url, $id) {
+function payswarm_authority_cache_license($host, $id) {
   // get licenses service
-  $config = payswarm_get_authority_config($url);
+  $config = payswarm_get_authority_config($host);
   $url = $config->{'ps:licensesService'};
 
   // sign message
@@ -757,11 +757,11 @@ function payswarm_create_key_pair() {
  * Adds a trusted PaySwarm Authority. Only trusted PaySwarm Authorities can
  * be used in financial transactions.
  *
- * @param $url string the URL to the PaySwarm Authority.
+ * @param string $host the PaySwarm Authority host and port.
  */
-function payswarm_add_trusted_authority($url) {
+function payswarm_add_trusted_authority($host) {
   // get authority config
-  $config = payswarm_get_authority_config($url);
+  $config = payswarm_get_authority_config($host);
 
   // store authority identity
   $id = $config->{'ps:authorityIdentity'};
@@ -774,7 +774,7 @@ function payswarm_add_trusted_authority($url) {
  * it will be generated, otherwise the existing key pair will be used unless
  * $overwrite_key_pair is set to true.
  *
- * @param string $url the URL to the PaySwarm Authority.
+ * @param string $host the PaySwarm Authority host and port.
  * @param string $callback the callback URL for the registration result.
  * @param boolean $overwrite_key_pair true to generate a new key-pair even if
  *          there is an existing one.
@@ -782,10 +782,10 @@ function payswarm_add_trusted_authority($url) {
  * @return string the URL for registering the vendor.
  */
 function payswarm_get_register_vendor_url(
-  $url, $callback, $overwrite_key_pair=false) {
+  $host, $callback, $overwrite_key_pair=false) {
 
   // get register URL from authority config
-  $config = payswarm_get_authority_config($url);
+  $config = payswarm_get_authority_config($host);
   $register_url = $config->{'ps:vendorRegistrationService'};
 
   // use existing public key if overwrite is not specified
@@ -844,7 +844,7 @@ function payswarm_register_vendor($msg) {
  * Get the PaySwarm Authority's purchase URL, including the parameters
  * identifying the Listing with the Asset to be purchased.
  *
- * @param string $url the URL to the PaySwarm Authority.
+ * @param string $host the PaySwarm Authority host and port.
  * @param string $listing_id the ID (IRI) for the Listing.
  * @param string $listing_hash the hash for the Listing.
  * @param string $callback the callback URL for the purchase result.
@@ -852,10 +852,10 @@ function payswarm_register_vendor($msg) {
  * @return string the URL for purchasing.
  */
 function payswarm_get_purchase_url(
-  $url, $listing_id, $listing_hash, $callback) {
+  $host, $listing_id, $listing_hash, $callback) {
 
   // get payment URL from authority config
-  $config = payswarm_get_authority_config($url);
+  $config = payswarm_get_authority_config($host);
   $payment_url = $config->{'ps:paymentService'};
 
   // add query parameters to the payment URL
@@ -874,14 +874,14 @@ function payswarm_get_purchase_url(
  * Performs an automated purchase on behalf of a customer who has previously
  * authorized it.
  *
- * @param string $url the URL to the PaySwarm Authority.
+ * @param string $host the PaySwarm Authority host and port.
  * @param string $id the ID (IRI) of the customer.
  * @param string $listing_id the ID (IRI) for the Listing.
  * @param string $listing_hash the hash for the Listing.
  *
  * @return string the JSON-encoded encrypted purchase response message.
  */
-function payswarm_purchase($url, $id, $listing_id, $listing_hash) {
+function payswarm_purchase($host, $id, $listing_id, $listing_hash) {
   // TODO: implement
 }
 
