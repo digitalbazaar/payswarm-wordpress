@@ -35,14 +35,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 define('PAYSWARM_PLUGIN_URL', site_url() . '/wp-content/plugins/' .
   str_replace(basename(__FILE__), '', plugin_basename(__FILE__)));
-// FIXME: Enable this for production. It should be 'false' for development
-define('PAYSWARM_SSL_ENABLED', false);
-// FIXME: This should be a commercial site once we get out of alpha
-define('PAYSWARM_AUTHORITY_BASE_URL', 'https://dev.payswarm.com/');
 
-require_once('payswarm-client.inc');
-require_once('payswarm-wp-hooks.inc');
-require_once('payswarm-database.inc');
+require_once('payswarm-config.inc');
 require_once('payswarm-admin.inc');
 require_once('payswarm-article.inc');
 
@@ -65,5 +59,17 @@ add_filter('the_content', 'payswarm_filter_paid_content');
 
 // add the javascript for the PaySwarm plugin
 wp_enqueue_script('payswarm', PAYSWARM_PLUGIN_URL . 'payswarm.js');
+
+/**
+ * Adds the required stylesheets for the PaySwarm plugin.
+ *
+ * @package payswarm
+ * @since 1.0
+ */
+function payswarm_add_stylesheets() {
+  $css_url = PAYSWARM_PLUGIN_URL . 'payswarm.css';
+  wp_register_style('payswarm-style', $css_url);
+  wp_enqueue_style( 'payswarm-style');
+}
 
 /* end of file, omit ?> */

@@ -1,5 +1,6 @@
 <?php
 
+require_once('payswarm-config.inc');
 require_once('payswarm-client.inc');
 require_once('payswarm-wp-hooks.inc');
 
@@ -11,8 +12,8 @@ require_once('payswarm-wp-hooks.inc');
  */
 function payswarm_admin_init() {
   // set up pages
-  payswarm_setup_options_page();
   payswarm_setup_register_page();
+  payswarm_setup_options_page();
 }
 
 /**
@@ -50,7 +51,7 @@ function payswarm_get_options() {
   return get_option('payswarm_options', array(
     'default_price' => '0.05',
     'default_license_id' => 'http://purl.org/payswarm/licenses/blogging',
-    'default_license_hash' => 'Save settings to compute',
+    'default_license_hash' => '',
     'default_authority_rate' => '10.0'
   ));
 }
@@ -127,13 +128,7 @@ function payswarm_setup_register_page() {
     'payswarm_register',
     'payswarm_register_section');
 
-  // register payswarm registration settings
-  register_setting(
-    'payswarm_register',
-    'payswarm_authority_host');
-  register_setting(
-    'payswarm_register',
-    'payswarm_overwrite_key_pair');
+  // no need to register settings, options.php is not used for registration
 }
 
 /**
@@ -190,8 +185,12 @@ function payswarm_complete_registration($response) {
     // get vendor preferences from response
     $prefs = payswarm_register_vendor($response);
 
-    // save financial account
+    // save financial account, set registered
     update_option('payswarm_financial_account', $prefs->{'com:destination'});
+    update_option('payswarm_registered', true);
+
+    // trigger resign of listings
+    payswarm_trigger_listing_resign();
 
     // close popup and show admin page
     $url = admin_url() . 'plugins.php?page=payswarm';
@@ -293,12 +292,12 @@ function payswarm_render_register_section() {
     or fill in any of their credit card or banking details. You can charge as
     little as a penny per article or up to hundreds of dollars for your content.
     To use PaySwarm, you must first sign up with a
-    <a href="https://dev.payswarm.com/">PaySwarm Authority</a>.
+    <a href="<?php echo PAYSWARM_AUTHORITY_URL; ?>">PaySwarm Authority</a>.
   </p>
   </p>After you have created an account on a
-    <a href="https://dev.payswarm.com/">PaySwarm Authority</a>, enter the
-    website for the PaySwarm Authority below. For example:
-    <code>dev.payswarm.com</code>.
+    <a href="<?php echo PAYSWARM_AUTHORITY_URL; ?>">PaySwarm Authority</a>,
+    enter the website for the PaySwarm Authority below. For example:
+    <code><?php echo PAYSWARM_AUTHORITY_HOST; ?></code>.
   </p>
   <?php
 }
@@ -312,8 +311,10 @@ function payswarm_render_register_section() {
 function payswarm_render_authority_host() {
   $value = get_option('payswarm_authority_host', '');
   ?>
-  <input type="text" name="payswarm_authority_host"
+  <input id="payswarm_authority_host" type="text" size="32"
+    name="payswarm_authority_host"
     value="<?php echo $value; ?>" />
+  <label for="payswarm_authority_host">eg: dev.payswarm.com</label>
   <?php
 }
 
@@ -326,8 +327,12 @@ function payswarm_render_authority_host() {
 function payswarm_render_overwrite_key_pair() {
   $value = get_option('payswarm_overwrite_key_pair', '');
   ?>
-  <input type="checkbox" name="payswarm_overwrite_key_pair"
+  <input id="payswarm_overwrite_key_pair" type="checkbox"
+    name="payswarm_overwrite_key_pair"
     value="1" <?php checked($value); ?> />
+  <label for="payswarm_overwrite_key_pair">
+    Check to always create a new key pair before registering
+    (default: off)</label>
   <?php
 }
 
@@ -338,20 +343,26 @@ function payswarm_render_overwrite_key_pair() {
  * @since 1.0
  */
 function payswarm_render_options_page() {
-  ?>
-  <div class="wrap">
-    <?php screen_icon('options-general'); ?>
-      <h2>PaySwarm</h2>
-      <form action="options.php" method="post">
-        <?php settings_fields('payswarm'); ?>
-        <?php do_settings_sections('payswarm'); ?>
-        <p class="submit">
-          <input name="submit" type="submit" class="button-primary"
-            value="<?php _e('Save Changes'); ?>" />
-        </p>
-      </form>
-    </div>
-  <?php
+  // show registration page if not registered with an authority yet
+  if(!get_option('payswarm_registered', false)) {
+    payswarm_render_register_page();
+  }
+  else {
+     ?>
+     <div class="wrap">
+       <?php screen_icon('options-general'); ?>
+         <h2>PaySwarm</h2>
+         <form action="options.php" method="post">
+           <?php settings_fields('payswarm'); ?>
+           <?php do_settings_sections('payswarm'); ?>
+           <p class="submit">
+             <input name="submit" type="submit" class="button-primary"
+               value="<?php _e('Save Changes'); ?>" />
+           </p>
+         </form>
+       </div>
+     <?php
+  }
 }
 
 /**
@@ -398,10 +409,14 @@ function payswarm_render_default_price($options) {
  * @param array $options the payswarm options.
  */
 function payswarm_render_default_license_id($options) {
+  $hash = $options['default_license_hash'];
+  if($hash === '') {
+    $hash = 'Save settings to compute';
+  }
   ?>
   <input type="text" size="64" name="payswarm_options[default_license_id]"
     value="<?php echo $options['default_license_id']; ?>" />
-  <p>Hash: <?php echo $options['default_license_hash']; ?></p>
+  <p>Hash: <?php echo $hash ?></p>
   <p>This is the URL for the default license to use for any
     content in a post that you specify must be paid for.</p>
   <?php
@@ -487,6 +502,9 @@ function payswarm_validate_options($input) {
       __('The default authority rate must be a number between 0 and 100.'));
   }
 
+  // trigger listing resign
+  payswarm_trigger_listing_resign();
+
   return $options;
 }
 
@@ -499,6 +517,19 @@ function payswarm_validate_options($input) {
  */
 function payswarm_is_decimal($input, $format='%.0f') {
   return sprintf($format, $input) === $input;
+}
+
+/**
+ * Sets a flag that indicates that listings need to be resigned due to
+ * registration or options changes.
+ *
+ * @package payswarm
+ * @since 1.0
+ */
+function payswarm_trigger_listing_resign() {
+  // set resign_if_before date
+  $now = date_format(date_create(), 'Y-m-d\TH:i:s\Z');
+  update_option('payswarm_resign_if_before', $now);
 }
 
 /* end of file, omit ?> */

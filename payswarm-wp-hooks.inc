@@ -1,5 +1,6 @@
 <?php
 
+require_once('payswarm-config.inc');
 require_once('payswarm-client.inc');
 
 // add required payswarm protocol hooks
@@ -77,7 +78,7 @@ function payswarm_wp_check_nonce($nonce) {
  */
 function payswarm_wp_get_jsonld($url) {
   $response = wp_remote_get($url, array(
-    'sslverify' => PAYSWARM_SSL_ENABLED,
+    'sslverify' => PAYSWARM_VERIFY_SSL,
     'headers' => array('Accept' => 'application/ld+json')
   ));
   if(is_wp_error($response)) {
@@ -103,7 +104,7 @@ function payswarm_wp_post_jsonld($data, $url) {
       'Content-Length' => strlen($data),
       'User-Agent' => 'PaySwarm PHP Client/1.0'),
     'body' => $data,
-    'sslverify' => PAYSWARM_SSL_ENABLED)
+    'sslverify' => PAYSWARM_VERIFY_SSL)
   );
   if(is_wp_error($response)) {
     throw new Exception("Could not POST to url: $url" .

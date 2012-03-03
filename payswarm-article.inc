@@ -1,19 +1,7 @@
 <?php
-require_once('jsonld.php');
 
-/**
- * Adds the required stylesheets for the PaySwarm plugin.
- *
- * @package payswarm
- * @since 1.0
- */
-function payswarm_add_stylesheets()
-{
-   $css_url = PAYSWARM_PLUGIN_URL . 'payswarm.css';
-
-   wp_register_style('payswarm-style', $css_url);
-   wp_enqueue_style( 'payswarm-style');
-}
+require_once('payswarm-database.inc');
+require_once('payswarm-session.inc');
 
 /**
  * Generates a JSON-LD asset object given all of the parameters that belong in
@@ -655,8 +643,9 @@ function payswarm_filter_paid_content($content)
  */
 function payswarm_add_meta_boxes()
 {
-   add_meta_box('payswarm_sectionid', __( 'PaySwarm Options'),
-                'payswarm_create_meta_box', 'post', 'side', 0);
+   add_meta_box(
+     'payswarm_sectionid', __( 'PaySwarm Options'),
+     'payswarm_create_meta_box', 'post', 'side', 0);
 }
 
 /**
