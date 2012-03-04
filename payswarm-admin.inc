@@ -180,7 +180,7 @@ function payswarm_init_registration() {
  * @param string $response the JSON encoded encrypted registration response.
  */
 function payswarm_complete_registration($response) {
-  echo "<html><body>";
+  echo '<html><body>';
   try {
     // get vendor preferences from response
     $prefs = payswarm_register_vendor($response);
@@ -202,7 +202,7 @@ function payswarm_complete_registration($response) {
     $url = admin_url() . 'plugins.php?page=payswarm&error=authority';
     payswarm_close_register_popup($url);
   }
-  echo "</body></html>";
+  echo '</body></html>';
   exit(0);
 }
 
@@ -254,17 +254,20 @@ function payswarm_render_register_page() {
   ?>
   <div class="wrap">
     <?php screen_icon('options-general'); ?>
-      <h2>PaySwarm</h2>
-      <form action="<?php echo $register_url; ?>" method="post"
-        onsubmit="javascript:showAuthorityPopup(this);">
-        <?php settings_fields('payswarm_register'); ?>
-        <?php do_settings_sections('payswarm_register'); ?>
-        <p class="submit">
-          <input name="submit" type="submit" class="button-primary"
-            value="<?php _e('Register this site'); ?>" />
-        </p>
-      </form>
-    </div>
+    <h2>PaySwarm</h2>
+    <form action="<?php echo $register_url; ?>" method="post"
+      onsubmit="javascript:showAuthorityPopup(this);">
+      <?php settings_fields('payswarm_register'); ?>
+      <?php do_settings_sections('payswarm_register'); ?>
+      <p class="submit">
+        <input name="submit" type="submit" class="button-primary"
+          value="<?php _e('Register this site'); ?>" />
+      </p>
+    </form>
+    <p>To manage your PaySwarm options after registering go to the
+      <a href="options-general.php?page=payswarm">PaySwarm Options</a> page.
+    </p>
+  </div>
   <?php
 
   // output warnings

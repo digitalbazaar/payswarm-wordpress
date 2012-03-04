@@ -49,20 +49,15 @@ function payswarm_create_session($identity_id = null) {
     $timeout = $now + 3600;
     set_transient('ps_sess_' . $session['id'], $session, 3600);
 
-    // set cookie security based on page
-    $secure = ($_SERVER['HTTPS'] === 'on');
-
     // update cookies
     global $_SERVER;
     setcookie(
-      'payswarm-session', $session['id'], $timeout, '/',
-      $_SERVER['HTTP_HOST'], $secure);
+      'payswarm-session', $session['id'], $timeout, '/', $_SERVER['HTTP_HOST']);
     setcookie(
-      'payswarm-timeout', $timeout, $timeout, '/',
-      $_SERVER['HTTP_HOST'], $secure);
-   }
+      'payswarm-timeout', $timeout, $timeout, '/', $_SERVER['HTTP_HOST']);
+  }
 
-   return $session;
+  return $session;
 }
 
 /**
@@ -130,15 +125,10 @@ function payswarm_clear_session() {
  */
 function payswarm_clear_session_cookie() {
   if(!headers_sent()) {
-    // set cookie security based on page
-    $secure = ($_SERVER['HTTPS'] === 'on');
-
     global $_SERVER;
     $expires = time() - 3600;
-    setcookie('payswarm-session', '', $expires, '/',
-      $_SERVER['HTTP_HOST'], $secure);
-    setcookie('payswarm-timeout', '', $expires, '/',
-      $_SERVER['HTTP_HOST'], $secure);
+    setcookie('payswarm-session', '', $expires, '/', $_SERVER['HTTP_HOST']);
+    setcookie('payswarm-timeout', '', $expires, '/', $_SERVER['HTTP_HOST']);
 
     // clear authority host URL cookie as well
     payswarm_clear_authority_host_cookie();
@@ -146,7 +136,7 @@ function payswarm_clear_session_cookie() {
 }
 
 /**
- * Sets the authority-host cookie.
+ * Sets the payswarm-authority-host cookie.
  *
  * @package payswarm
  * @since 1.0
@@ -157,8 +147,7 @@ function payswarm_set_authority_host_cookie($host) {
   global $_SERVER;
   $timeout = time() + 3600;
   setcookie(
-    'authority-host', $host, $timeout, '/',
-    $_SERVER['HTTP_HOST'], $_SERVER['HTTPS'] === 'on');
+    'payswarm-authority-host', $host, $timeout, '/', $_SERVER['HTTP_HOST']);
 }
 
 /**
@@ -175,16 +164,16 @@ function payswarm_get_authority_host_cookie() {
   global $_COOKIE;
   $host = false;
 
-  // check to see if the authority-host cookie exists
-  if(array_key_exists('authority-host', $_COOKIE)) {
-    $host = $_COOKIE['authority-host'];
+  // check to see if the payswarm-authority-host cookie exists
+  if(array_key_exists('payswarm-authority-host', $_COOKIE)) {
+    $host = $_COOKIE['payswarm-authority-host'];
   }
 
   return $host;
 }
 
 /**
- * Clears the authority-host cookie.
+ * Clears the payswarm-authority-host cookie.
  *
  * @package payswarm
  * @since 1.0
@@ -193,8 +182,8 @@ function payswarm_clear_authority_host_cookie() {
   if(!headers_sent()) {
     global $_SERVER;
     $expires = time() - 3600;
-    setcookie('authority-host', '', $expires, '/',
-      $_SERVER['HTTP_HOST'], $_SERVER['HTTPS'] === 'on');
+    setcookie('payswarm-authority-host', '',
+      $expires, '/', $_SERVER['HTTP_HOST']);
   }
 }
 
