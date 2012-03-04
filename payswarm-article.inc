@@ -96,7 +96,11 @@ function payswarm_complete_purchase($response) {
  * @param string $url the URL to load in the parent window.
  */
 function payswarm_close_purchase_popup($url) {
-  echo "<script type=\"text/javascript\">closePopup('$url');</script>";
+  $script = PAYSWARM_PLUGIN_URL . 'payswarm.js';
+  ?>
+  <script type="text/javascript" src="<?php echo $script; ?>"></script>
+  <script type="text/javascript">closePopup('<?php echo $url; ?>');</script>
+  <?php
 }
 
 /**

@@ -3,9 +3,8 @@
 require_once('../../../wp-config.php');
 require_once('payswarm-admin.inc');
 
-if(!is_admin() or
-  (is_multisite() and !is_super_admin())) {
-  wp_die(__('You must be an admin to register.'));
+if(!current_user_can('manage_options')) {
+  wp_die(__('Access denied.'));
 }
 
 // see if a registration response is available

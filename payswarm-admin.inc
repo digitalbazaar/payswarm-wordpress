@@ -137,7 +137,11 @@ function payswarm_setup_register_page() {
  */
 function payswarm_init_registration() {
   // do nonce security check (dies on failure)
-  check_admin_referer('update');
+  $valid_nonce = wp_verify_nonce(
+    $_POST['_wpnonce'], 'payswarm_register-options');
+  if(!$valid_nonce) {
+    wp_die(__('Access denied.'));
+  }
 
   try {
      // validate authority host
@@ -146,17 +150,15 @@ function payswarm_init_registration() {
        throw new Exception('Invalid PaySwarm Authority host.');
      }
      $host = $_POST['payswarm_authority_host'];
+     update_option('payswarm_authority_host', $host);
 
      // sanitize overwrite key pair
      $overwrite = isset($_POST['payswarm_overwrite_key_pair']);
+     update_option('payswarm_overwrite_key_pair', $overwrite);
 
      // get register vendor url
      $callback = plugins_url() . '/payswarm/payswarm-register.php';
      $url = payswarm_get_register_vendor_url($host, $callback, $overwrite);
-
-     // save settings
-     update_option('payswarm_authority_host', $host);
-     update_option('payswarm_overwrite_key_pair', $overwrite);
 
      // redirect to the PaySwarm Authority registration URL
      header('HTTP/1.1 303 See Other');
@@ -165,7 +167,8 @@ function payswarm_init_registration() {
   catch(Exception $e) {
     // close the popup and report an error
     $url = admin_url() . 'plugins.php?page=payswarm&error=config';
-    payswarm_close_register_popup($url);
+    print_r($e);
+    //payswarm_close_register_popup($url);
   }
 }
 
@@ -214,7 +217,11 @@ function payswarm_complete_registration($response) {
  * @param string $url the URL to load in the parent window.
  */
 function payswarm_close_register_popup($url) {
-  echo "<script type=\"text/javascript\">closePopup('$url');</script>";
+  $script = PAYSWARM_PLUGIN_URL . 'payswarm.js';
+  ?>
+  <script type="text/javascript" src="<?php echo $script; ?>"></script>
+  <script type="text/javascript">closePopup('<?php echo $url; ?>');</script>
+  <?php
 }
 
 /**
@@ -228,8 +235,10 @@ function payswarm_close_register_popup($url) {
 function payswarm_admin_warning($warning) {
   ?>
   <div id='payswarm-admin-warning' class='updated fade'>
-    <p><?php __($warning); ?>
-    You still need to <a href="plugins.php?page=payswarm">configure PaySwarm</a>
+    <p>
+      <?php _e($warning); ?>
+      You still need to
+      <a href="plugins.php?page=payswarm">configure PaySwarm</a>.
     </p>
   </div>
   <?php
@@ -247,7 +256,7 @@ function payswarm_render_register_page() {
   <div class="wrap">
     <?php screen_icon('options-general'); ?>
       <h2>PaySwarm</h2>
-      <form action="$register_url" method="post"
+      <form action="<?php echo $register_url; ?>" method="post"
         onsubmit="javascript:showAuthorityPopup(this);">
         <?php settings_fields('payswarm_register'); ?>
         <?php do_settings_sections('payswarm_register'); ?>

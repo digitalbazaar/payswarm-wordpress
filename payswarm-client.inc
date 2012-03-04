@@ -293,7 +293,7 @@ function payswarm_get_jsonld($url, $cache) {
   if($rval === false) {
     // retrieve response
     $rval = call_user_func($payswarm_hooks['get_jsonld'], $url);
-    payswarm_jsonld_decode($rval);
+    $rval = payswarm_jsonld_decode($rval);
     if($rval === null) {
       throw new Exception("Invalid response from '$url': Malformed JSON.");
     }
@@ -324,11 +324,11 @@ function payswarm_post_jsonld($url, $obj) {
   }
   catch(Exception $e) {
     throw new Exception('PaySwarm Exception: ' .
-      "Error while trying to POST to '$url': " + $e->getMessage());
+      "Error while trying to POST to '$url': " . $e->getMessage());
   }
 
   // decode response
-  payswarm_jsonld_decode($rval);
+  $rval = payswarm_jsonld_decode($rval);
   if($rval === null) {
     throw new Exception("Invalid response from '$url': Malformed JSON.");
   }
@@ -372,6 +372,11 @@ function payswarm_get_cached_jsonld($id) {
  * @return stdClass the JSON-LD context.
  */
 function payswarm_jsonld_resolve($url) {
+  // FIXME: hack until http://purl.org/payswarm/v1 is ready
+  if($url === 'http://purl.org/payswarm/v1') {
+    return (object)array(
+      '@context' => payswarm_create_default_jsonld_context());
+  }
   return payswarm_get_jsonld($url, true);
 }
 
