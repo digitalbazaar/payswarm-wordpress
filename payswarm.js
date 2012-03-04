@@ -24,18 +24,21 @@ function toggleAssetInformation(postId) {
 }
 
 /**
- * Shows the PaySwarm Authority registration pop up.
+ * Sets the target of a form submission to a popup that will redirect to
+ * the PaySwarm Authority.
+ *
+ * @param form the form that is being submitted.
  */
-function showRegisterPopup() {
+function showAuthorityPopup(form) {
   var width = 700;
   var height = 600;
-  var popup = window.open('', 'registerpopup',
+  var popup = window.open('', 'payswarm',
     'left=' + ((screen.width-width)/2) +
     ',top=' + ((screen.height-height)/2) +
     ',width=' + width +
     ',height=' + height +
     ',resizeable,scrollbars');
-  document.getElementById('register').target = 'registerpopup';
+  form.target = 'payswarm';
 }
 
 /**

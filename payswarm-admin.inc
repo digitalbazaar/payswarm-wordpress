@@ -1,7 +1,5 @@
 <?php
 
-require_once('payswarm-config.inc');
-require_once('payswarm-client.inc');
 require_once('payswarm-wp-hooks.inc');
 
 /**
@@ -185,9 +183,10 @@ function payswarm_complete_registration($response) {
     // get vendor preferences from response
     $prefs = payswarm_register_vendor($response);
 
-    // save financial account, set registered
+    // save vendor information, set registered
+    update_option('payswarm_vendor_id', $prefs->{'ps:owner'});
     update_option('payswarm_financial_account', $prefs->{'com:destination'});
-    update_option('payswarm_registered', true);
+    update_option('payswarm_registered', 1);
 
     // trigger resign of listings
     payswarm_trigger_listing_resign();
@@ -243,16 +242,17 @@ function payswarm_admin_warning($warning) {
  * @since 1.0
  */
 function payswarm_render_register_page() {
+  $register_url = PAYSWARM_PLUGIN_URL . 'payswarm-register.php';
   ?>
   <div class="wrap">
     <?php screen_icon('options-general'); ?>
       <h2>PaySwarm</h2>
-      <form action="payswarm-register.php" method="post">
+      <form action="$register_url" method="post"
+        onsubmit="javascript:showAuthorityPopup(this);">
         <?php settings_fields('payswarm_register'); ?>
         <?php do_settings_sections('payswarm_register'); ?>
         <p class="submit">
           <input name="submit" type="submit" class="button-primary"
-            onclick="showRegisterPopup();"
             value="<?php _e('Register this site'); ?>" />
         </p>
       </form>
@@ -528,7 +528,7 @@ function payswarm_is_decimal($input, $format='%.0f') {
  */
 function payswarm_trigger_listing_resign() {
   // set resign_if_before date
-  $now = date_format(date_create(), 'Y-m-d\TH:i:s\Z');
+  $now = date_format(date_create(), DateTime::W3C);
   update_option('payswarm_resign_if_before', $now);
 }
 

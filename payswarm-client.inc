@@ -462,7 +462,7 @@ function payswarm_hash($obj) {
  * @since 1.0
  *
  * @param stdClass $obj the JSON-LD object to sign.
- * @param string $date the W3C-formatted signature creation date (optional).
+ * @param string $date the ISO8601-formatted signature creation date (optional).
  */
 function payswarm_sign($obj, $date=null, $nonce='') {
   global $payswarm_hooks;
@@ -957,6 +957,23 @@ function payswarm_add_query_vars($url, $qvars) {
 function payswarm_get_query_vars($url) {
   parse_str(parse_url($url, PHP_URL_QUERY), $query);
   return $query;
+}
+
+/**
+ * Determines whether or not the given Listing's validity period has passed.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param stdClass $listing the Listing to check.
+ *
+ * @return boolean true if the validity period still applies, false if not.
+ */
+function payswarm_is_listing_valid() {
+  $now = date_create();
+  $valid_from = date_create($listing->{'ps:validFrom'});
+  $valid_until = date_create($listing->{'ps:validUntil'});
+  return ($now >= $start and $now <= $end);
 }
 
 /* end of file, omit ?> */

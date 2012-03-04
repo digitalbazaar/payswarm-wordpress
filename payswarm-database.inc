@@ -165,7 +165,7 @@ function payswarm_database_is_post_authorized($session, $post_id) {
       ' WHERE p.identity_hash=%s AND' .
       ' p.identity_id=%s AND ap.post_id=%s LIMIT 1',
       $identity_hash, $session['identity_id'], $post_id), ARRAY_A);
-    $rval = (is_array($rval) && count($rval) === 1);
+    $rval = (is_array($rval) and count($rval) === 1);
   }
 
   return $rval;
