@@ -90,7 +90,7 @@ Authorities.
 5. When a customer indicates that they want to purchase the Asset in a
   Listing, call:
 
-  $url = payswarm_get_purchase_url(
+  $url = payswarm_get_payment_url(
     'customersauthority:port',
     $listing_id,
     $listing_hash,
@@ -851,7 +851,7 @@ function payswarm_register_vendor($msg) {
  *
  * @return string the URL for purchasing.
  */
-function payswarm_get_purchase_url(
+function payswarm_get_payment_url(
   $host, $listing_id, $listing_hash, $callback) {
 
   // get payment URL from authority config
@@ -899,8 +899,6 @@ function payswarm_get_receipt($msg) {
 
   // check message type
   if(payswarm_jsonld_has_type($receipt, 'err:Error')) {
-    // FIXME: call access denied instead of exception?
-    //payswarm_access_denied();
     throw new Exception('PaySwarm Purchase Exception: ' .
       $receipt->{'err:message'});
   }

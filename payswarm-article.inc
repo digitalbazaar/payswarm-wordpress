@@ -6,6 +6,100 @@ require_once('payswarm-session.inc');
 require_once('payswarm-admin.inc');
 
 /**
+ * Initiates an article purchase with a PaySwarm Authority.
+ *
+ * @package payswarm
+ * @since 1.0
+ */
+function payswarm_init_purchase() {
+  // get post to access
+  $post_id = $_GET['p'];
+
+  // get customer's PaySwarm Authority host
+  $host = payswarm_get_authority_host_cookie();
+  if($host === false) {
+    // TODO: UI to select the PaySwarm Authority if one isn't already selected
+    // get authority host from a UI
+    //$host =
+    // FIXME: use the authority for the customer, not the vendor
+    $host = get_option('payswarm_authority_host');
+    payswarm_set_authority_host_cookie($host);
+  }
+
+  // get payment url
+  $info = payswarm_get_post_info($post_id);
+  $callback = plugins_url() . '/payswarm/payswarm-access.php?p=' . $post_id;
+  $url = payswarm_get_purchase_url(
+    $host, $info['listing']->{'@id'}, $info['listing_hash'], $callback);
+
+  // redirect to the PaySwarm Authority payment URL
+  header('HTTP/1.1 303 See Other');
+  header("Location: $url");
+}
+
+/**
+ * Completes an article purchase with a PaySwarm Authority.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string $response the JSON encoded encrypted purchase response.
+ */
+function payswarm_complete_purchase($response) {
+  echo "<html><body>";
+  try {
+    // get receipt from response
+    $receipt = payswarm_register_vendor($response);
+
+    // get contract info
+    $identity_id = $receipt->{'ps:assetAcquirer'};
+    $asset = $receipt->{'ps:asset'};
+    $license = $receipt->{'ps:license'};
+
+    // get post ID from asset URL (strip after hash)
+    $post_id = url_to_postid(preg_replace('/#.*/', '', $asset));
+    if($post_id === 0) {
+      throw new Exception('PaySwarm Purchase Exception: ' .
+        'The Asset in the Contract could not be matched to a post.');
+    }
+
+    // create/update payswarm session
+    $session = payswarm_create_session($identity_id);
+
+    // authorize the post
+    if(!payswarm_database_authorize_post($identity_id, $post_id, $license)) {
+      throw new Exception('PaySwarm Purchase Exception: ' .
+        'A record of the purchase could not be written to the database.');
+    }
+
+    // close popup and show post
+    $url = get_permalink($post_id);
+    payswarm_close_purchase_popup($url);
+  }
+  catch(Exception $e) {
+    // close the popup and return to the post
+    // FIXME: report the error
+    $url = get_permalink($_GET['p']);
+    payswarm_close_purchase_popup($url);
+  }
+  echo "</body></html>";
+  exit(0);
+}
+
+/**
+ * A helper function that outputs JavaScript to close the purchase
+ * popup.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param string $url the URL to load in the parent window.
+ */
+function payswarm_close_purchase_popup($url) {
+  echo "<script type=\"text/javascript\">closePopup('$url');</script>";
+}
+
+/**
  * Determines whether or not the given Asset is stale. An Asset is considered
  * stale if it isn't a valid Asset or if its signature was created before the
  * global resign date flag.
@@ -209,7 +303,7 @@ function payswarm_get_post_info_rdfa($post_id) {
   // get payswarm post info
   $info = payswarm_get_post_info($post_id);
 
-  // get URLs
+  // get URLs (add post ID to access URL as query param)
   $access_url = PAYSWARM_PLUGIN_URL . 'payswarm-access.php';
   $access_url = add_query_arg('p', $post_id, $access_url);
   $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
@@ -268,7 +362,10 @@ function payswarm_filter_paid_content($content) {
   $session = payswarm_get_session();
   $purchased = payswarm_database_is_post_authorized($session, $post_id);
 
-  // FIXME: include these tags in the regex below to optimize
+  // FIXME: include these tags in the regex below to optimize ... or maybe
+  // store different post versions as metadata on article save and load
+  // that here (pick a way to reduce dynamic loading overhead)
+
   // remove any spurious paragraph and break tags
   $content = str_replace(
     '<p><!--payswarm--></p>',
@@ -424,7 +521,7 @@ function payswarm_render_meta_box() {
   </div>
   <div>
     <strong><label for="payswarm_use_default_license">
-      <?php _e('Use Default License') ?>
+      <?php _e('Use Default License'); ?>
     </label></strong>
     <input type="checkbox" id="payswarm_use_default_license"
       name="payswarm_use_default_license"
@@ -433,7 +530,7 @@ function payswarm_render_meta_box() {
   </div>
   <div>
     <strong><label for="payswarm_license_id">
-      <?php _e('License') ?>
+      <?php _e('License'); ?>
     </label></strong>
     <select id="payswarm_license_id" name="payswarm_license_id">
       <option value="<?php echo $info['listing']->{'ps:license'}; ?>">

@@ -140,60 +140,60 @@ function payswarm_clear_session_cookie() {
     setcookie('payswarm-timeout', '', $expires, '/',
       $_SERVER['HTTP_HOST'], $secure);
 
-    // clear payment URL cookie as well
-    payswarm_clear_payment_url_cookie();
+    // clear authority host URL cookie as well
+    payswarm_clear_authority_host_cookie();
   }
 }
 
 /**
- * Sets the payment-url cookie.
+ * Sets the authority-host cookie.
  *
  * @package payswarm
  * @since 1.0
  *
- * @param string $payment_url the customer's PaySwarm Authority payment URL.
+ * @param string $host the customer's PaySwarm Authority host.
  */
-function payswarm_set_payment_url_cookie($payment_url) {
+function payswarm_set_authority_host_cookie($host) {
   global $_SERVER;
   $timeout = time() + 3600;
   setcookie(
-    'payment-url', $payment_url, $timeout, '/',
+    'authority-host', $host, $timeout, '/',
     $_SERVER['HTTP_HOST'], $_SERVER['HTTPS'] === 'on');
 }
 
 /**
- * Gets the value of the customer's PaySwarm Authority payment URL that is
- * being tracked on the site.
+ * Gets the customer's PaySwarm Authority host that is being tracked on the
+ * site.
  *
  * @package payswarm
  * @since 1.0
  *
- * @return mixed the customer's PaySwarm Authority payment URL or false if no
+ * @return mixed the customer's PaySwarm Authority host or false if no
  *         such value exists.
  */
-function payswarm_get_payment_url_cookie() {
+function payswarm_get_authority_host_cookie() {
   global $_COOKIE;
-  $payment_url = false;
+  $host = false;
 
-  // check to see if the payment-url cookie exists
-  if(array_key_exists('payment-url', $_COOKIE)) {
-    $payment_url = $_COOKIE['payment_url'];
+  // check to see if the authority-host cookie exists
+  if(array_key_exists('authority-host', $_COOKIE)) {
+    $host = $_COOKIE['authority_host'];
   }
 
-  return $payment_url;
+  return $host;
 }
 
 /**
- * Clears the payment-url cookie.
+ * Clears the authority-host cookie.
  *
  * @package payswarm
  * @since 1.0
  */
-function payswarm_clear_payment_url_cookie() {
+function payswarm_clear_authority_host_cookie() {
   if(!headers_sent()) {
     global $_SERVER;
     $expires = time() - 3600;
-    setcookie('payment-url', '', $expires, '/',
+    setcookie('authority-host', '', $expires, '/',
       $_SERVER['HTTP_HOST'], $_SERVER['HTTPS'] === 'on');
   }
 }
