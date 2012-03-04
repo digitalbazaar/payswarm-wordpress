@@ -1,7 +1,7 @@
 <?php
 
-require_once('../../../wp-config.php');
-require_once('payswarm-article.inc');
+// Note: Do not move this code after the inclusion of wp-config. It adds
+// slashes to POST data even if magic quotes is off.
 
 // see if a purchase response is available
 if(isset($_POST['encrypted-message'])) {
@@ -12,6 +12,9 @@ if(isset($_POST['encrypted-message'])) {
     $response = stripcslashes($response);
   }
 }
+
+require_once('../../../wp-config.php');
+require_once('payswarm-article.inc');
 
 if(isset($response)) {
   payswarm_complete_purchase($response);

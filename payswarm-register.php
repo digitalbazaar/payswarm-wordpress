@@ -1,11 +1,7 @@
 <?php
 
-require_once('../../../wp-config.php');
-require_once('payswarm-admin.inc');
-
-if(!current_user_can('manage_options')) {
-  wp_die(__('Access denied.'));
-}
+// Note: Do not move this code after the inclusion of wp-config. It adds
+// slashes to POST data even if magic quotes is off.
 
 // see if a registration response is available
 if(isset($_POST['encrypted-message'])) {
@@ -15,6 +11,13 @@ if(isset($_POST['encrypted-message'])) {
   if(get_magic_quotes_gpc()) {
     $response = stripcslashes($response);
   }
+}
+
+require_once('../../../wp-config.php');
+require_once('payswarm-admin.inc');
+
+if(!current_user_can('manage_options')) {
+  wp_die(__('Access denied.'));
 }
 
 if(isset($response)) {

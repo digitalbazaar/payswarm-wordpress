@@ -434,7 +434,7 @@ function payswarm_get_public_key($id) {
  */
 function payswarm_create_nonce() {
   global $payswarm_hooks;
-  call_user_func($payswarm_hooks['create_nonce']);
+  return call_user_func($payswarm_hooks['create_nonce']);
 }
 
 /**
@@ -674,8 +674,8 @@ function payswarm_decode_authority_message($json_message) {
   }
 
   // decrypt and verify message
-  $rval = payswarm_decrypt_message($msg);
-  payswarm_verify_message($rval);
+  $rval = payswarm_decrypt($msg);
+  payswarm_verify($rval);
   return $rval;
 }
 
@@ -798,6 +798,9 @@ function payswarm_add_trusted_authority($host) {
 function payswarm_get_register_vendor_url(
   $host, $callback, $overwrite_key_pair=false) {
   global $payswarm_hooks;
+
+  // automatically trust given payswarm authority
+  payswarm_add_trusted_authority($host);
 
   // get register URL from authority config
   $config = payswarm_get_authority_config($host);

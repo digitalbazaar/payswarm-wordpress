@@ -167,8 +167,7 @@ function payswarm_init_registration() {
   catch(Exception $e) {
     // close the popup and report an error
     $url = admin_url() . 'plugins.php?page=payswarm&error=config';
-    print_r($e);
-    //payswarm_close_register_popup($url);
+    payswarm_close_register_popup($url);
   }
 }
 
