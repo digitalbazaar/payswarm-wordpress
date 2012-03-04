@@ -64,7 +64,7 @@ $vars['output'] = <<<RDFA
          datatype="xsd:dateTime">tomorrow</abbr>.
     </span>
     <span rel="sec:signature">
-      <span typeof="sec:JsonLdSignature">
+      <span typeof="{$vars['asset']->{'sec:signature'}->{'@type'}}">
         This <a href="{$vars['asset']->{'@id'}}">asset</a> was
         <abbr property="sec:signatureValue"
           content="{$vars['asset']->{'sec:signature'}->{'sec:signatureValue'}}"
@@ -90,7 +90,7 @@ $vars['output'] = <<<RDFA
         </span>
       </span>
       <span rel="sec:signature">
-        <span typeof="sec:JsonLdSignature">
+        <span typeof="{$vars['listing']->{'sec:signature'}->{'@type'}}">
           This <a href="{$vars['listing']->{'@id'}}">listing</a> was
           <abbr property="sec:signatureValue"
             content="{$vars['listing']->{'sec:signature'}->{'sec:signatureValue'}}"
@@ -108,7 +108,7 @@ $vars['output'] = <<<RDFA
       typeof="{$vars['payee']->{'@type'}}">
       <span property="com:payeePosition" datatype="xsd:integer" content="0">
       </span>
-      <a rel="com:rateType" href="{$vars['listing']->{'com:rateType'}}">
+      <a rel="com:rateType" href="http://purl.org/commerce#FlatAmount">
         Flat-rate payment</a> will be deposited into
       <a rel="com:destination"
         href="{$vars['payee']->{'com:destination'}}">this account</a>.
@@ -118,7 +118,7 @@ $vars['output'] = <<<RDFA
         </span>&quot;
     </span>
   </div>
-</div>";
+</div>
 RDFA;
 
 /* end of file, omit ?> */

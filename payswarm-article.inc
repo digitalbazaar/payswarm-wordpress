@@ -290,8 +290,12 @@ function payswarm_update_post_info($post_id) {
   // sign listing
   payswarm_sign($listing);
 
-  // update listing hash
+  // hash listing
   $listing_hash = payswarm_hash($listing);
+
+  // update post meta
+  update_post_meta($post_id, '_payswarm_asset', $asset);
+  update_post_meta($post_id, '_payswarm_listing', $listing);
   update_post_meta($post_id, '_payswarm_listing_hash', $listing_hash);
 
   return array(
