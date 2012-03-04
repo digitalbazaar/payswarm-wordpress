@@ -55,3 +55,15 @@ function closePopup(url) {
     window.opener.location = url;
   }
 }
+
+/**
+ * Shows/hides the license input field in the payswarm meta box.
+ *
+ * @param container the ID of the license input container.
+ * @param checkbox the ID of the default license checkbox.
+ */
+function toggleLicenseInput(container, checkbox) {
+  container = document.getElementById(container);
+  checkbox = document.getElementById(checkbox);
+  container.className = (checkbox.checked ? 'hidden' : '');
+}

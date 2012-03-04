@@ -158,21 +158,19 @@ function payswarm_is_asset_stale($asset) {
  */
 function payswarm_get_post_info($post_id) {
   // get asset
-  $asset = get_post_meta($post_id, 'payswarm_asset', true);
+  $asset = get_post_meta($post_id, '_payswarm_asset', true);
 
   // if asset is stale, force update
   $update = payswarm_is_asset_stale($asset);
-
   if(!$update) {
     // get listing
-    $listing = get_post_meta($post_id, 'payswarm_listing', true);
+    $listing = get_post_meta($post_id, '_payswarm_listing', true);
 
     // if listing is not valid, force update
     $update = !payswarm_is_listing_valid($listing);
-
     if(!$update) {
       // get listing hash
-      $listing_hash = get_post_meta($post_id, 'payswarm_listing_hash', true);
+      $listing_hash = get_post_meta($post_id, '_payswarm_listing_hash', true);
     }
   }
 
@@ -214,6 +212,9 @@ function payswarm_update_post_info($post_id) {
   // based on the different protocol
   $post_url = preg_replace('/^https/', 'http', get_permalink($post_id));
 
+  // get payswarm options
+  $options = get_option('payswarm_options');
+
   // create asset
   $asset = (object)array(
     '@context' => payswarm_create_default_jsonld_context(),
@@ -236,40 +237,48 @@ function payswarm_update_post_info($post_id) {
   $valid_until = date_format($next24, DateTime::W3C);
 
   // get license ID and hash
+  $license_id = false;
+  $license_hash = false;
   $use_default_license = get_post_meta(
-    $post_id, 'payswarm_use_default_license', 1);
-  if($use_default_license) {
-    $license_id = get_option('payswarm_default_license_id');
-    $license_hash = get_option('payswarm_default_license_hash');
+    $post_id, '_payswarm_use_default_license', true);
+  if($use_default_license === 0) {
+    $license_id = get_post_meta($post_id, '_payswarm_license_id', true);
+    $license_hash = get_post_meta($post_id, '_payswarm_license_hash', true);
   }
-  else {
-    $license_id = get_post_meta($post_id, 'payswarm_license_id', true);
-    $license_hash = get_post_meta($post_id, 'payswarm_license_hash', true);
+  if(!$license_id or !$license_hash) {
+    $license_id = $options['default_license_id'];
+    $license_hash = $options['default_license_hash'];
   }
 
   // create listing
   $listing = (object)array(
     '@context' => payswarm_create_default_jsonld_context(),
     '@id' => $post_url . '#listing',
-    '@type' => array('gr:Offering', 'ps:Listing'),
-    'com:payee' => (object)array(
-      '@id' => $post_url . '#listing-payee',
-      '@type' => 'com:Payee',
-      'com:payeePosition' => 0,
-      'com:destination' => get_option('payswarm_financial_account'),
-      'com:rate' => get_post_meta($post_id, 'payswarm_price', true),
-      'com:rateType' => 'com:FlatAmount',
-      'rdfs:comment' => "Payment for $post_title by $post_author."
+    '@type' => array('ps:Listing', 'gr:Offering'),
+    'com:payee' => array(
+      (object)array(
+        '@id' => $post_url . '#listing-payee',
+        '@type' => 'com:Payee',
+        'com:payeePosition' => 0,
+        'com:destination' => get_option('payswarm_financial_account'),
+        'com:rate' => get_post_meta($post_id, '_payswarm_price', true),
+        'com:rateType' => 'com:FlatAmount',
+        'rdfs:comment' => "Payment for $post_title by $post_author."
+      )
     ),
-    'com:payeeRule' => (object)array(
-      '@type' => 'com:PayeeRule',
-      'com:destinationOwnerType' => 'ps:Authority',
-      'com:maximumRate' => get_option('payswarm_authority_rate'),
-      'com:rateContext' => array(
-        'com:Inclusive',
-        'com:Tax',
-        'com:TaxExempt'),
-      'com:rateType' => 'com:Percentage'),
+    'com:payeeRule' => array(
+      (object)array(
+        '@type' => 'com:PayeeRule',
+        'com:destinationOwnerType' => 'ps:Authority',
+        'com:maximumRate' => get_post_meta(
+          $post_id, '_payswarm_authority_rate', true),
+        'com:rateContext' => array(
+          'com:Inclusive',
+          'com:Tax',
+          'com:TaxExempt'),
+        'com:rateType' => 'com:Percentage'
+      )
+    ),
     'ps:asset' => $asset->{'@id'},
     'ps:assetHash' => payswarm_hash($asset),
     'ps:license' => $license_id,
@@ -283,7 +292,7 @@ function payswarm_update_post_info($post_id) {
 
   // update listing hash
   $listing_hash = payswarm_hash($listing);
-  update_post_meta($post_id, 'listing_hash', $listing_hash);
+  update_post_meta($post_id, '_payswarm_listing_hash', $listing_hash);
 
   return array(
     'asset' => $asset,
@@ -390,7 +399,7 @@ function payswarm_filter_paid_content($content) {
     $processed_content = payswarm_filter_content($content, true);
 
     // if a price is available, add purchase UI
-    $amount = get_post_meta($post_id, 'payswarm_price', true);
+    $amount = get_post_meta($post_id, '_payswarm_price', true);
     if($amount !== '') {
       $processed_content .=
         '<div class="purchase section">' .
@@ -479,8 +488,8 @@ function payswarm_filter_content($content, $paid) {
  */
 function payswarm_add_meta_boxes() {
   add_meta_box(
-    'payswarm_sectionid', __( 'PaySwarm Options'),
-    'payswarm_render_meta_box', 'post', 'side', 0);
+    'payswarm_section_id', __('PaySwarm Options'),
+    'payswarm_render_meta_box', 'post', 'side', 'high');
 }
 
 /**
@@ -495,7 +504,10 @@ function payswarm_render_meta_box() {
   // get post info
   $info = payswarm_get_post_info($post->ID);
   $use_default_license = get_post_meta(
-    $post->ID, 'payswarm_use_default_license', 1);
+    $post->ID, '_payswarm_use_default_license', true);
+  if($use_default_license !== 0) {
+    $use_default_license = 1;
+  }
 
   // get payee and payee rule from listing
   $payee = $info['listing']->{'com:payee'}[0];
@@ -506,42 +518,52 @@ function payswarm_render_meta_box() {
   wp_nonce_field($plugin . '_save_meta', '_payswarm_save_meta_nonce');
 
   ?>
-  <div>
-    <strong><label for="payswarm_price">
-      <?php _e('Price'); ?>
-    </label></strong>
-    $<input type="text" id="payswarm_price" name="payswarm_price"
-      value="<?php echo $payee->{'com:rate'}; ?>" size="6" />
-    <span>The price to charge for access to the non-free content.</span>
-  </div>
-  <div>
-    <strong><label for="payswarm_authority_rate">
-      <?php _e('Authority Percentage'); ?>
-    </label></strong>
-    %<input type="text" id="payswarm_authority_rate"
-      name="payswarm_authority_rate"
-      value="<?php echo $payee_rule->{'maximumRate'}; ?>" size="6" />
-    <span>The percentage to permit the PaySwarm authority to charge.</span>
-  </div>
-  <div>
-    <strong><label for="payswarm_use_default_license">
-      <?php _e('Use Default License'); ?>
-    </label></strong>
+  <div class="payswarm_meta_box">
+    <label for="payswarm_price">
+      <?php _e('Price'); echo ' (USD)'; ?>:
+    </label>
+    <p>
+      <input class="right" type="text" id="payswarm_price"
+        name="payswarm_price"
+        value="<?php echo $payee->{'com:rate'}; ?>" />
+      <span>The price for access to non-free content.</span>
+    </p>
+
+    <label for="payswarm_authority_rate">
+      <?php _e('Authority Percentage'); echo ' (%)'; ?>:
+    </label>
+    <p>
+      <input type="text" id="payswarm_authority_rate"
+        name="payswarm_authority_rate"
+        value="<?php echo $payee_rule->{'com:maximumRate'}; ?>" />
+      <span>The percentage of the price to allow a PaySwarm Authority to
+        collect.</span>
+    </p>
+
+    <label class="inline" for="payswarm_use_default_license"
+      onclick="javascript:toggleLicenseInput(
+        'payswarm_license_container', 'payswarm_use_default_license');">
+      <?php _e('Use Default License'); ?>:
+    </label>
     <input type="checkbox" id="payswarm_use_default_license"
       name="payswarm_use_default_license"
       value="<?php echo $use_default_license; ?>"
+      onclick="javascript:toggleLicenseInput(
+        'payswarm_license_container', 'payswarm_use_default_license');"
       <?php checked($use_default_license); ?> />
-  </div>
-  <div>
-    <strong><label for="payswarm_license_id">
-      <?php _e('License'); ?>
-    </label></strong>
-    <select id="payswarm_license_id" name="payswarm_license_id">
-      <option value="<?php echo $info['listing']->{'ps:license'}; ?>">
-        <?php echo $info['listing']->{'ps:license'}; ?>
-      </option>
-    </select>
-    <span>The license to associate with the content when it is sold.</span>
+
+    <div id="payswarm_license_container"
+      <?php if($use_default_license) { echo 'class="hidden"'; } ?> >
+      <label for="payswarm_license_id">
+        <?php _e('License'); ?>:
+      </label>
+      <p>
+        <input type="text" id="payswarm_license_id"
+          name="payswarm_license_id" size="44"
+          value="<?php echo $info['listing']->{'ps:license'}; ?>" />
+        <span>The license to associate with the content when it is sold.</span>
+      </p>
+    </div>
   </div>
   <?php
 }
@@ -570,59 +592,60 @@ function payswarm_save_post_data($post_id) {
   $edit_allowed = current_user_can('edit_post', $post_id);
 
   // only update on non-auto and non-revision save
-  if(!$autosave && !$revision && $edit_allowed) {
-    // ensure POST nonce is valid
-    $valid_nonce = false;
-    if(isset($_POST['_payswarm_save_meta_nonce'])) {
-      $plugin = plugin_basename(__FILE__);
-      $valid_nonce = wp_verify_nonce(
-        $_POST['_payswarm_save_meta_nonce'], $plugin . '_save_meta');
-    }
-
-    /* Note: If the nonce is not valid, then use the existing data from the
-      post. The nonce will be missing (and thus, invalid) when "Quick Edit"
-      or xmlrpc were used to save the post data. */
-    if($valid_nonce) {
-      $price = $_POST['payswarm_price'];
-      $authority_rate = $_POST['payswarm_authority_rate'];
-      $use_default_license = isset($_POST['use_default_license']) ? 1 : 0;
-      if($use_default_license === 0) {
-        $authority_host = get_option('payswarm_authority_host');
-        $license_id = $_POST['payswarm_license_id'];
-        try {
-          $license = payswarm_authority_cache_license(
-            $authority_host, $license_id);
-          $hash = payswarm_hash($license);
-        }
-        catch(Exception $e) {
-          // invalid license, use existing/default
-          $use_default_license = get_post_meta(
-            $post_id, 'payswarm_use_default_license', 1);
-          if($use_default_license === 0) {
-            $license_id = get_post_meta($post_id, 'payswarm_license_id', true);
-            $hash = get_post_meta($post_id, 'payswarm_license_hash', true);
-          }
-        }
-      }
-
-      // validate and update post meta data
-      payswarm_update_post_meta(
-        $post_id, 'payswarm_price', $price);
-      payswarm_update_post_meta(
-        $post_id, 'payswarm_authority_rate', $authority);
-      payswarm_update_post_meta(
-        $post_id, 'payswarm_use_default_license', $use_default_license);
-      if($use_default_license === 0) {
-        payswarm_update_post_meta(
-          $post_id, 'payswarm_license_id', $license_id);
-        payswarm_update_post_meta(
-          $post_id, 'payswarm_license_hash', $hash);
-      }
-    }
-
-    // update post info
-    payswarm_update_post_info($post_id);
+  if($autosave or $revision or !$edit_allowed) {
+    return $post_id;
   }
+
+  // ensure POST nonce is valid
+  $valid_nonce = false;
+  if(isset($_POST['_payswarm_save_meta_nonce'])) {
+    $plugin = plugin_basename(__FILE__);
+    $valid_nonce = wp_verify_nonce(
+      $_POST['_payswarm_save_meta_nonce'], $plugin . '_save_meta');
+  }
+
+  /* Note: If the nonce is not valid, then use the existing data from the
+    post. The nonce will be missing (and thus, invalid) when "Quick Edit"
+    or xmlrpc were used to save the post data. */
+  if($valid_nonce) {
+    $price = $_POST['payswarm_price'];
+    $authority_rate = $_POST['payswarm_authority_rate'];
+    $use_default_license = isset($_POST['payswarm_use_default_license']) ?
+      1 : 0;
+    if($use_default_license === 0) {
+      $authority_host = get_option('payswarm_authority_host');
+      $license_id = $_POST['payswarm_license_id'];
+      try {
+        $license = payswarm_authority_cache_license(
+          $authority_host, $license_id);
+        $hash = payswarm_hash($license);
+      }
+      catch(Exception $e) {
+        // invalid license, use existing/default
+        $use_default_license = get_post_meta(
+          $post_id, '_payswarm_use_default_license', true);
+        if($use_default_license === 0) {
+          $license_id = get_post_meta($post_id, '_payswarm_license_id', true);
+          $hash = get_post_meta($post_id, '_payswarm_license_hash', true);
+        }
+      }
+    }
+
+    // sanitize and update post meta data
+    payswarm_update_post_meta(
+      $post_id, '_payswarm_price', $price);
+    payswarm_update_post_meta(
+      $post_id, '_payswarm_authority_rate', $authority_rate);
+    payswarm_update_post_meta(
+      $post_id, '_payswarm_use_default_license', $use_default_license);
+    if($use_default_license === 0) {
+      payswarm_update_post_meta($post_id, '_payswarm_license_id', $license_id);
+      payswarm_update_post_meta($post_id, '_payswarm_license_hash', $hash);
+    }
+  }
+
+  // update post info
+  payswarm_update_post_info($post_id);
 
   return $post_id;
 }
@@ -643,31 +666,31 @@ function payswarm_save_post_data($post_id) {
  * @param string $meta_value the metadata value to use for the update.
  */
 function payswarm_update_post_meta($post_id, $meta_key, $meta_value) {
-  if($meta_key === 'payswarm_price') {
+  if($meta_key === '_payswarm_price') {
     $price = $meta_value;
     if(!is_numeric($price) or floatval($price) < 0) {
       $options = get_option('payswarm_options');
-      update_post_meta($post_id, 'payswarm_price', $options['default_price']);
+      update_post_meta($post_id, '_payswarm_price', $options['default_price']);
     }
   }
-  else if($meta_key === 'payswarm_authority_rate') {
-    $auth_rate = $meta_value;
-    if(!is_numeric($auth_rate) or floatval($auth_rate) < 0) {
+  else if($meta_key === '_payswarm_authority_rate') {
+    $authority_rate = $meta_value;
+    if(!is_numeric($authority_rate) or floatval($authority_rate) < 0) {
       $options = get_option('payswarm_options');
       $authority_rate = $options['default_authority_rate'];
-      update_post_meta($post_id, 'payswarm_authority_rate', $authority_rate);
+      update_post_meta($post_id, '_payswarm_authority_rate', $authority_rate);
     }
   }
-  else if($meta_key === 'payswarm_license_id' or
-    $meta_key === 'payswarm_license_hash') {
+  else if($meta_key === '_payswarm_license_id' or
+    $meta_key === '_payswarm_license_hash') {
     if($meta_value === '') {
       $options = get_option('payswarm_options');
       $license_id = $options['default_license'];
       $license_hash = $options['default_license_hash'];
       update_post_meta(
-        $post_id, 'payswarm_license_id', $license_id);
+        $post_id, '_payswarm_license_id', $license_id);
       update_post_meta(
-        $post_id, 'payswarm_license_hash', $license_hash);
+        $post_id, '_payswarm_license_hash', $license_hash);
     }
   }
   else {
@@ -694,14 +717,14 @@ function payswarm_added_postmeta($meta_id) {
 
   // do not perform the signature update/sanitize if the post is a revision
   // or if the metadata is not PaySwarm metadata
-  if(!$revision && (strpos($meta->meta_key, 'payswarm_') === 0)) {
+  if(!$revision && (strpos($meta->meta_key, '_payswarm_') === 0)) {
     // delete any older meta_id from the database for any PaySwarm metadata
     payswarm_database_remove_old_metadata(
       $meta->post_id, $meta_id, $meta->meta_key);
 
     // sanitize and update metadata
     payswarm_update_post_meta(
-      $meta->post_id, $meta->meta_id, $meta->meta_value);
+      $meta->post_id, $meta->meta_key, $meta->meta_value);
 
     // force a new signature for the post info
     payswarm_update_post_info($meta->post_id);
@@ -725,10 +748,10 @@ function payswarm_updated_postmeta($meta_id) {
 
   // do not perform the signature update/sanitize if the post is a revision
   // or if the metadata is not PaySwarm metadata
-  if(!$revision && (strpos($meta->meta_key, 'payswarm_') === 0)) {
+  if(!$revision && (strpos($meta->meta_key, '_payswarm_') === 0)) {
     // sanitize and update metadata
     payswarm_update_post_meta(
-      $meta->post_id, $meta->meta_id, $meta->meta_value);
+      $meta->post_id, $meta->meta_key, $meta->meta_value);
 
     // force a new signature for the post info
     payswarm_update_post_info($meta->post_id);

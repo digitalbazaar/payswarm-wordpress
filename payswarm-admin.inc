@@ -478,14 +478,15 @@ function payswarm_validate_options($input) {
   // validate default license
   try {
     $authority_host = get_option('payswarm_authority_host');
-    $license_url = $options['default_license_id'];
-    if(wp_kses_bad_protocol($url, array('http', 'https')) !== $url) {
+    $license_id = $options['default_license_id'];
+    if(wp_kses_bad_protocol($license_id, array('http', 'https')) !==
+      $license_id) {
       throw new Exception('Invalid license ID.');
     }
 
     // get license
-    $license = payswarm_authority_cache_license($authority_host, $license_url);
-    $options['default_license_id'] = $license_url;
+    $license = payswarm_authority_cache_license($authority_host, $license_id);
+    $options['default_license_id'] = $license_id;
     $options['default_license_hash'] = payswarm_hash($license);
   }
   catch(Exception $e) {

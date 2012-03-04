@@ -44,7 +44,6 @@ register_deactivation_hook(__FILE__, 'payswarm_uninstall_database');
 // add actions associated with the WordPress processing
 add_action('admin_init', 'payswarm_admin_init');
 add_action('admin_menu', 'payswarm_admin_menu');
-add_action('wp_print_styles', 'payswarm_add_stylesheets');
 add_action('add_meta_boxes', 'payswarm_add_meta_boxes');
 add_action('save_post', 'payswarm_save_post_data');
 add_action('added_postmeta', 'payswarm_added_postmeta');
@@ -53,19 +52,8 @@ add_action('updated_postmeta', 'payswarm_updated_postmeta');
 // add filters for text that the PaySwarm plugin will modify
 add_filter('the_content', 'payswarm_filter_paid_content');
 
-// add the javascript for the PaySwarm plugin
+// include payswarm CSS and JavaScript
+wp_enqueue_style('payswarm-style', PAYSWARM_PLUGIN_URL . 'payswarm.css');
 wp_enqueue_script('payswarm', PAYSWARM_PLUGIN_URL . 'payswarm.js');
-
-/**
- * Adds the required stylesheets for the PaySwarm plugin.
- *
- * @package payswarm
- * @since 1.0
- */
-function payswarm_add_stylesheets() {
-  $css_url = PAYSWARM_PLUGIN_URL . 'payswarm.css';
-  wp_register_style('payswarm-style', $css_url);
-  wp_enqueue_style( 'payswarm-style');
-}
 
 /* end of file, omit ?> */

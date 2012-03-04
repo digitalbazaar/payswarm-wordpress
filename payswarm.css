@@ -2,59 +2,79 @@
  * PaySwarm CSS styles.
  */
 .row {
-text-align: right;
+  text-align: right;
 }
 
 .money {
-color: #666;
+  color: #666;
 }
 
 .label {
-vertical-align: middle;
+  vertical-align: middle;
 }
 
 .hidden {
-display: none;
+  display: none;
 }
 
 .section h2 {
-padding: 8px;
-color: #fff;
-background-color: #333;
+  padding: 8px;
+  color: #fff;
+  background-color: #333;
 }
 
 .purchase, .manage {
-margin: 20px 0;
-padding: 10px;
-font-family: Arial, sans-serif;
-border-top: 1px solid #bbb;
-border-bottom: 1px solid #bbb;
+  margin: 20px 0;
+  padding: 10px;
+  font-family: Arial, sans-serif;
+  border-top: 1px solid #bbb;
+  border-bottom: 1px solid #bbb;
 }
 
 .purchase-button {
-padding: 2px 20px;
-font-size: 1em;
-font-weight: bold;
-color: #fff;
-/*text-shadow: #000 0 0 2px;*/
-background-color: #390;
-border: 1px solid #370;
--moz-border-radius: 4px;
-border-radius: 4px;
-cursor: pointer;
+  padding: 2px 20px;
+  font-size: 1em;
+  font-weight: bold;
+  color: #fff;
+  /*text-shadow: #000 0 0 2px;*/
+  background-color: #390;
+  border: 1px solid #370;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .purchase-button img {
-padding: 2px 4px;
-vertical-align: middle;
+  padding: 2px 4px;
+  vertical-align: middle;
 }
 
 .asset-info {
-text-align: left;
+  text-align: left;
 }
 
 .view-more, .view-more:hover {
-float: right;
-cursor: pointer;
-text-decoration: underline;
+  float: right;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.payswarm_meta_box .inline {
+  display: inline;
+}
+.payswarm_meta_box label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0;
+  margin-top: 12px;
+}
+.payswarm_meta_box span {
+  display: block;
+}
+.payswarm_meta_box input[type='text'] {
+  margin-bottom: 3px;
+  width: 99%;
+}
+.payswarm_meta_box input[type='checkbox'] {
+  display: inline;
 }
