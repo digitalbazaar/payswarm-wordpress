@@ -177,7 +177,7 @@ function payswarm_get_authority_host_cookie() {
 
   // check to see if the authority-host cookie exists
   if(array_key_exists('authority-host', $_COOKIE)) {
-    $host = $_COOKIE['authority_host'];
+    $host = $_COOKIE['authority-host'];
   }
 
   return $host;

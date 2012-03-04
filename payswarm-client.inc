@@ -460,8 +460,8 @@ function payswarm_check_nonce($nonce) {
  * @return the SHA-1 hash of the encoded JSON data.
  */
 function payswarm_hash($obj) {
-   // SHA-1 hash JSON
-   return sha1(payswarm_jsonld_encode(jsonld_normalize($obj)));
+  // SHA-1 hash JSON
+  return sha1(payswarm_jsonld_encode(jsonld_normalize($obj)));
 }
 
 /**

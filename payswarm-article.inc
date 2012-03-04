@@ -29,7 +29,7 @@ function payswarm_init_purchase() {
   // get payment url
   $info = payswarm_get_post_info($post_id);
   $callback = plugins_url() . '/payswarm/payswarm-access.php?p=' . $post_id;
-  $url = payswarm_get_purchase_url(
+  $url = payswarm_get_payment_url(
     $host, $info['listing']->{'@id'}, $info['listing_hash'], $callback);
 
   // redirect to the PaySwarm Authority payment URL
@@ -332,8 +332,8 @@ function payswarm_get_post_info_rdfa($post_id) {
     'asset' => $info['asset'],
     'listing' => $info['listing'],
     'listing_hash' => $info['listing_hash'],
-    'asset_types' => join('', $info['asset']->{'@type'}),
-    'listing_types' => join('', $info['listing']->{'@type'}),
+    'asset_types' => join(' ', $info['asset']->{'@type'}),
+    'listing_types' => join(' ', $info['listing']->{'@type'}),
     'access_url' => $access_url,
     'pslogo_url' => $pslogo_url,
     'payee' => $payee,

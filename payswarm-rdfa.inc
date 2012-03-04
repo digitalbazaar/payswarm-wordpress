@@ -26,7 +26,7 @@ $vars['output'] = <<<RDFA
         {$vars['text_view_full_article']}
       </span>
       <span rel="com:payee" resource="{$vars['payee']->{'@id'}}">
-        <span property="com:currency" content="USD">$</span>
+        <span>$</span>
         <abbr property="com:rate" title="{$vars['payee']->{'com:rate'}}"
           content="{$vars['payee']->{'com:rate'}}">{$vars['payee_rate']}
         </abbr>
@@ -39,9 +39,7 @@ $vars['output'] = <<<RDFA
   </div>
   <div id="payswarm-asset-info-$post_id" class="hidden">
     <a rel="ps:contentUrl" href="{$vars['asset']->{'ps:contentUrl'}}"
-      property="dc:title">
-      {$vars['post_title']}
-    </a> by
+      property="dc:title">{$vars['post_title']}</a> by
     <span rel="dc:creator">
       <span property="foaf:name">{$vars['post_author']}</span>
     </span>.
@@ -73,8 +71,7 @@ $vars['output'] = <<<RDFA
         using <a rel="dc:creator"
           href="{$vars['asset']->{'sec:signature'}->{'dc:creator'}}">
           this key</a>
-        at <span property="dc:created" datatype="xsd:dateTime">
-          {$vars['asset']->{'sec:signature'}->{'dc:created'}}</span>.
+        at <span property="dc:created" datatype="xsd:dateTime">{$vars['asset']->{'sec:signature'}->{'dc:created'}}</span>.
       </span>
     </span>
     <span about="{$vars['listing']->{'@id'}}">
@@ -99,8 +96,7 @@ $vars['output'] = <<<RDFA
           using <a rel="dc:creator"
             href="{$vars['listing']->{'sec:signature'}->{'dc:creator'}}">
             this key</a>
-          at <span property="dc:created" datatype="xsd:dateTime">
-            {$vars['listing']->{'sec:signature'}->{'dc:created'}}</span>.
+          at <span property="dc:created" datatype="xsd:dateTime">{$vars['listing']->{'sec:signature'}->{'dc:created'}}</span>.
         </span>
       </span>
     </span>
@@ -113,9 +109,9 @@ $vars['output'] = <<<RDFA
       <a rel="com:destination"
         href="{$vars['payee']->{'com:destination'}}">this account</a>.
       The memo field for the payment will read:
-        &quot;<span property="rdfs:comment">
-          {$vars['payee']->{'rdfs:comment'}}
-        </span>&quot;
+        &quot;
+        <span property="rdfs:comment">{$vars['payee']->{'rdfs:comment'}}</span>
+        &quot;
     </span>
   </div>
 </div>
