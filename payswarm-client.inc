@@ -268,15 +268,12 @@ function payswarm_jsonld_encode($input) {
  * @return mixed the resolved JSON-LD object, null on error.
  */
 function payswarm_jsonld_decode($input) {
-  global $payswarm_hooks;
-
   // JSON-decode
   $rval = json_decode($input);
   if($rval !== null) {
     // resolve any @context URLs
     $rval = jsonld_resolve($rval, 'payswarm_jsonld_resolve');
   }
-
   return $rval;
 }
 
@@ -289,6 +286,8 @@ function payswarm_jsonld_decode($input) {
  * @return stdClass the JSON-LD object.
  */
 function payswarm_get_jsonld($url, $cache) {
+  global $payswarm_hooks;
+
   // use cache if available
   $rval = payswarm_get_cached_jsonld($url);
   if($rval === false) {
@@ -317,6 +316,8 @@ function payswarm_get_jsonld($url, $cache) {
  * @return stdClass the JSON-LD response.
  */
 function payswarm_post_jsonld($url, $obj) {
+  global $payswarm_hooks;
+
   try {
     $data = payswarm_jsonld_encode($obj);
     $rval = call_user_func($payswarm_hooks['post_jsonld'], $data, $url);
@@ -341,6 +342,7 @@ function payswarm_post_jsonld($url, $obj) {
  * @param stdClass $obj the JSON-LD object to cache.
  */
 function payswarm_cache_jsonld($id, $obj) {
+  global $payswarm_hooks;
   if(isset($payswarm_hooks['cache_jsonld'])) {
     call_user_func($payswarm_hooks['cache_jsonld'], $id, $obj, 60*60*24);
   }
@@ -354,6 +356,7 @@ function payswarm_cache_jsonld($id, $obj) {
  * @return stdClass the cached JSON-LD object or false.
  */
 function payswarm_get_cached_jsonld($id) {
+  global $payswarm_hooks;
   $rval = false;
   if(isset($payswarm_hooks['get_cached_jsonld'])) {
     $rval = call_user_func($payswarm_hooks['get_cached_jsonld'], $id);
@@ -425,6 +428,7 @@ function payswarm_get_public_key($id) {
  * @return string the nonce.
  */
 function payswarm_create_nonce() {
+  global $payswarm_hooks;
   call_user_func($payswarm_hooks['create_nonce']);
 }
 
@@ -436,6 +440,7 @@ function payswarm_create_nonce() {
  * @return true if the nonce is valid, false if not.
  */
 function payswarm_check_nonce($nonce) {
+  global $payswarm_hooks;
   return call_user_func($payswarm_hooks['check_nonce'], $nonce);
 }
 
@@ -477,7 +482,7 @@ function payswarm_sign($obj, $date=null, $nonce='') {
   $public_key_id = call_user_func($payswarm_hooks['get_public_key_id']);
 
   // generate base64-encoded signature
-  $json = payswarm_json_encode(jsonld_normalize($obj));
+  $json = payswarm_jsonld_encode(jsonld_normalize($obj));
   openssl_sign($nonce . $date . $json, $signature, $pem, OPENSSL_ALGO_SHA1);
   $signature = base64_encode($signature);
 
@@ -736,6 +741,8 @@ function payswarm_authority_cache_license($host, $id) {
  * @return array an array with the key pair as 'public_key' and 'private_key'.
  */
 function payswarm_create_key_pair() {
+  global $payswarm_hooks;
+
   // generate the key pair
   $key_pair = openssl_pkey_new();
 
@@ -760,6 +767,8 @@ function payswarm_create_key_pair() {
  * @param string $host the PaySwarm Authority host and port.
  */
 function payswarm_add_trusted_authority($host) {
+  global $payswarm_hooks;
+
   // get authority config
   $config = payswarm_get_authority_config($host);
 
@@ -783,6 +792,7 @@ function payswarm_add_trusted_authority($host) {
  */
 function payswarm_get_register_vendor_url(
   $host, $callback, $overwrite_key_pair=false) {
+  global $payswarm_hooks;
 
   // get register URL from authority config
   $config = payswarm_get_authority_config($host);
@@ -820,6 +830,8 @@ function payswarm_get_register_vendor_url(
  * @return stdClass the PaySwarm Vendor Preferences.
  */
 function payswarm_register_vendor($msg) {
+  global $payswarm_hooks;
+
   // decode message
   $prefs = payswarm_decode_authority_message($msg);
 
