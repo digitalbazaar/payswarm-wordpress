@@ -44,7 +44,6 @@ register_deactivation_hook(__FILE__, 'payswarm_uninstall_database');
 // add actions associated with the WordPress processing
 add_action('admin_init', 'payswarm_admin_init');
 add_action('admin_menu', 'payswarm_admin_menu');
-add_action('payswarm_hourly_event', 'payswarm_database_cleanup_sessions');
 add_action('wp_print_styles', 'payswarm_add_stylesheets');
 add_action('add_meta_boxes', 'payswarm_add_meta_boxes');
 add_action('save_post', 'payswarm_save_post_data');
