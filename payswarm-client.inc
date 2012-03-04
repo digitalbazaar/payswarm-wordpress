@@ -602,7 +602,7 @@ function payswarm_verify($obj) {
  * @param stdClass $encrypted the message to decrypt.
  * @param string $pem the PEM-encoded private key to decrypt the message.
  *
- * @return string the decrypted message.
+ * @return stdClass the decrypted JSON-LD object.
  */
 function payswarm_decrypt($encrypted) {
   global $payswarm_hooks;

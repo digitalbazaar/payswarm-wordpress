@@ -49,7 +49,7 @@ function payswarm_complete_purchase($response) {
   echo "<html><body>";
   try {
     // get receipt from response
-    $receipt = payswarm_register_vendor($response);
+    $receipt = payswarm_get_receipt($response);
 
     // get contract info
     $identity_id = $receipt->{'ps:assetAcquirer'};
