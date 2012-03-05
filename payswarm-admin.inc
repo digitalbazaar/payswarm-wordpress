@@ -180,7 +180,6 @@ function payswarm_init_registration() {
  * @param string $response the JSON encoded encrypted registration response.
  */
 function payswarm_complete_registration($response) {
-  echo '<html><body>';
   try {
     // get vendor preferences from response
     $prefs = payswarm_register_vendor($response);
@@ -202,7 +201,6 @@ function payswarm_complete_registration($response) {
     $url = admin_url() . 'plugins.php?page=payswarm&error=authority';
     payswarm_close_register_popup($url);
   }
-  echo '</body></html>';
   exit(0);
 }
 
@@ -218,8 +216,10 @@ function payswarm_complete_registration($response) {
 function payswarm_close_register_popup($url) {
   $script = PAYSWARM_PLUGIN_URL . 'payswarm.js';
   ?>
+  <html><body>
   <script type="text/javascript" src="<?php echo $script; ?>"></script>
   <script type="text/javascript">closePopup('<?php echo $url; ?>');</script>
+  </body></html>
   <?php
 }
 

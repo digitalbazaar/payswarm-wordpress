@@ -46,7 +46,6 @@ function payswarm_init_purchase() {
  * @param string $response the JSON encoded encrypted purchase response.
  */
 function payswarm_complete_purchase($response) {
-  echo '<html><body>';
   try {
     // get receipt from response
     $receipt = payswarm_get_receipt($response);
@@ -82,7 +81,6 @@ function payswarm_complete_purchase($response) {
     $url = get_permalink($_GET['p']);
     payswarm_close_purchase_popup($url);
   }
-  echo '</body></html>';
   exit(0);
 }
 
@@ -98,8 +96,10 @@ function payswarm_complete_purchase($response) {
 function payswarm_close_purchase_popup($url) {
   $script = PAYSWARM_PLUGIN_URL . 'payswarm.js';
   ?>
+  <html><body>
   <script type="text/javascript" src="<?php echo $script; ?>"></script>
   <script type="text/javascript">closePopup('<?php echo $url; ?>');</script>
+  </body></html>
   <?php
 }
 
