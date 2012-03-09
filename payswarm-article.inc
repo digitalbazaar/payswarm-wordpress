@@ -140,6 +140,48 @@ function payswarm_is_asset_stale($asset) {
 }
 
 /**
+ * A temporary method to convert old PaySwarm sandbox posts to the new format.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @param integer $post_id the ID of the post.
+ */
+function payswarm_convert_old_post($post_id) {
+  $price = get_post_meta($post_id, 'payswarm_price', true);
+  if($price === false) {
+    // nothing to convert
+    return;
+  }
+
+  // sanitize and update post meta data
+  payswarm_update_post_meta(
+    $post_id, '_payswarm_price', $price);
+  payswarm_update_post_meta(
+    $post_id, '_payswarm_authority_rate',
+    get_post_meta($post_id, 'payswarm_auth_rate', true));
+  payswarm_update_post_meta(
+    $post_id, '_payswarm_use_default_license', 1);
+
+  // update post
+  payswarm_update_post_info($post_id);
+
+  // remove old post meta
+  delete_post_meta($post_id, 'payswarm_asset_hash');
+  delete_post_meta($post_id, 'payswarm_asset_signature');
+  delete_post_meta($post_id, 'payswarm_auth_rate');
+  delete_post_meta($post_id, 'payswarm_content_license_hash');
+  delete_post_meta($post_id, 'payswarm_content_license_url');
+  delete_post_meta($post_id, 'payswarm_listing_hash');
+  delete_post_meta($post_id, 'payswarm_listing_signature');
+  delete_post_meta($post_id, 'payswarm_listing_valid_from');
+  delete_post_meta($post_id, 'payswarm_listing_valid_until');
+  delete_post_meta($post_id, 'payswarm_price');
+  delete_post_meta($post_id, 'payswarm_signature_created');
+  delete_post_meta($post_id, 'payswarm_use_default_license');
+}
+
+/**
  * Returns an associative array of the PaySwarm related information for a post.
  * If the information is determined to be stale, it will be automatically
  * regenerated and updated in the database.
@@ -157,6 +199,12 @@ function payswarm_is_asset_stale($asset) {
  * @return array an associative array with PaySwarm related information.
  */
 function payswarm_get_post_info($post_id) {
+  // FIXME: remove me after sandbox update
+  if(!PAYSWARM_PRODUCTION) {
+    // convert old sandbox post
+    payswarm_convert_old_post($post_id);
+  }
+
   // get asset
   $asset = get_post_meta($post_id, '_payswarm_asset', true);
 
@@ -378,6 +426,12 @@ function payswarm_filter_paid_content($content) {
   $post_id = $post->ID;
   $session = payswarm_get_session();
   $purchased = payswarm_database_is_post_authorized($session, $post_id);
+
+  // FIXME: remove me after sandbox update
+  if(!PAYSWARM_PRODUCTION) {
+    // convert old sandbox post
+    payswarm_convert_old_post($post_id);
+  }
 
   // FIXME: include these tags in the regex below to optimize ... or maybe
   // store different post versions as metadata on article save and load
