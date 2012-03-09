@@ -149,7 +149,7 @@ function payswarm_is_asset_stale($asset) {
  */
 function payswarm_convert_old_post($post_id) {
   $price = get_post_meta($post_id, 'payswarm_price', true);
-  if($price === false) {
+  if($price === '') {
     // nothing to convert
     return;
   }
