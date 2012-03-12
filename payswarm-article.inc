@@ -261,7 +261,7 @@ function payswarm_update_post_info($post_id) {
   $post_url = preg_replace('/^https/', 'http', get_permalink($post_id));
 
   // get payswarm options
-  $options = get_option('payswarm_options');
+  $options = payswarm_get_options();
 
   // create asset
   $asset = (object)array(
@@ -727,14 +727,14 @@ function payswarm_update_post_meta($post_id, $meta_key, $meta_value) {
   if($meta_key === '_payswarm_price') {
     $price = $meta_value;
     if(!is_numeric($price) or floatval($price) < 0) {
-      $options = get_option('payswarm_options');
+      $options = payswarm_get_options();
       update_post_meta($post_id, '_payswarm_price', $options['default_price']);
     }
   }
   else if($meta_key === '_payswarm_authority_rate') {
     $authority_rate = $meta_value;
     if(!is_numeric($authority_rate) or floatval($authority_rate) < 0) {
-      $options = get_option('payswarm_options');
+      $options = payswarm_get_options();
       $authority_rate = $options['default_authority_rate'];
       update_post_meta($post_id, '_payswarm_authority_rate', $authority_rate);
     }
@@ -742,7 +742,7 @@ function payswarm_update_post_meta($post_id, $meta_key, $meta_value) {
   else if($meta_key === '_payswarm_license_id' or
     $meta_key === '_payswarm_license_hash') {
     if($meta_value === '') {
-      $options = get_option('payswarm_options');
+      $options = payswarm_get_options();
       $license_id = $options['default_license'];
       $license_hash = $options['default_license_hash'];
       update_post_meta(
