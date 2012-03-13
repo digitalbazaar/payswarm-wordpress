@@ -148,6 +148,11 @@ function payswarm_is_asset_stale($asset) {
  * @param integer $post_id the ID of the post.
  */
 function payswarm_convert_old_post($post_id) {
+  if(!get_option('payswarm_registered', false)) {
+    // not registered with payswarm yet, bail out
+    return;
+  }
+
   $price = get_post_meta($post_id, 'payswarm_price', true);
   if($price === '') {
     // nothing to convert
