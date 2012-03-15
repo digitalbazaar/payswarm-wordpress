@@ -90,7 +90,7 @@ Authorities.
 5. When a customer indicates that they want to purchase the Asset in a
   Listing, call:
 
-  $url = payswarm_get_payment_url(
+  $url = payswarm_get_purchase_url(
     'customersauthority:port',
     $listing_id,
     $listing_hash,
@@ -871,23 +871,23 @@ function payswarm_register_vendor($msg) {
  *
  * @return string the URL for purchasing.
  */
-function payswarm_get_payment_url(
+function payswarm_get_purchase_url(
   $host, $listing_id, $listing_hash, $callback) {
 
-  // get payment URL from authority config
+  // get purchase URL from authority config
   $config = payswarm_get_authority_config($host);
-  $payment_url = $config->{'ps:paymentService'};
+  $url = $config->{'ps:paymentService'};
 
-  // add query parameters to the payment URL
-  $payment_url = payswarm_add_query_vars(
-    $payment_url, array(
+  // add query parameters to the purchase URL
+  $url = payswarm_add_query_vars(
+    $url, array(
     'listing' => $listing_id,
     'listing-hash' => $listing_hash,
     'callback' => $callback,
     'response-nonce' => payswarm_create_nonce())
   );
 
-  return $payment_url;
+  return $purchase_url;
 }
 
 /**

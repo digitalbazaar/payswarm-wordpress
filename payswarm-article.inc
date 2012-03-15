@@ -26,10 +26,10 @@ function payswarm_init_purchase() {
     payswarm_set_authority_host_cookie($host);
   }
 
-  // get payment url
+  // get purchase url
   $info = payswarm_get_post_info($post_id);
   $callback = plugins_url() . '/payswarm/payswarm-access.php?p=' . $post_id;
-  $url = payswarm_get_payment_url(
+  $url = payswarm_get_purchase_url(
     $host, $info['listing']->{'@id'}, $info['listing_hash'], $callback);
 
   // redirect to the PaySwarm Authority payment URL
