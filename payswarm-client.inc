@@ -876,11 +876,11 @@ function payswarm_get_purchase_url(
 
   // get purchase URL from authority config
   $config = payswarm_get_authority_config($host);
-  $url = $config->{'ps:paymentService'};
+  $purchase_url = $config->{'ps:paymentService'};
 
   // add query parameters to the purchase URL
-  $url = payswarm_add_query_vars(
-    $url, array(
+  $purchase_url = payswarm_add_query_vars(
+    $purchase_url, array(
     'listing' => $listing_id,
     'listing-hash' => $listing_hash,
     'callback' => $callback,
