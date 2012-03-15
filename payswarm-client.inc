@@ -44,9 +44,9 @@ Authorities.
     'myauthority:port',
     'http://myserver/myregistercallbackurl.php');
 
-  The first parameter is the base URL of the PaySwarm Authority to register
-  with. The second is a callback URL that will receive the result of the
-  registration as POST data.
+  The first parameter is the host and port of the PaySwarm Authority to
+  register with. The second is a callback URL that will receive the result of
+  the registration as POST data.
 
   Direct the vendor to the URL so that they can complete the registration
   process. Once the registration process is complete, the vendor's browser
