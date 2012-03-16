@@ -581,7 +581,7 @@ function payswarm_verify($obj) {
   // verify the signature
   $rc = openssl_verify($data, $sig, $pem, OPENSSL_ALGO_SHA1);
   if($rc === 1) {
-      $rval = true;
+    $rval = true;
   }
   else if($rc === -1) {
     // throw exception, error while trying to verify
@@ -610,7 +610,7 @@ function payswarm_decrypt($encrypted) {
   if($encrypted->{'sec:algorithm'} !== 'rsa-aes-128-cbc') {
     $algorithm = $encrypted->{'sec:algorithm'};
     throw new Exception('PaySwarm Security Exception: ' .
-       'Unknown encryption algorithm "' . $algorithm . '"');
+      'Unknown encryption algorithm "' . $algorithm . '"');
   }
 
   // get private key pem
