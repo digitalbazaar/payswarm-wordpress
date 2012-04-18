@@ -398,7 +398,7 @@ function payswarm_jsonld_has_type($obj, $type) {
     $types = is_array($obj->{'@type'}) ?
       $obj->{'@type'} : array($obj->{'@type'});
     $length = count($types);
-    for($t = 0; $t < $length and !$rval; ++$t) {
+    for($t = 0; $t < $length && !$rval; ++$t) {
       $rval = ($types[$t] == $type);
     }
   }
@@ -530,7 +530,7 @@ function payswarm_verify($obj) {
   );
   $obj = jsonld_frame($obj, $frame);
 
-  if($obj === null or $obj->{'sec:signature'} === null) {
+  if($obj === null || $obj->{'sec:signature'} === null) {
     throw new Exception('PaySwarm Security Exception: ' .
       'The message is not digitally signed.');
   }
@@ -551,7 +551,7 @@ function payswarm_verify($obj) {
   // ensure signature timestamp is +/- 15 minutes
   $now = time();
   $time = date_create($sprop->{'dc:created'})->getTimestamp();
-  if($time < ($now - 15*60) or $time > ($now + 15*60)) {
+  if($time < ($now - 15*60) || $time > ($now + 15*60)) {
     throw new Exception('PaySwarm Security Exception: ' .
       'The message digital signature timestamp is out of range.');
   }
@@ -722,12 +722,12 @@ function payswarm_authority_cache_license($host, $id) {
   $rval = payswarm_post_jsonld($url, $msg);
 
   // check license
-  if(!$rval or !is_object($rval)) {
+  if(!$rval || !is_object($rval)) {
     throw new Exception('PaySwarm Exception: ' .
       'Invalid response when caching license.');
   }
   // FIXME: use JSON-LD exceptions
-  else if(is_object($rval) and property_exists($rval, 'type')) {
+  else if(is_object($rval) && property_exists($rval, 'type')) {
     throw new Exception('PaySwarm Exception: ' .
       'Error while caching license: ' .
       $rval->{'message'} . ', ' . $rval->{'type'});
@@ -991,7 +991,7 @@ function payswarm_is_listing_valid($listing) {
   $now = date_create();
   $valid_from = date_create($listing->{'ps:validFrom'});
   $valid_until = date_create($listing->{'ps:validUntil'});
-  return ($now >= $valid_from and $now <= $valid_until);
+  return ($now >= $valid_from && $now <= $valid_until);
 }
 
 /* end of file, omit ?> */

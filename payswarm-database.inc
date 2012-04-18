@@ -154,7 +154,7 @@ function payswarm_database_is_post_authorized($session, $post_id) {
   $rval = false;
   global $wpdb;
 
-  if($session !== false and $session['identity_id'] !== null) {
+  if($session !== false && $session['identity_id'] !== null) {
     $identity_hash = payswarm_database_hash_identity_id(
       $session['identity_id']);
     $rval = $wpdb->get_row($wpdb->prepare(
@@ -165,7 +165,7 @@ function payswarm_database_is_post_authorized($session, $post_id) {
       ' WHERE p.identity_hash=%s AND' .
       ' p.identity_id=%s AND ap.post_id=%s LIMIT 1',
       $identity_hash, $session['identity_id'], $post_id), ARRAY_A);
-    $rval = (is_array($rval) and count($rval) === 1);
+    $rval = (is_array($rval) && count($rval) === 1);
   }
 
   return $rval;

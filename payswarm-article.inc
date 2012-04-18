@@ -298,7 +298,7 @@ function payswarm_update_post_info($post_id) {
     $license_id = get_post_meta($post_id, '_payswarm_license_id', true);
     $license_hash = get_post_meta($post_id, '_payswarm_license_hash', true);
   }
-  if(!$license_id or !$license_hash) {
+  if(!$license_id || !$license_hash) {
     $license_id = $options['default_license_id'];
     $license_hash = $options['default_license_hash'];
   }
@@ -655,7 +655,7 @@ function payswarm_save_post_data($post_id) {
   $edit_allowed = current_user_can('edit_post', $post_id);
 
   // only update on non-auto and non-revision save
-  if($autosave or $revision or !$edit_allowed) {
+  if($autosave || $revision || !$edit_allowed) {
     return $post_id;
   }
 
@@ -731,7 +731,7 @@ function payswarm_save_post_data($post_id) {
 function payswarm_update_post_meta($post_id, $meta_key, $meta_value) {
   // special-case license ID/hash because values are tied together
   if(($meta_key === '_payswarm_license_id' or
-    $meta_key === '_payswarm_license_hash') and $meta_value === '') {
+    $meta_key === '_payswarm_license_hash') && $meta_value === '') {
     $options = payswarm_get_options();
     $license_id = $options['default_license'];
     $license_hash = $options['default_license_hash'];
@@ -742,13 +742,13 @@ function payswarm_update_post_meta($post_id, $meta_key, $meta_value) {
   }
   else {
     if($meta_key === '_payswarm_price') {
-      if(!is_numeric($meta_value) or floatval($meta_value) < 0) {
+      if(!is_numeric($meta_value) || floatval($meta_value) < 0) {
         $options = payswarm_get_options();
         $meta_value = $options['default_price'];
       }
     }
     else if($meta_key === '_payswarm_authority_rate') {
-      if(!is_numeric($meta_value) or floatval($meta_value) < 0) {
+      if(!is_numeric($meta_value) || floatval($meta_value) < 0) {
         $options = payswarm_get_options();
         $meta_value = $options['default_authority_rate'];
       }
