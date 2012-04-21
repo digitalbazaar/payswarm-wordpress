@@ -631,8 +631,8 @@ function payswarm_decrypt($encrypted) {
   }
 
   // decrypt IV
-  $encIv = base64_decode($encrypted->{'sec:iv'});
-  if(openssl_private_decrypt($encIv, $iv, $pkey) === false) {
+  $enc_iv = base64_decode($encrypted->{'sec:iv'});
+  if(openssl_private_decrypt($enc_iv, $iv, $pkey) === false) {
     throw new Exception('PaySwarm Security Exception: ' .
       'Failed to decrypt the initialization vector (IV).');
   }
