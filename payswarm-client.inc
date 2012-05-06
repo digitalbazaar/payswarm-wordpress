@@ -493,7 +493,7 @@ function payswarm_sign($obj, $date=null, $nonce='') {
 
   // add signature to object
   $obj->{'sec:signature'} = (object)array(
-    '@type' => 'sec:JsonLdSignature',
+    '@type' => 'sec:GraphSignature2012',
     'dc:created' => $date,
     'dc:creator' => $public_key_id,
     'sec:signatureValue' => $signature
