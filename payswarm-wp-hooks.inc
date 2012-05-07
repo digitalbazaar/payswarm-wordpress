@@ -82,7 +82,7 @@ function payswarm_wp_get_jsonld($url) {
     'headers' => array('Accept' => 'application/ld+json')
   ));
   if(is_wp_error($response)) {
-    throw new Exception("Could not GET url: $url" .
+    throw new Exception("Could not GET url: '$url', " .
       $response->get_error_message());
   }
   return wp_remote_retrieve_body($response);
@@ -107,7 +107,7 @@ function payswarm_wp_post_jsonld($data, $url) {
     'sslverify' => PAYSWARM_VERIFY_SSL)
   );
   if(is_wp_error($response)) {
-    throw new Exception("Could not POST to url: $url" .
+    throw new Exception("Could not POST to url: '$url', " .
       $response->get_error_message());
   }
   return wp_remote_retrieve_body($response);

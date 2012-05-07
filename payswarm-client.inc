@@ -994,4 +994,34 @@ function payswarm_is_listing_valid($listing) {
   return ($now >= $valid_from && $now <= $valid_until);
 }
 
+/**
+ * Default POST JSON-LD hook.
+ *
+ * @param string $data the JSON-LD data.
+ * @param string $url the URL.
+ *
+ * @return string the retrieved JSON-LD.
+ */
+function payswarm_default_post_jsonld($data, $url) {
+  $opts = array('http' =>
+    array(
+      'method' => "POST",
+      'header' =>
+        "Accept: application/ld+json\r\n" .
+        "Content-Type: application/ld+json\r\n" .
+        "Content-Length: " . strlen($data) . "\r\n" .
+        "User-Agent: PaySwarm PHP Client/1.0\r\n",
+      'content' => $data));
+  $stream = stream_context_create($opts);
+  $result = @file_get_contents($url, false, $stream);
+  if($result === false) {
+    throw new Exception("Could not POST to url: '$url'");
+  }
+  return $result;
+}
+
+/** Default GET/POST JSON-LD hooks. */
+payswarm_add_hook('get_jsonld', 'jsonld_resolve_url');
+payswarm_add_hook('post_jsonld', 'payswarm_default_post_jsonld');
+
 /* end of file, omit ?> */
