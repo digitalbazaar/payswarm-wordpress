@@ -257,8 +257,7 @@ function payswarm_jsonld_encode($input) {
 }
 
 /**
- * Decodes a serialized JSON-LD object and resolves any @context URLs using
- * the preset API hook 'get_jsonld'.
+ * Decodes a serialized JSON-LD object.
  *
  * @package payswarm
  * @since 1.0
@@ -269,12 +268,7 @@ function payswarm_jsonld_encode($input) {
  */
 function payswarm_jsonld_decode($input) {
   // JSON-decode
-  $rval = json_decode($input);
-  if($rval !== null) {
-    // resolve any @context URLs
-    $rval = jsonld_resolve($rval, 'payswarm_jsonld_resolve');
-  }
-  return $rval;
+  return json_decode($input);
 }
 
 /**
@@ -461,7 +455,8 @@ function payswarm_check_nonce($nonce) {
  */
 function payswarm_hash($obj) {
   // SHA-1 hash JSON
-  return sha1(payswarm_jsonld_encode(jsonld_normalize($obj)));
+  $options = array('format' => 'application/nquads');
+  return sha1(jsonld_normalize($obj, $options));
 }
 
 /**
@@ -487,8 +482,9 @@ function payswarm_sign($obj, $date=null, $nonce='') {
   $public_key_id = call_user_func($payswarm_hooks['get_public_key_id']);
 
   // generate base64-encoded signature
-  $json = payswarm_jsonld_encode(jsonld_normalize($obj));
-  openssl_sign($nonce . $date . $json, $signature, $pem, OPENSSL_ALGO_SHA1);
+  $options = array('format' => 'application/nquads');
+  $nquads = jsonld_normalize($obj, $options);
+  openssl_sign($nonce . $date . $nquads, $signature, $pem, OPENSSL_ALGO_SHA1);
   $signature = base64_encode($signature);
 
   // add signature to object
@@ -529,15 +525,16 @@ function payswarm_verify($obj) {
     )
   );
   $obj = jsonld_frame($obj, $frame);
-
-  if($obj === null || $obj->{'sec:signature'} === null) {
+  if(count($obj->{'@graph'}) === 0 ||
+    $obj->{'@graph'}[0]->{'sec:signature'} === null) {
     throw new Exception('PaySwarm Security Exception: ' .
       'The message is not digitally signed.');
   }
 
   // save signature property and remove from object
-  $sprop = $obj->{'sec:signature'};
-  unset($obj->{'sec:signature'});
+  $result = $obj->{'@graph'}[0];
+  $sprop = $result->{'sec:signature'};
+  unset($result->{'sec:signature'});
 
   // check the message nonce
   if(isset($sprop->{'sec:nonce'})) {
@@ -569,11 +566,11 @@ function payswarm_verify($obj) {
   }
 
   // normalize and serialize the object
-  $normalized = jsonld_normalize($obj);
-  $json = payswarm_jsonld_encode($normalized);
+  $options = array('format' => 'application/nquads');
+  $nquads = jsonld_normalize($obj, $options);
 
   // get the data to hash
-  $data = $sprop->{'sec:nonce'} . $sprop->{'dc:created'} . $json;
+  $data = $sprop->{'sec:nonce'} . $sprop->{'dc:created'} . $nquads;
 
   // decode the signature value
   $sig = base64_decode($sprop->{'sec:signatureValue'});
