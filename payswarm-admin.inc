@@ -297,6 +297,8 @@ function payswarm_render_register_page() {
  * @since 1.0
  */
 function payswarm_render_register_section() {
+  // show settings errors, if any
+  settings_errors();
   ?>
   <p>PaySwarm enables you to sell your articles, photos, and other content
     directly to your website visitors without requiring them to create accounts
@@ -383,6 +385,8 @@ function payswarm_render_options_page() {
  * @since 1.0
  */
 function payswarm_render_options_section() {
+  // show settings errors, if any
+  settings_errors();
   ?>
   <p>This page allows you to configure the default settings used for content
     your customers must pay for to access. The PaySwarm plugin allows you
