@@ -49,7 +49,7 @@ function payswarm_get_options() {
   return get_option('payswarm_options', array(
     'default_price' => '0.05',
     'default_license_id' => 'http://purl.org/payswarm/licenses/blogging',
-    'default_license_hash' => '7ede2ee1c8e0f3125b7758df2b6b47115dd596ce',
+    'default_license_hash' => 'bf955b5f8dc1fb824990b804ebf16577be3f6615',
     'default_authority_rate' => '10.0'
   ));
 }
@@ -470,7 +470,7 @@ function payswarm_validate_options($input) {
   $options = payswarm_get_options();
 
   // validate default price
-  if(payswarm_is_decimal($input['default_price']) and
+  if(payswarm_is_decimal($input['default_price']) &&
     floatval($input['default_price']) >= 0) {
     $options['default_price'] = sprintf('%0.7f', $input['default_price']);
   }
@@ -505,8 +505,8 @@ function payswarm_validate_options($input) {
   }
 
   // validate default authority rate
-  if(payswarm_is_decimal($input['default_authority_rate']) and
-    floatval($input['default_authority_rate']) >= 0 and
+  if(payswarm_is_decimal($input['default_authority_rate']) &&
+    floatval($input['default_authority_rate']) >= 0 &&
     floatval($input['default_authority_rate']) <= 100) {
     $options['default_authority_rate'] = sprintf(
       '%0.7f', $input['default_authority_rate']);
@@ -531,8 +531,8 @@ function payswarm_validate_options($input) {
  *
  * @return true if the format is valid, false if not.
  */
-function payswarm_is_decimal($input, $format='%.0f') {
-  return sprintf($format, $input) === $input;
+function payswarm_is_decimal($input, $format='%0.7f') {
+  return sprintf($format, $input) == $input;
 }
 
 /**
