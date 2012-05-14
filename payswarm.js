@@ -32,7 +32,7 @@ function toggleAssetInformation(postId) {
 function showAuthorityPopup(form) {
   var width = 700;
   var height = 600;
-  var popup = window.open('', 'payswarm',
+  window.open('', 'payswarm',
     'left=' + ((screen.width-width)/2) +
     ',top=' + ((screen.height-height)/2) +
     ',width=' + width +
