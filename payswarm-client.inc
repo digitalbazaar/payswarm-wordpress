@@ -338,7 +338,7 @@ function payswarm_post_jsonld($url, $obj) {
 function payswarm_cache_jsonld($id, $obj) {
   global $payswarm_hooks;
   if(isset($payswarm_hooks['cache_jsonld'])) {
-    call_user_func($payswarm_hooks['cache_jsonld'], $id, $obj, 60*60*24);
+    call_user_func($payswarm_hooks['cache_jsonld'], $id, $obj, 60*5);
   }
 }
 
