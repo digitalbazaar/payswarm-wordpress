@@ -620,18 +620,24 @@ function payswarm_decrypt($encrypted) {
       'Failed to load the private key.');
   }
 
-  // decrypt symmetric key
+  // decrypt symmetric key (be lenient with padding)
   $encryption_key = base64_decode($encrypted->{'sec:encryptionKey'});
-  if(openssl_private_decrypt($encryption_key, $skey, $pkey) === false) {
-    throw new Exception('PaySwarm Security Exception: ' .
-      'Failed to decrypt the encryption key.');
+  if(openssl_private_decrypt(
+    $encryption_key, $skey, $pkey, OPENSSL_PKCS1_OAEP_PADDING) === false) {
+    if(openssl_private_decrypt($encryption_key, $skey, $pkey) === false) {
+      throw new Exception('PaySwarm Security Exception: ' .
+        'Failed to decrypt the encryption key.');
+    }
   }
 
   // decrypt IV
   $enc_iv = base64_decode($encrypted->{'sec:iv'});
-  if(openssl_private_decrypt($enc_iv, $iv, $pkey) === false) {
-    throw new Exception('PaySwarm Security Exception: ' .
-      'Failed to decrypt the initialization vector (IV).');
+  if(openssl_private_decrypt(
+    $enc_iv, $iv, $pkey, OPENSSL_PKCS1_OAEP_PADDING) === false) {
+    if(openssl_private_decrypt($enc_iv, $iv, $pkey) === false) {
+      throw new Exception('PaySwarm Security Exception: ' .
+        'Failed to decrypt the initialization vector (IV).');
+    }
   }
 
   // free private key resource
