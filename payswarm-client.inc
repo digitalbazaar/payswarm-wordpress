@@ -227,8 +227,7 @@ function payswarm_create_default_jsonld_context() {
     'dc:created' => (object)array('@type' => 'xsd:dateTime'),
     'com:date' => (object)array('@type' => 'xsd:dateTime'),
     'ps:validFrom' => (object)array('@type' => 'xsd:dateTime'),
-    'ps:validUntil' => (object)array('@type' => 'xsd:dateTime'),
-    'ps:licenseTemplate' => (object)array('@type' => 'rdf:XMLLiteral')
+    'ps:validUntil' => (object)array('@type' => 'xsd:dateTime')
   );
 }
 
