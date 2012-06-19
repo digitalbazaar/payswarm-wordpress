@@ -751,7 +751,8 @@ function payswarm_create_key_pair() {
   global $payswarm_hooks;
 
   // generate the key pair
-  $key_pair = openssl_pkey_new();
+  $config = array('private_key_bits' => 2048);
+  $key_pair = openssl_pkey_new($config);
 
   // get private key and public key in PEM format
   openssl_pkey_export($key_pair, $private_key);
@@ -999,12 +1000,12 @@ function payswarm_is_listing_valid($listing) {
 /**
  * Default POST JSON-LD hook.
  *
- * @param string $data the JSON-LD data.
  * @param string $url the URL.
+ * @param string $data the JSON-LD data.
  *
  * @return string the retrieved JSON-LD.
  */
-function payswarm_default_post_jsonld($data, $url) {
+function payswarm_default_post_jsonld($url, $data) {
   $opts = array('http' =>
     array(
       'method' => "POST",
