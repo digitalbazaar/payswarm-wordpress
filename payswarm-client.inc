@@ -222,7 +222,6 @@ function payswarm_create_default_jsonld_context() {
     'ps:authority' => (object)array('@type' => '@id'),
     'ps:contentUrl' => (object)array('@type' => '@id'),
     'ps:license' => (object)array('@type' => '@id'),
-    'sec:signer' => (object)array('@type' => '@id'),
     'com:payeePosition' => (object)array('@type' => 'xsd:integer'),
     'dc:created' => (object)array('@type' => 'xsd:dateTime'),
     'com:date' => (object)array('@type' => 'xsd:dateTime'),
@@ -387,9 +386,8 @@ function payswarm_jsonld_resolve($url) {
 function payswarm_jsonld_has_type($obj, $type) {
   $rval = false;
 
-  if(property_exists($obj, '@type')) {
-    $types = is_array($obj->{'@type'}) ?
-      $obj->{'@type'} : array($obj->{'@type'});
+  if(property_exists($obj, 'type')) {
+    $types = is_array($obj->type) ? $obj->type : array($obj->type);
     $length = count($types);
     for($t = 0; $t < $length && !$rval; ++$t) {
       $rval = ($types[$t] == $type);
@@ -409,7 +407,7 @@ function payswarm_jsonld_has_type($obj, $type) {
 function payswarm_get_public_key($id) {
   // retrieve public key
   $key = payswarm_get_jsonld($id, false);
-  if(!property_exists($key, 'sec:publicKeyPem')) {
+  if(!property_exists($key, 'publicKeyPem')) {
     throw new Exception('PaySwarm Security Exception: ' .
       'Could not get public key. Unknown format.');
   }
@@ -487,15 +485,15 @@ function payswarm_sign($obj, $date=null, $nonce='') {
   $signature = base64_encode($signature);
 
   // add signature to object
-  $obj->{'sec:signature'} = (object)array(
-    '@type' => 'sec:GraphSignature2012',
-    'dc:created' => $date,
-    'dc:creator' => $public_key_id,
-    'sec:signatureValue' => $signature
+  $obj->signature = (object)array(
+    'type' => 'sec:GraphSignature2012',
+    'created' => $date,
+    'creator' => $public_key_id,
+    'signatureValue' => $signature
   );
   // add optional nonce
   if($nonce) {
-    $obj->{'sec:signature'}->{'sec:nonce'} = $nonce;
+    $obj->signature->nonce = $nonce;
   }
 }
 
@@ -516,28 +514,28 @@ function payswarm_verify($obj) {
   // frame message to retrieve signature
   $frame = (object)array(
     '@context' => payswarm_create_default_jsonld_context(),
-    'sec:signature' => (object)array(
-      'dc:created' => new stdClass(),
-      'dc:creator' => new stdClass(),
-      'sec:signatureValue' => new stdClass(),
-      'sec:nonce' => new stdClass()
+    'signature' => (object)array(
+      'created' => new stdClass(),
+      'creator' => new stdClass(),
+      'signatureValue' => new stdClass(),
+      'nonce' => new stdClass()
     )
   );
   $obj = jsonld_frame($obj, $frame);
   if(count($obj->{'@graph'}) === 0 ||
-    $obj->{'@graph'}[0]->{'sec:signature'} === null) {
+    $obj->{'@graph'}[0]->signature === null) {
     throw new Exception('PaySwarm Security Exception: ' .
       'The message is not digitally signed.');
   }
 
   // save signature property and remove from object
   $result = $obj->{'@graph'}[0];
-  $sprop = $result->{'sec:signature'};
-  unset($result->{'sec:signature'});
+  $sprop = $result->signature;
+  unset($result->signature);
 
   // check the message nonce
-  if(isset($sprop->{'sec:nonce'})) {
-    $valid_nonce = payswarm_check_nonce($sprop->{'sec:nonce'});
+  if(isset($sprop->nonce)) {
+    $valid_nonce = payswarm_check_nonce($sprop->nonce);
     if(!$valid_nonce) {
       throw new Exception('PaySwarm Security Exception: ' .
         'The message nonce is invalid.');
@@ -546,19 +544,19 @@ function payswarm_verify($obj) {
 
   // ensure signature timestamp is +/- 15 minutes
   $now = time();
-  $time = date_create($sprop->{'dc:created'})->getTimestamp();
+  $time = date_create($sprop->created)->getTimestamp();
   if($time < ($now - 15*60) || $time > ($now + 15*60)) {
     throw new Exception('PaySwarm Security Exception: ' .
       'The message digital signature timestamp is out of range.');
   }
 
   // fetch the public key for the signature
-  $key = payswarm_get_public_key($sprop->{'dc:creator'});
-  $pem = $key->{'sec:publicKeyPem'};
+  $key = payswarm_get_public_key($sprop->creator);
+  $pem = $key->publicKeyPem;
 
   // verify key owner
   $trusted = call_user_func(
-    $payswarm_hooks['is_trusted_authority'], $key->{'ps:owner'});
+    $payswarm_hooks['is_trusted_authority'], $key->owner);
   if(!$trusted) {
     throw new Exception('PaySwarm Security Exception: ' .
       'The message is not signed by a trusted public key.');
@@ -569,10 +567,10 @@ function payswarm_verify($obj) {
   $nquads = jsonld_normalize($obj, $options);
 
   // get the data to hash
-  $data = $sprop->{'sec:nonce'} . $sprop->{'dc:created'} . $nquads;
+  $data = $sprop->nonce . $sprop->created . $nquads;
 
   // decode the signature value
-  $sig = base64_decode($sprop->{'sec:signatureValue'});
+  $sig = base64_decode($sprop->signatureValue);
 
   // verify the signature
   $rc = openssl_verify($data, $sig, $pem, OPENSSL_ALGO_SHA1);
@@ -603,8 +601,8 @@ function payswarm_verify($obj) {
 function payswarm_decrypt($encrypted) {
   global $payswarm_hooks;
 
-  if($encrypted->{'sec:algorithm'} !== 'rsa-aes-128-cbc') {
-    $algorithm = $encrypted->{'sec:algorithm'};
+  if($encrypted->cipherAlgorithm !== 'rsa-aes-128-cbc') {
+    $algorithm = $encrypted->cipherAlgorithm;
     throw new Exception('PaySwarm Security Exception: ' .
       'Unknown encryption algorithm "' . $algorithm . '"');
   }
@@ -620,7 +618,7 @@ function payswarm_decrypt($encrypted) {
   }
 
   // decrypt symmetric key (be lenient with padding)
-  $encryption_key = base64_decode($encrypted->{'sec:encryptionKey'});
+  $encryption_key = base64_decode($encrypted->cipherKey);
   if(openssl_private_decrypt(
     $encryption_key, $skey, $pkey, OPENSSL_PKCS1_OAEP_PADDING) === false) {
     if(openssl_private_decrypt($encryption_key, $skey, $pkey) === false) {
@@ -630,7 +628,7 @@ function payswarm_decrypt($encrypted) {
   }
 
   // decrypt IV
-  $enc_iv = base64_decode($encrypted->{'sec:iv'});
+  $enc_iv = base64_decode($encrypted->initializationVector);
   if(openssl_private_decrypt(
     $enc_iv, $iv, $pkey, OPENSSL_PKCS1_OAEP_PADDING) === false) {
     if(openssl_private_decrypt($enc_iv, $iv, $pkey) === false) {
@@ -643,9 +641,7 @@ function payswarm_decrypt($encrypted) {
   openssl_pkey_free($pkey);
 
   // decrypt data
-  $data = openssl_decrypt(
-    $encrypted->{'sec:data'}, 'aes128', $skey, false, $iv);
-
+  $data = openssl_decrypt($encrypted->cipherData, 'aes128', $skey, false, $iv);
   if($data === false) {
     throw new Exception('PaySwarm Security Exception: ' .
       'Failed to decrypt the encrypted message due to an incorrect ' .
@@ -710,14 +706,14 @@ function payswarm_get_authority_config($host) {
  * @return stdClass the license.
  */
 function payswarm_authority_cache_license($host, $id) {
-  // get licenses service
+  // get license service
   $config = payswarm_get_authority_config($host);
-  $url = $config->{'ps:licensesService'};
+  $url = $config->licenseService;
 
   // sign message
   $msg = new stdClass();
   $msg->{'@context'} = payswarm_create_default_jsonld_context();
-  $msg->{'ps:license'} = $id;
+  $msg->license = $id;
   payswarm_sign($msg);
 
   // post message
@@ -732,7 +728,7 @@ function payswarm_authority_cache_license($host, $id) {
   else if(is_object($rval) && property_exists($rval, 'type')) {
     throw new Exception('PaySwarm Exception: ' .
       'Error while caching license: ' .
-      $rval->{'message'} . ', ' . $rval->{'type'});
+      $rval->message . ', ' . $rval->type);
   }
 
   return $rval;
@@ -781,7 +777,7 @@ function payswarm_add_trusted_authority($host) {
   $config = payswarm_get_authority_config($host);
 
   // store authority identity
-  $id = $config->{'ps:authorityIdentity'};
+  $id = $config->authorityIdentity;
   call_user_func($payswarm_hooks['store_trusted_authority'], $id);
 }
 
@@ -807,7 +803,7 @@ function payswarm_get_register_vendor_url(
 
   // get register URL from authority config
   $config = payswarm_get_authority_config($host);
-  $register_url = $config->{'ps:vendorRegistrationService'};
+  $register_url = $config->vendorRegistrationService;
 
   // use existing public key if overwrite is not specified
   $public_key = false;
@@ -849,7 +845,7 @@ function payswarm_register_vendor($msg) {
   // check message type
   if(payswarm_jsonld_has_type($prefs, 'err:Error')) {
     throw new Exception('PaySwarm Registration Exception: ' .
-      $msg->{'err:message'});
+      $msg->errorMessage);
   }
   else if(!payswarm_jsonld_has_type($prefs, 'ps:Preferences')) {
     throw new Exception('PaySwarm Registration Exception: ' .
@@ -857,8 +853,7 @@ function payswarm_register_vendor($msg) {
   }
 
   // store public key ID
-  call_user_func(
-    $payswarm_hooks['store_public_key_id'], $prefs->{'sec:publicKey'});
+  call_user_func($payswarm_hooks['store_public_key_id'], $prefs->publicKey);
 
   return $prefs;
 }
@@ -879,7 +874,7 @@ function payswarm_get_purchase_url(
 
   // get purchase URL from authority config
   $config = payswarm_get_authority_config($host);
-  $purchase_url = $config->{'ps:paymentService'};
+  $purchase_url = $config->paymentService;
 
   // add query parameters to the purchase URL
   $purchase_url = payswarm_add_query_vars(
@@ -923,7 +918,7 @@ function payswarm_get_receipt($msg) {
   // check message type
   if(payswarm_jsonld_has_type($receipt, 'err:Error')) {
     throw new Exception('PaySwarm Purchase Exception: ' .
-      $receipt->{'err:message'});
+      $receipt->errorMessage);
   }
   // FIXME: use ps:Receipt
   else if(!payswarm_jsonld_has_type($receipt, 'ps:Contract')) {
@@ -932,9 +927,9 @@ function payswarm_get_receipt($msg) {
   }
 
   // validate contract
-  if(!property_exists($receipt, 'ps:assetAcquirer') or
-    !property_exists($receipt, 'ps:asset') or
-    !property_exists($receipt, 'ps:license')) {
+  if(!property_exists($receipt, 'assetAcquirer') or
+    !property_exists($receipt, 'asset') or
+    !property_exists($receipt, 'license')) {
     throw new Exception('PaySwarm Purchase Exception: ' .
       'Unknown Contract format.');
   }
@@ -992,8 +987,8 @@ function payswarm_get_query_vars($url) {
  */
 function payswarm_is_listing_valid($listing) {
   $now = date_create();
-  $valid_from = date_create($listing->{'ps:validFrom'});
-  $valid_until = date_create($listing->{'ps:validUntil'});
+  $valid_from = date_create($listing->validFrom);
+  $valid_until = date_create($listing->validUntil);
   return ($now >= $valid_from && $now <= $valid_until);
 }
 

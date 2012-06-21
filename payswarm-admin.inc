@@ -185,8 +185,8 @@ function payswarm_complete_registration($response) {
     $prefs = payswarm_register_vendor($response);
 
     // save vendor information, set registered
-    update_option('payswarm_vendor_id', $prefs->{'ps:owner'});
-    update_option('payswarm_financial_account', $prefs->{'com:destination'});
+    update_option('payswarm_vendor_id', $prefs->owner);
+    update_option('payswarm_financial_account', $prefs->destination);
     update_option('payswarm_registered', 1);
 
     // trigger resign of listings

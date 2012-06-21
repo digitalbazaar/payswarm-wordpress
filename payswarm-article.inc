@@ -30,7 +30,7 @@ function payswarm_init_purchase() {
   $info = payswarm_get_post_info($post_id);
   $callback = plugins_url() . '/payswarm/payswarm-access.php?p=' . $post_id;
   $url = payswarm_get_purchase_url(
-    $host, $info['listing']->{'@id'}, $info['listing_hash'], $callback);
+    $host, $info['listing']->id, $info['listing_hash'], $callback);
 
   // redirect to the PaySwarm Authority payment URL
   header('HTTP/1.1 303 See Other');
@@ -51,9 +51,9 @@ function payswarm_complete_purchase($response) {
     $receipt = payswarm_get_receipt($response);
 
     // get contract info
-    $identity_id = $receipt->{'ps:assetAcquirer'};
-    $asset = $receipt->{'ps:asset'};
-    $license = $receipt->{'ps:license'};
+    $identity_id = $receipt->assetAcquirer;
+    $asset = $receipt->asset;
+    $license = $receipt->license;
 
     // get post ID from asset URL (strip after hash)
     $post_id = url_to_postid(preg_replace('/#.*/', '', $asset));
@@ -131,7 +131,7 @@ function payswarm_is_asset_stale($asset) {
 
   // compare dates
   $resign = date_create($resign);
-  $created = date_create($asset->{'sec:signature'}->{'dc:created'});
+  $created = date_create($asset->signature->created);
   if($created <= $resign) {
     return true;
   }
@@ -271,12 +271,12 @@ function payswarm_update_post_info($post_id) {
   // create asset
   $asset = (object)array(
     '@context' => payswarm_create_default_jsonld_context(),
-    '@id' => $post_url . '#asset',
-    '@type' => array('ps:Asset', 'ps:WebPage'),
-    'dc:creator' => (object)array('foaf:name' => $post_author),
-    'dc:title' => $post_title,
-    'ps:assetProvider' => get_option('payswarm_vendor_id'),
-    'ps:contentUrl' => $post_url
+    'id' => $post_url . '#asset',
+    'type' => array('ps:Asset', 'ps:WebPage'),
+    'creator' => (object)array('fullName' => $post_author),
+    'title' => $post_title,
+    'assetProvider' => get_option('payswarm_vendor_id'),
+    'assetContent' => $post_url
   );
 
   // sign asset
@@ -306,38 +306,38 @@ function payswarm_update_post_info($post_id) {
   // create listing
   $listing = (object)array(
     '@context' => payswarm_create_default_jsonld_context(),
-    '@id' => $post_url . '#listing',
-    '@type' => array('ps:Listing', 'gr:Offering'),
-    'com:payee' => array(
+    'id' => $post_url . '#listing',
+    'type' => array('ps:Listing', 'gr:Offering'),
+    'payee' => array(
       (object)array(
-        '@id' => $post_url . '#listing-payee',
-        '@type' => 'com:Payee',
-        'com:payeePosition' => 0,
-        'com:destination' => get_option('payswarm_financial_account'),
-        'com:rate' => get_post_meta($post_id, '_payswarm_price', true),
-        'com:rateType' => 'com:FlatAmount',
-        'rdfs:comment' => "Payment for $post_title by $post_author."
+        'id' => $post_url . '#listing-payee',
+        'type' => 'com:Payee',
+        'payeePosition' => 0,
+        'destination' => get_option('payswarm_financial_account'),
+        'payeeRate' => get_post_meta($post_id, '_payswarm_price', true),
+        'payeeRateType' => 'com:FlatAmount',
+        'comment' => "Payment for $post_title by $post_author."
       )
     ),
-    'com:payeeRule' => array(
+    'payeeRule' => array(
       (object)array(
-        '@type' => 'com:PayeeRule',
-        'com:destinationOwnerType' => 'ps:Authority',
-        'com:maximumRate' => get_post_meta(
+        'type' => 'com:PayeeRule',
+        'destinationOwnerType' => 'ps:Authority',
+        'maximumPayeeRate' => get_post_meta(
           $post_id, '_payswarm_authority_rate', true),
-        'com:rateContext' => array(
+        'payeeRateContext' => array(
           'com:Inclusive',
           'com:Tax',
           'com:TaxExempt'),
-        'com:rateType' => 'com:Percentage'
+        'payeeRateType' => 'com:Percentage'
       )
     ),
-    'ps:asset' => $asset->{'@id'},
-    'ps:assetHash' => payswarm_hash($asset),
-    'ps:license' => $license_id,
-    'ps:licenseHash' => $license_hash,
-    'ps:validFrom' => $valid_from,
-    'ps:validUntil' => $valid_until
+    'asset' => $asset->id,
+    'assetHash' => payswarm_hash($asset),
+    'license' => $license_id,
+    'licenseHash' => $license_hash,
+    'validFrom' => $valid_from,
+    'validUntil' => $valid_until
   );
 
   // sign listing
@@ -379,23 +379,22 @@ function payswarm_get_post_info_rdfa($post_id) {
   $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
 
   // set vars for template
-  $payee = $info['listing']->{'com:payee'}[0];
-  $payee_rule = $info['listing']->{'com:payeeRule'}[0];
+  $payee = $info['listing']->payee[0];
+  $payee_rule = $info['listing']->payeeRule[0];
   $vars = array(
     'asset' => $info['asset'],
     'listing' => $info['listing'],
     'listing_hash' => $info['listing_hash'],
-    'asset_types' => join(' ', $info['asset']->{'@type'}),
-    'listing_types' => join(' ', $info['listing']->{'@type'}),
+    'asset_types' => join(' ', $info['asset']->type),
+    'listing_types' => join(' ', $info['listing']->type),
     'access_url' => $access_url,
     'pslogo_url' => $pslogo_url,
     'payee' => $payee,
-    'payee_rate' => sprintf('%1.02f', $payee->{'com:rate'}),
-    'payee_comment' => htmlentities($payee->{'rdfs:comment'}),
+    'payee_rate' => sprintf('%1.02f', $payee->payeeRate),
+    'payee_comment' => htmlentities($payee->comment),
     'payee_rule' => $payee_rule,
-    'post_title' => htmlentities($info['asset']->{'dc:title'}),
-    'post_author' =>
-      htmlentities($info['asset']->{'dc:creator'}->{'foaf:name'}),
+    'post_title' => htmlentities($info['asset']->title),
+    'post_author' => htmlentities($info['asset']->creator->fullName),
     'text_access' => __('Access'),
     'text_view_full_article' => __('View the full article for'),
     'text_view_offer_details' => __('View offer details'),
@@ -573,8 +572,8 @@ function payswarm_render_meta_box() {
   }
 
   // get payee and payee rule from listing
-  $payee = $info['listing']->{'com:payee'}[0];
-  $payee_rule = $info['listing']->{'com:payeeRule'}[0];
+  $payee = $info['listing']->payee[0];
+  $payee_rule = $info['listing']->payeeRule[0];
 
   // output nonce field (required to prevent forgery attacks)
   $plugin = plugin_basename(__FILE__);
@@ -588,7 +587,7 @@ function payswarm_render_meta_box() {
     <p>
       <input class="right" type="text" id="payswarm_price"
         name="payswarm_price"
-        value="<?php echo $payee->{'com:rate'}; ?>" />
+        value="<?php echo $payee->payeeRate; ?>" />
       <span>The price for access to non-free content.</span>
     </p>
 
@@ -598,7 +597,7 @@ function payswarm_render_meta_box() {
     <p>
       <input type="text" id="payswarm_authority_rate"
         name="payswarm_authority_rate"
-        value="<?php echo $payee_rule->{'com:maximumRate'}; ?>" />
+        value="<?php echo $payee_rule->maximumPayeeRate; ?>" />
       <span>The percentage of the price to allow a PaySwarm Authority to
         collect.</span>
     </p>
@@ -623,7 +622,7 @@ function payswarm_render_meta_box() {
       <p>
         <input type="text" id="payswarm_license_id"
           name="payswarm_license_id" size="44"
-          value="<?php echo $info['listing']->{'ps:license'}; ?>" />
+          value="<?php echo $info['listing']->license; ?>" />
         <span>The license to associate with the content when it is sold.</span>
       </p>
     </div>
