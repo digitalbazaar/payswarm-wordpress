@@ -199,6 +199,12 @@ function payswarm_add_hook($hook, $func) {
  */
 function payswarm_create_default_jsonld_context() {
   return (object)array(
+    // aliases
+    'id' => '@id',
+    'type' => '@type',
+
+    // prefixes
+    'ccard' => 'http://purl.org/commerce/creditcard#',
     'com' => 'http://purl.org/commerce#',
     'dc' => 'http://purl.org/dc/terms/',
     'foaf' => 'http://xmlns.com/foaf/0.1/',
@@ -210,23 +216,136 @@ function payswarm_create_default_jsonld_context() {
     'sec' => 'http://purl.org/security#',
     'vcard' => 'http://www.w3.org/2006/vcard/ns#',
     'xsd' => 'http://www.w3.org/2001/XMLSchema#',
-    'com:destination' => (object)array('@type' => '@id'),
-    'com:destinationOwnerType' => (object)array('@type' => '@id'),
-    'com:payee' => (object)array('@type' => '@id'),
-    'com:rateContext' => (object)array('@type' => '@id'),
-    'com:rateType' => (object)array('@type' => '@id'),
-    'com:source' => (object)array('@type' => '@id'),
-    'dc:creator' => (object)array('@type' => '@id'),
-    'ps:asset' => (object)array('@type' => '@id'),
-    'ps:assetProvider' => (object)array('@type' => '@id'),
-    'ps:authority' => (object)array('@type' => '@id'),
-    'ps:contentUrl' => (object)array('@type' => '@id'),
-    'ps:license' => (object)array('@type' => '@id'),
-    'com:payeePosition' => (object)array('@type' => 'xsd:integer'),
-    'dc:created' => (object)array('@type' => 'xsd:dateTime'),
-    'com:date' => (object)array('@type' => 'xsd:dateTime'),
-    'ps:validFrom' => (object)array('@type' => 'xsd:dateTime'),
-    'ps:validUntil' => (object)array('@type' => 'xsd:dateTime')
+
+    // general
+    'address' => (object)array('@id' => 'vcard:adr', '@type' => '@id'),
+    'comment' => 'rdfs:comment',
+    'countryName' => 'vcard:country-name',
+    'created' =>
+      (object)array('@id' => 'dc:created', '@type' => 'xsd:dateTime'),
+    'creator' => (object)array('@id' => 'dc:creator', '@type' => '@id'),
+    'depiction' => (object)array('@id' => 'foaf:depiction', '@type' => '@id'),
+    'description' => 'dc:description',
+    'email' => 'foaf:mbox',
+    'fullName' => 'vcard:fn',
+    'homepage' => (object)array('@id' => 'foaf:homepage', '@type' => '@id'),
+    'label' => 'rdfs:label',
+    'locality' => 'vcard:locality',
+    'postalCode' => 'vcard:postal-code',
+    'region' => 'vcard:region',
+    'streetAddress' => 'vcard:street-address',
+    'title' => 'dc:title',
+
+    // bank
+    'bankAccount' => 'bank:account',
+    'bankRouting' => 'bank:routing',
+
+    // credit card
+    'cardAddress' => (object)array('@id' => 'ccard:address', '@type' => '@id'),
+    'cardBrand' => (object)array('@id' => 'ccard:brand', '@type' => '@id'),
+    'cardCvm' => 'ccard:cvm',
+    // FIXME: use xsd mo/yr types?
+    'cardExpMonth' => 'ccard:expMonth',
+    'cardExpYear' => 'ccard:expYear',
+    'cardNumber' => 'ccard:number',
+
+    // commerce
+    'account' => (object)array('@id' => 'com:account', '@type' => '@id'),
+    'accountOwnerType' =>
+      (object)array('@id' => 'com:accountOwnerType', '@type' => '@id'),
+    'amount' => 'com:amount',
+    'balance' => 'com:balance',
+    'currency' => 'com:currency',
+    'destination' =>
+      (object)array('@id' => 'com:destination', '@type' => '@id'),
+    'escrow' => 'com:escrow',
+    'forTransaction' =>
+      (object)array('@id' => 'com:forTransaction', '@type' => '@id'),
+    'limitation' =>
+      (object)array('@id' => 'com:payeeLimitation', '@type' => '@id'),
+    'maximumAmount' => 'com:maximumAmount',
+    'maximumPayeeRate' => 'com:maximumPayeeRate',
+    'minimumAmount' => 'com:minimumAmount',
+    'payee' =>
+      (object)array(
+         '@id' => 'com:payee', '@type' => '@id', '@container' => '@set'),
+    // FIXME: be more strict with nonNegativeInteger?
+    'payeeLimitation' =>
+      (object)array('@id' => 'com:payeeLimitation', '@type' => '@id'),
+    'payeePosition' =>
+      (object)array('@id' => 'com:payeePosition', '@type' => 'xsd:integer'),
+    'payeeRate' => 'com:payeeRate',
+    'payeeRateContext' =>
+      (object)array('@id' => 'com:payeeRateContext', '@type' => '@id'),
+    'payeeRateType' =>
+      (object)array('@id' => 'com:payeeRateType', '@type' => '@id'),
+    'paymentGateway' => 'com:paymentGateway',
+    'paymentMethod' =>
+      (object)array('@id' => 'com:paymentMethod', '@type' => '@id'),
+    'paymentToken' => 'com:paymentToken',
+    'referenceId' => 'com:referenceId',
+    'settled' =>
+      (object)array('@id' => 'com:settled', '@type' => 'xsd:dateTime'),
+    'source' => (object)array('@id' => 'com:source', '@type' => '@id'),
+    'transfer' => (object)array('@id' => 'com:transfer', '@type' => '@id'),
+    'vendor' => (object)array('@id' => 'com:vendor', '@type' => '@id'),
+    'voided' => (object)array('@id' => 'com:voided', '@type' => 'xsd:dateTime'),
+
+    // error
+    // FIXME
+    // 'errorMessage' => 'err:message'
+
+    // payswarm
+    'asset' =>(object)array('@id' => 'ps:asset', '@type' => '@id'),
+    'assetAcquirer' =>
+      (object)array('@id' => 'ps:assetAcquirer', '@type' => '@id'),
+    // FIXME: support inline content
+    'assetContentUrl' =>
+      (object)array('@id' => 'ps:assetContentUrl', '@type' => '@id'),
+    'assetHash' => 'ps:assetHash',
+    'assetProvider' =>
+      (object)array('@id' => 'ps:assetProvider', '@type' => '@id'),
+    'authority' => (object)array('@id' => 'ps:authority', '@type' => '@id'),
+    'identityHash' => 'ps:identityHash',
+    // FIXME: move?
+    'ipv4Address' => 'ps:ipv4Address',
+    'license' => (object)array('@id' => 'ps:license', '@type' => '@id'),
+    'licenseHash' => 'ps:licenseHash',
+    'licenseTemplate' => 'ps:licenseTemplate',
+    'licenseTerms' =>
+      (object)array('@id' => 'ps:licenseTerms', '@type' => '@id'),
+    'listing' => (object)array('@id' => 'ps:listing', '@type' => '@id'),
+    'listingHash' => 'ps:listingHash',
+    // FIXME: move?
+    'owner' => (object)array('@id' => 'ps:owner', '@type' => '@id'),
+    'preferences' => (object)array('@id' => 'ps:preferences', '@type' => '@id'),
+    'validFrom' =>
+      (object)array('@id' => 'ps:validFrom', '@type' => 'xsd:dateTime'),
+    'validUntil' =>
+      (object)array('@id' => 'ps:validUntil', '@type' => 'xsd:dateTime'),
+
+    // security
+    'cipherAlgorithm' => 'sec:cipherAlgorithm',
+    'cipherData' => 'sec:cipherData',
+    'cipherKey' => 'sec:cipherKey',
+    'digestAlgorithm' => 'sec:digestAlgorithm',
+    'digestValue' => 'sec:digestValue',
+    'expiration' =>
+      (object)array('@id' => 'sec:expiration', '@type' => 'xsd:dateTime'),
+    'initializationVector' => 'sec:initializationVector',
+    'nonce' => 'sec:nonce',
+    'normalizationAlgorithm' => 'sec:normalizationAlgorithm',
+    'password' => 'sec:password',
+    'privateKey' => (object)array('@id' => 'sec:privateKey', '@type' => '@id'),
+    'privateKeyPem' => 'sec:privateKeyPem',
+    'publicKey' => (object)array('@id' => 'sec:publicKey', '@type' => '@id'),
+    'publicKeyPem' => 'sec:publicKeyPem',
+    'publicKeyService' =>
+      (object)array('@id' => 'sec:publicKeyService', '@type' => '@id'),
+    'revoked' => (object)array('@id' => 'sec:revoked', '@type' => '@id'),
+    'signature' => 'sec:signature',
+    'signatureAlgorithm' => 'sec:signatureAlgorithm',
+    'signatureValue' => 'sec:signatureValue'
   );
 }
 
