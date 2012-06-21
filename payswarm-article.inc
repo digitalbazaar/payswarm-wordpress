@@ -121,6 +121,11 @@ function payswarm_is_asset_stale($asset) {
     return true;
   }
 
+  // old asset format, consider stale
+  if(!isset($asset->signature)) {
+    return true;
+  }
+
   // no resign date set yet
   $resign = get_option('payswarm_resign_if_before', true);
   if($resign === true) {
