@@ -27,7 +27,7 @@ $vars['output'] = <<<RDFA
       </span>
       <span rel="com:payee" resource="{$vars['payee']->id}">
         <span>$</span>
-        <abbr property="com:rate" title="{$vars['payee']->payeeRate}"
+        <abbr property="com:payeeRate" title="{$vars['payee']->payeeRate}"
           content="{$vars['payee']->payeeRate}">{$vars['payee_rate']}
         </abbr>
       </span>
@@ -38,10 +38,10 @@ $vars['output'] = <<<RDFA
     </form>
   </div>
   <div id="payswarm-asset-info-$post_id" class="hidden">
-    <a rel="ps:contentUrl" href="{$vars['asset']->assetContent}"
+    <a rel="ps:assetContent" href="{$vars['asset']->assetContent}"
       property="dc:title">{$vars['post_title']}</a> by
     <span rel="dc:creator">
-      <span property="foaf:name">{$vars['post_author']}</span>
+      <span property="vcard:fn">{$vars['post_author']}</span>
     </span>.
     Offered by
     <a rel="ps:assetProvider"
@@ -77,12 +77,12 @@ $vars['output'] = <<<RDFA
     <span about="{$vars['listing']->id}">
       <span rel="com:payeeRule">
         <span typeof="com:PayeeRule">
-          <span rel="com:destinationOwnerType" resource="ps:Authority"></span>
-          <span rel="com:rateType" resource="com:Percentage"></span>
-          <span rel="com:rateContext" resource="com:Inclusive"></span>
-          <span rel="com:rateContext" resource="com:Tax"></span>
-          <span rel="com:rateContext" resource="com:TaxExempt"></span>
-          <span property="com:maximumRate"
+          <span rel="com:accountOwnerType" resource="ps:Authority"></span>
+          <span rel="com:payeeRateType" resource="com:Percentage"></span>
+          <span rel="com:payeeRateContext" resource="com:Inclusive"></span>
+          <span rel="com:payeeRateContext" resource="com:Tax"></span>
+          <span rel="com:payeeRateContext" resource="com:TaxExempt"></span>
+          <span property="com:maximumPayeeRate"
             content="{$vars['payee_rule']->maximumPayeeRate}"></span>
         </span>
       </span>
@@ -104,7 +104,7 @@ $vars['output'] = <<<RDFA
       typeof="{$vars['payee']->type}">
       <span property="com:payeePosition" datatype="xsd:integer" content="0">
       </span>
-      <a rel="com:rateType" href="http://purl.org/commerce#FlatAmount">
+      <a rel="com:payeeRateType" href="http://purl.org/commerce#FlatAmount">
         Flat-rate payment</a> will be deposited into
       <a rel="com:destination"
         href="{$vars['payee']->destination}">this account</a>.
