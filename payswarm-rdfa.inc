@@ -6,7 +6,7 @@ $vars['output'] = <<<RDFA
 <div
   xmlns:com="http://purl.org/commerce#"
   xmlns:dc="http://purl.org/dc/terms/"
-  xmlns:foaf="http://xmlns.com/foaf/0.1/"
+  xmlns:vcard="http://www.w3.org/2006/vcard/ns#"
   xmlns:gr="http://purl.org/goodrelations/v1#"
   xmlns:ps="http://purl.org/payswarm#"
   xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
