@@ -261,17 +261,18 @@ function payswarm_create_default_jsonld_context() {
     'escrow' => 'com:escrow',
     'forTransaction' =>
       (object)array('@id' => 'com:forTransaction', '@type' => '@id'),
-    'limitation' =>
-      (object)array('@id' => 'com:payeeLimitation', '@type' => '@id'),
     'maximumAmount' => 'com:maximumAmount',
     'maximumPayeeRate' => 'com:maximumPayeeRate',
     'minimumAmount' => 'com:minimumAmount',
     'payee' =>
       (object)array(
          '@id' => 'com:payee', '@type' => '@id', '@container' => '@set'),
-    // FIXME: be more strict with nonNegativeInteger?
+    'payeeRule' =>
+      (object)array(
+         '@id' => 'com:payeeRule', '@type' => '@id', '@container' => '@set'),
     'payeeLimitation' =>
       (object)array('@id' => 'com:payeeLimitation', '@type' => '@id'),
+    // FIXME: be more strict with nonNegativeInteger?
     'payeePosition' =>
       (object)array('@id' => 'com:payeePosition', '@type' => 'xsd:integer'),
     'payeeRate' => 'com:payeeRate',
@@ -300,8 +301,8 @@ function payswarm_create_default_jsonld_context() {
     'assetAcquirer' =>
       (object)array('@id' => 'ps:assetAcquirer', '@type' => '@id'),
     // FIXME: support inline content
-    'assetContentUrl' =>
-      (object)array('@id' => 'ps:assetContentUrl', '@type' => '@id'),
+    'assetContent' =>
+      (object)array('@id' => 'ps:assetContent', '@type' => '@id'),
     'assetHash' => 'ps:assetHash',
     'assetProvider' =>
       (object)array('@id' => 'ps:assetProvider', '@type' => '@id'),
@@ -653,7 +654,7 @@ function payswarm_verify($obj) {
   unset($result->signature);
 
   // check the message nonce
-  if(isset($sprop->nonce)) {
+  if(property_exists($sprop, 'nonce')) {
     $valid_nonce = payswarm_check_nonce($sprop->nonce);
     if(!$valid_nonce) {
       throw new Exception('PaySwarm Security Exception: ' .
@@ -720,7 +721,8 @@ function payswarm_verify($obj) {
 function payswarm_decrypt($encrypted) {
   global $payswarm_hooks;
 
-  if($encrypted->cipherAlgorithm !== 'rsa-aes-128-cbc') {
+  if(!property_exists($encrypted, 'cipherAlgorithm') ||
+    $encrypted->cipherAlgorithm !== 'rsa-aes-128-cbc') {
     $algorithm = $encrypted->cipherAlgorithm;
     throw new Exception('PaySwarm Security Exception: ' .
       'Unknown encryption algorithm "' . $algorithm . '"');
@@ -844,7 +846,7 @@ function payswarm_authority_cache_license($host, $id) {
       'Invalid response when caching license.');
   }
   // FIXME: use JSON-LD exceptions
-  else if(is_object($rval) && property_exists($rval, 'type')) {
+  else if(is_object($rval) && property_exists($rval, 'message')) {
     throw new Exception('PaySwarm Exception: ' .
       'Error while caching license: ' .
       $rval->message . ', ' . $rval->type);
