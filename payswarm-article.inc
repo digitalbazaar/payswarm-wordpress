@@ -5,6 +5,27 @@ require_once('payswarm-database.inc');
 require_once('payswarm-session.inc');
 require_once('payswarm-admin.inc');
 
+
+/**
+ * Includes all CSS files that are needed by the public-facing front-end.
+ *
+ * @package payswarm
+ * @since 1.0
+ */
+function payswarm_enqueue_styles() {
+  wp_enqueue_style('payswarm-style', PAYSWARM_PLUGIN_URL . 'payswarm.css');
+}
+
+/**
+ * Includes all script files that are needed by the public-facing front-end.
+ *
+ * @package payswarm
+ * @since 1.0
+ */
+function payswarm_enqueue_scripts() {
+  wp_enqueue_script('payswarm', PAYSWARM_PLUGIN_URL . 'payswarm.js');
+}
+
 /**
  * Initiates an article purchase with a PaySwarm Authority.
  *

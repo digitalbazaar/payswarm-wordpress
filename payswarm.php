@@ -48,12 +48,10 @@ add_action('add_meta_boxes', 'payswarm_add_meta_boxes');
 add_action('save_post', 'payswarm_save_post_data');
 add_action('added_postmeta', 'payswarm_added_postmeta');
 add_action('updated_postmeta', 'payswarm_updated_postmeta');
+add_action('wp_enqueue_styles', 'payswarm_enqueue_styles');
+add_action('wp_enqueue_scripts', 'payswarm_enqueue_scripts');
 
 // add filters for text that the PaySwarm plugin will modify
 add_filter('the_content', 'payswarm_filter_paid_content');
-
-// include payswarm CSS and JavaScript
-wp_enqueue_style('payswarm-style', PAYSWARM_PLUGIN_URL . 'payswarm.css');
-wp_enqueue_script('payswarm', PAYSWARM_PLUGIN_URL . 'payswarm.js');
 
 /* end of file, omit ?> */
