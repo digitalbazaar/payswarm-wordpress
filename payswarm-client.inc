@@ -1107,6 +1107,9 @@ function payswarm_get_query_vars($url) {
  * @return boolean true if the validity period still applies, false if not.
  */
 function payswarm_is_listing_valid($listing) {
+  if(!$listing) {
+    return false;
+  }
   $now = date_create();
   $valid_from = date_create($listing->validFrom);
   $valid_until = date_create($listing->validUntil);

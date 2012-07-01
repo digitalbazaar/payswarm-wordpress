@@ -6,7 +6,7 @@ require_once('payswarm-session.inc');
 require_once('payswarm-admin.inc');
 
 /**
- * Includes all CSS and script files that are needed by the 
+ * Includes all CSS and script files that are needed by the
  * public-facing website.
  *
  * @package payswarm
@@ -129,9 +129,10 @@ function payswarm_close_purchase_popup($url) {
  */
 function payswarm_is_asset_stale($asset) {
   // no asset
-  if($asset === '') {
+  if(!$asset) {
     return true;
   }
+  return true;
 
   // old asset format, consider stale
   if(!isset($asset->signature)) {
@@ -229,12 +230,18 @@ function payswarm_get_post_info($post_id) {
 
   // get asset
   $asset = get_post_meta($post_id, '_payswarm_asset', true);
+  if(is_string($asset)) {
+    $asset = json_decode($asset);
+  }
 
   // if asset is stale, force update
   $update = payswarm_is_asset_stale($asset);
   if(!$update) {
     // get listing
     $listing = get_post_meta($post_id, '_payswarm_listing', true);
+    if(is_string($listing)) {
+      $listing = json_decode($listing);
+    }
 
     // if listing is not valid, force update
     $update = !payswarm_is_listing_valid($listing);
@@ -364,8 +371,8 @@ function payswarm_update_post_info($post_id) {
   $listing_hash = payswarm_hash($listing);
 
   // update post meta
-  update_post_meta($post_id, '_payswarm_asset', $asset);
-  update_post_meta($post_id, '_payswarm_listing', $listing);
+  update_post_meta($post_id, '_payswarm_asset', json_encode($asset));
+  update_post_meta($post_id, '_payswarm_listing', json_encode($listing));
   update_post_meta($post_id, '_payswarm_listing_hash', $listing_hash);
 
   return array(
@@ -788,7 +795,7 @@ function payswarm_update_post_meta($post_id, $meta_key, $meta_value) {
  * @param integer $meta_id the ID of the metadata.
  */
 function payswarm_added_postmeta($meta_id) {
-  $meta = get_post_meta_by_id($meta_id);
+  $meta = get_metadata_by_mid('post', $meta_id);
   $revision = wp_is_post_revision($meta->post_id);
 
   // do not perform the signature update/sanitize if the post is a revision
@@ -819,7 +826,7 @@ function payswarm_added_postmeta($meta_id) {
  * @param integer $meta_id the ID of the metadata.
  */
 function payswarm_updated_postmeta($meta_id) {
-  $meta = get_post_meta_by_id($meta_id);
+  $meta = get_metadata_by_mid('post', $meta_id);
   $revision = wp_is_post_revision($meta->post_id);
 
   // do not perform the signature update/sanitize if the post is a revision
