@@ -49,6 +49,7 @@ add_action('save_post', 'payswarm_save_post_data');
 add_action('added_postmeta', 'payswarm_added_postmeta');
 add_action('updated_postmeta', 'payswarm_updated_postmeta');
 add_action('wp_enqueue_scripts', 'payswarm_enqueue_scripts');
+add_action('admin_enqueue_scripts', 'payswarm_enqueue_scripts');
 
 // add filters for text that the PaySwarm plugin will modify
 add_filter('the_content', 'payswarm_filter_paid_content');
