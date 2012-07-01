@@ -132,7 +132,6 @@ function payswarm_is_asset_stale($asset) {
   if(!$asset) {
     return true;
   }
-  return true;
 
   // old asset format, consider stale
   if(!isset($asset->signature)) {
