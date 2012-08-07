@@ -209,6 +209,7 @@ function payswarm_create_default_jsonld_context() {
     'dc' => 'http://purl.org/dc/terms/',
     'foaf' => 'http://xmlns.com/foaf/0.1/',
     'gr' => 'http://purl.org/goodrelations/v1#',
+    'pto' => 'http://www.productontology.org/id/',
     'ps' => 'http://purl.org/payswarm#',
     'psp' => 'http://purl.org/payswarm/preferences#',
     'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',

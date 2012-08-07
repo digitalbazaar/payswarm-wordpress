@@ -8,6 +8,7 @@ $vars['output'] = <<<RDFA
   xmlns:dc="http://purl.org/dc/terms/"
   xmlns:vcard="http://www.w3.org/2006/vcard/ns#"
   xmlns:gr="http://purl.org/goodrelations/v1#"
+  xmlns:pto="http://www.productontology.org/id/"
   xmlns:ps="http://purl.org/payswarm#"
   xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
   xmlns:sec="http://purl.org/security#"
