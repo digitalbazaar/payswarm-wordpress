@@ -317,7 +317,7 @@ function payswarm_update_post_info($post_id) {
   $asset = (object)array(
     '@context' => payswarm_create_default_jsonld_context(),
     'id' => $post_url . '#asset',
-    'type' => array('ps:Asset', 'ps:WebPage'),
+    'type' => array('ps:Asset', 'pto:WebPage'),
     'creator' => (object)array('fullName' => $post_author),
     'title' => $post_title,
     'assetProvider' => get_option('payswarm_vendor_id'),
