@@ -239,7 +239,7 @@ function payswarm_create_default_jsonld_context() {
 
     // bank
     'bankAccount' => 'bank:account',
-    'bankRouting' => 'bank:routing',
+    'bankRoutingNumber' => 'bank:routing',
 
     // credit card
     'cardAddress' => (object)array('@id' => 'ccard:address', '@type' => '@id'),
