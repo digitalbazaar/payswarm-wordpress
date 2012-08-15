@@ -64,7 +64,7 @@ WordPress wp-content/plugins/ directory and hack on the plugin directly by
 doing the following:
 
     cd wp-content/plugins/
-    git clone http://github.com/digitalbazaar/payswarm-wordpress payswarm
+    git clone git://github.com/digitalbazaar/payswarm-wordpress.git payswarm
     cd payswarm
     make
 
