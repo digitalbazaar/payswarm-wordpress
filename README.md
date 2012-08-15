@@ -17,24 +17,37 @@ transactional friction. It ensures that the people that you want to support are
 automatically rewarded for their hard work.
 
 We need Web-native payment technology that is designed to work with how the Web
-works, not with how the banks and the credit card companies work. The
-technology can be integrated directly into WordPress-based websites with
-support for Drupal and other content management systems in the works. It has a
-simple, well-defined API, like Twitter, that allows for universal payment on
-the web.
+works. This technology can be integrated directly into WordPress-based 
+websites with support for Drupal and other content management systems in 
+the works. It has a simple, well-defined API, like Twitter, that allows for 
+universal payment on the web.
 
-Installing the WordPress Plugin
--------------------------------
+WordPress Plugin
+----------------
 
 This is a [WordPress][] plugin that implements a PaySwarm client. This plugin
 can be installed in a normal WordPress 3.x site, allowing page authors to
 charge a small fee for selected articles that they write.
 
-If you downloaded the ZIP file:
+Pre-requisites
+--------------
 
-1. Uncompress the ZIP file: unzip payswarm-X.Y.Z.zip.
-2. Rename the 'payswarm-X.Y.Z' directory to 'payswarm'.
-3. Place the directory into your WordPress wp-content/plugins/ directory.
+Before you install this plugin, you will need the following software:
+
+1. A [WordPress][] website (version 3.x or greater)
+2. [PHP][] (version 5.3 or greater)
+3. [wget][]
+4. [make][]
+
+Basic Development Install
+-------------------------
+
+Go to your WordPress installation and run the following commands:
+
+    cd wp-content/plugins/
+    git clone git://github.com/digitalbazaar/payswarm-wordpress.git payswarm
+    cd payswarm
+    make
 
 Getting the Source Code
 -----------------------
@@ -70,4 +83,6 @@ doing the following:
 
 [PaySwarm]: http://payswarm.com/
 [WordPress]: http://wordpress.org/
-
+[PHP]: http://www.php.net/
+[wget]: http://www.gnu.org/software/wget/
+[make]: http://www.gnu.org/software/make/
