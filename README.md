@@ -49,6 +49,31 @@ Go to your WordPress installation and run the following commands:
     cd payswarm
     make
 
+PaySwarm Plugin Setup
+---------------------
+
+To configure your new PaySwarm plugin for WordPress, you must do the
+following steps:
+
+1. [Register for a PaySwarm account][].
+2. Login as administrator on your WordPress website.
+3. Go to the PaySwarm Plugin page (select Plugins -> PaySwarm).
+4. Click the "Register this site" button.
+5. Click the "Add Identity" button.
+6. Enter the name of your WordPress website (e.g. "Good Food").
+7. Select "Vendor" for the type of Identity.
+8. Enter the address for your website (e.g. "http://foo.bar.com/").
+8. Enter a short description of your website (e.g. "Good Food strives to discover and share delicous recipes.").
+9. Enter the name of your new WordPress website Financial Account (e.g. "Blogging Revenue").
+10. Select "Public" for the type of Account Visibility.
+11. Click the "Add" button.
+12. Enter the name of your Access Key Label (e.g. "Good Food Vendor Key 2012-09-25")
+13. Click the "Register" button.
+14. If there are no errors when you get back to the WordPress plugin page, registration was successful.
+15. Go to the PaySwarm Plugin Settings page (select Settings -> PaySwarm).
+16. Set the default price for articles (e.g. "0.05")
+17. Click the "Save Changes" button.
+
 Getting the Source Code
 -----------------------
 
@@ -86,3 +111,4 @@ doing the following:
 [PHP]: http://www.php.net/
 [wget]: http://www.gnu.org/software/wget/
 [make]: http://www.gnu.org/software/make/
+[Register for a PaySwarm Account]: https://dev.payswarm.com/profile/create
