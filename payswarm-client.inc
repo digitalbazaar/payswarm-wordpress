@@ -289,7 +289,8 @@ function payswarm_create_default_jsonld_context() {
     'settled' =>
       (object)array('@id' => 'com:settled', '@type' => 'xsd:dateTime'),
     'source' => (object)array('@id' => 'com:source', '@type' => '@id'),
-    'transfer' => (object)array('@id' => 'com:transfer', '@type' => '@id'),
+    'transfer' => (object)array(
+      '@id' => 'com:transfer', '@type' => '@id', '@container' => '@set'),
     'vendor' => (object)array('@id' => 'com:vendor', '@type' => '@id'),
     'voided' => (object)array('@id' => 'com:voided', '@type' => 'xsd:dateTime'),
 
