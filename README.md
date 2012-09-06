@@ -29,6 +29,20 @@ This is a [WordPress][] plugin that implements a PaySwarm client. This plugin
 can be installed in a normal WordPress 3.x site, allowing page authors to
 charge a small fee for selected articles that they write.
 
+Once the plugin is installed, the author of a post needs to insert a single
+divider between the unpaid and paid content in the article, like so:
+
+```html
+This is unpaid content
+<!-- payswarm -->
+This is paid content
+```
+
+A reader will not be able to see the paid content portion until they have
+purchased the article. The price of the article, the license that is granted
+upon purchase, and other article-specific values can be changed on a 
+per-article basis.
+
 Pre-requisites
 --------------
 
