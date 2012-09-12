@@ -49,7 +49,7 @@ function payswarm_get_options() {
   return get_option('payswarm_options', array(
     'default_price' => '0.05',
     'default_license_id' => 'http://purl.org/payswarm/licenses/blogging',
-    'default_license_hash' => 'bf955b5f8dc1fb824990b804ebf16577be3f6615',
+    'default_license_hash' => 'ad8f72fcb47e867231d957c0bffb4c02d275926a',
     'default_authority_rate' => '10.0'
   ));
 }
