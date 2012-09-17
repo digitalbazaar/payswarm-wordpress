@@ -239,6 +239,8 @@ function payswarm_create_default_jsonld_context() {
 
     // bank
     'bankAccount' => 'bank:account',
+    'bankAccountType' =>
+      (object)array('@id' => 'bank:accountType', '@type' => '@id'),
     'bankRoutingNumber' => 'bank:routing',
 
     // credit card
