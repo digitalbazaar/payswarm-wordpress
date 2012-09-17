@@ -242,7 +242,6 @@ function payswarm_create_default_jsonld_context() {
     'bankRoutingNumber' => 'bank:routing',
 
     // credit card
-    'cardAddress' => (object)array('@id' => 'ccard:address', '@type' => '@id'),
     'cardBrand' => (object)array('@id' => 'ccard:brand', '@type' => '@id'),
     'cardCvm' => 'ccard:cvm',
     // FIXME: use xsd mo/yr types?
