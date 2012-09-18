@@ -440,7 +440,7 @@ function payswarm_get_post_info_rdfa($post_id) {
     'payee_rule' => $payee_rule,
     'post_title' => htmlentities($info['asset']->title),
     'post_author' => htmlentities($info['asset']->creator->fullName),
-    'text_access' => __('Access'),
+    'text_access' => __(payswarm_get_session() ? 'Buy' : 'Login'),
     'text_view_full_article' => __('View the full article for'),
     'text_view_offer_details' => __('View offer details'),
     'output' => ''
