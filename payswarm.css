@@ -23,6 +23,28 @@
   background-color: #333;
 }
 
+.payswarm-session {
+  display: block;
+  padding: 2px 4px;
+  font-size: 1em;
+  color: #fff;
+  /*text-shadow: #000 0 0 2px;*/
+  background-color: #390;
+  border: 1px solid #370;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+}
+
+.payswarm-session .right {
+  float: right;
+}
+
+.payswarm-session img {
+  padding: 0 4px;
+  height: 14px;
+  vertical-align: middle;
+}
+
 .purchase, .manage {
   margin: 20px 0;
   padding: 10px;
