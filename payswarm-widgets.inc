@@ -10,7 +10,7 @@ require_once('payswarm-session.inc');
  */
 class PaySwarmSessionWidget extends WP_Widget {
   function PaySwarmSessionWidget() {
-    parent::WP_Widget('PaySwarm_Session', 'PaySwarm Session', array(
+    parent::WP_Widget('payswarm_session', 'PaySwarm Session', array(
       'classname' => 'PaySwarmSessionWidget',
       'description' => 'Indicates whether a PaySwarm session is active.'
     ));
@@ -63,14 +63,28 @@ class PaySwarmSessionWidget extends WP_Widget {
   }*/
 }
 
-/**
- * Installs default PaySwarm widgets on plugin activation.
- */
+// register widgets
+add_action('widgets_init', 'payswarm_init_widgets');
+function payswarm_init_widgets() {
+  register_widget('PaySwarmSessionWidget');
+}
+
+// install default widgets on activation
 function payswarm_install_widgets() {
-  // FIXME: implement me
-  $fp = fopen('/tmp/php.txt', 'a');
-  fwrite($fp, "payswarm plugin activated\n");
-  fclose($fp);
+  // add widget by default if no widget settings are present
+  $settings = get_option('widget_payswarm_session', false);
+  if($settings === false) {
+    // manually create widget settings
+    $settings = array(2 => array(), '_multiwidget' => 1);
+    update_option('widget_payswarm_session', $settings);
+
+    // add widget to beginning of primary-widget-area
+    $sidebars_widgets = wp_get_sidebars_widgets();
+    array_splice(
+      $sidebars_widgets['primary-widget-area'], 0, 0,
+      'payswarm_session-2');
+    wp_set_sidebars_widgets($sidebars_widgets);
+  }
 }
 
 /* end of file, omit ?> */

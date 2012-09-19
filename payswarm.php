@@ -36,12 +36,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 require_once('payswarm-config.inc');
 require_once('payswarm-admin.inc');
 require_once('payswarm-article.inc');
-require_once('payswarm-session-widget.inc');
+require_once('payswarm-widgets.inc');
 
 // handle install/uninstall PaySwarm database
 register_activation_hook(__FILE__, 'payswarm_install_database');
-register_activation_hook(__FILE__, 'payswarm_install_widgets');
 register_deactivation_hook(__FILE__, 'payswarm_uninstall_database');
+
+// install widgets on activation
+register_activation_hook(__FILE__, 'payswarm_install_widgets');
 
 // add actions associated with the WordPress processing
 add_action('admin_init', 'payswarm_admin_init');
@@ -55,11 +57,5 @@ add_action('admin_enqueue_scripts', 'payswarm_enqueue_scripts');
 
 // add filters for text that the PaySwarm plugin will modify
 add_filter('the_content', 'payswarm_filter_paid_content');
-
-// register widgets
-add_action('widgets_init', 'payswarm_init_widgets');
-function payswarm_init_widgets() {
-  register_widget('PaySwarmSessionWidget');
-}
 
 /* end of file, omit ?> */
