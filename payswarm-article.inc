@@ -423,6 +423,14 @@ function payswarm_get_post_info_rdfa($post_id) {
   $access_url = add_query_arg('p', $post_id, $access_url);
   $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
 
+  $session = payswarm_get_session();
+  if($session === false || $session['identity_id'] === null) {
+    $button_text = 'Login';
+  }
+  else {
+    $button_text = 'Buy';
+  }
+
   // set vars for template
   $payee = $info['listing']->payee[0];
   $payee_rule = $info['listing']->payeeRule[0];
@@ -440,7 +448,7 @@ function payswarm_get_post_info_rdfa($post_id) {
     'payee_rule' => $payee_rule,
     'post_title' => htmlentities($info['asset']->title),
     'post_author' => htmlentities($info['asset']->creator->fullName),
-    'text_access' => __(payswarm_get_session() ? 'Buy' : 'Login'),
+    'text_access' => __($button_text),
     'text_view_full_article' => __('View the full article for'),
     'text_view_offer_details' => __('View offer details'),
     'output' => ''

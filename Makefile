@@ -4,9 +4,8 @@ PACKAGE=payswarm-${VERSION}
 .PHONY: prerequisites
 
 prerequisites: jsonld.php
-	@(test -d .git || echo "ERROR: No git repository found, package building will fail.")
-	@(test -n "$(shell which wget)" || echo "ERROR: wget is not installed, retrieving jsonld.php will fail.")
-	@(test -n "$(shell which git)" || echo "ERROR: git is not installed, package building will fail.")
+	@(test -n "$(shell which wget)" || echo "WARNING: wget is not installed, retrieving jsonld.php will fail.")
+	@(test -n "$(shell which git)" || echo "WARNING: git is not installed, package building will fail.")
 
 jsonld.php:
 	@echo -n "Retrieving jsonld.php from github.com... "
@@ -14,6 +13,7 @@ jsonld.php:
 	@echo "done."
 
 package: jsonld.php
+	@(test -d .git || echo "ERROR: No git repository found, package building will fail.")
 	mkdir -p ${PACKAGE}
 	cp -a --parents $(shell git ls-files) jsonld.php ${PACKAGE}
 	rm ${PACKAGE}/Makefile

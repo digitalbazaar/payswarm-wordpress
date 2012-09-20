@@ -36,10 +36,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 require_once('payswarm-config.inc');
 require_once('payswarm-admin.inc');
 require_once('payswarm-article.inc');
+require_once('payswarm-widgets.inc');
 
 // handle install/uninstall PaySwarm database
 register_activation_hook(__FILE__, 'payswarm_install_database');
 register_deactivation_hook(__FILE__, 'payswarm_uninstall_database');
+
+// install widgets on activation
+register_activation_hook(__FILE__, 'payswarm_install_widgets');
 
 // add actions associated with the WordPress processing
 add_action('admin_init', 'payswarm_admin_init');
