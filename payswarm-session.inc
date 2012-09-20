@@ -1,5 +1,13 @@
 <?php
 
+define('PAYSWARM_SESSION_TIMEOUT', 3600);
+
+// get session on plugin initialization to refresh/clear it
+add_action('init', 'payswarm_init_session');
+function payswarm_init_session() {
+  payswarm_get_session();
+}
+
 /**
  * Creates a new PaySwarm session if one doesn't already exist. If one does
  * exist, it will be updated with the given identity ID if it hasn't already
@@ -19,9 +27,12 @@
 function payswarm_create_session($identity_id = null) {
   global $_COOKIE;
 
+  // expiration interval
+  $timeout = PAYSWARM_SESSION_TIMEOUT;
+
   // try to get existing session
   $session = payswarm_get_session($identity_id);
-  $timeout = 0;
+  $now = time();
 
   // no session exists, create a new one
   if($session === false) {
@@ -31,30 +42,24 @@ function payswarm_create_session($identity_id = null) {
     $session = array(
       'id' => md5("$now$random_value"),
       'ip' => $_SERVER['REMOTE_ADDR'],
-      'identity_id' => $identity_id);
-  }
-  // get timeout cookie value
-  else if(array_key_exists('payswarm-session-timeout', $_COOKIE)) {
-    $timeout = $_COOKIE['payswarm-session-timeout'];
+      'identity_id' => $identity_id,
+      'expires' => $now + $timeout,
+      'last_update' => 0);
   }
 
-  // only update cookie every 5 minutes since it requires a write
-  // (timeout is 0 for new sessions, so always write in that case)
-  $now = time();
-  if($now - 300 > $timeout) {
-    // get client IP address
-    $ip = $_SERVER['REMOTE_ADDR'];
+  // only update cookie if a minute has passed since last_update to
+  // throttle writes (timeout is 0 for new sessions, so will always write)
+  if($now - 60 > $session['last_update']) {
+    // update session, auto-clear from DB in 24 hours
+    // 24 hours allows time to show "You've been signed out" warning
+    $expires = $now + $timeout;
+    $session['expires'] = $expires;
+    $session['last_update'] = $now;
+    set_transient('ps_sess_' . $session['id'], $session, $timeout + 24*3600);
 
-    // update session (updates expiration time and identity ID)
-    $timeout = $now + 3600;
-    set_transient('ps_sess_' . $session['id'], $session, 3600);
-
-    // update cookies
+    // update cookie (client cookie is browser-session based)
     global $_SERVER;
-    setcookie(
-      'payswarm-session', $session['id'], $timeout, '/', $_SERVER['HTTP_HOST']);
-    setcookie(
-      'payswarm-timeout', $timeout, $timeout, '/', $_SERVER['HTTP_HOST']);
+    setcookie('payswarm-session', $session['id'], 0, '/');
   }
 
   return $session;
@@ -68,11 +73,15 @@ function payswarm_create_session($identity_id = null) {
  *
  * @param string $identity_id the identity IRI to check against the session,
  *          null for no check.
+ * @param boolean $return_expired if true and a session exists but it is
+ *          expired, return the timestamp for when the session expired instead
+ *          of returning false.
  *
- * @return mixed the active PaySwarm session or false if no such session
- *         exists.
+ * @return mixed either the active PaySwarm session, the expiration timestamp
+ *           for any expired session if $return_expired is true (false
+ *           otherwise), or false if no such session exists.
  */
-function payswarm_get_session($identity_id = null) {
+function payswarm_get_session($identity_id = null, $return_expired = false) {
   global $_COOKIE;
   $session = false;
 
@@ -83,13 +92,24 @@ function payswarm_get_session($identity_id = null) {
     if($session !== false) {
       // ensure client IP address and identity ID match
       $ip = $_SERVER['REMOTE_ADDR'];
-      if($session['ip'] !== $ip or
-        ($identity_id !== $session['identity_id'] and
+      if($session['ip'] !== $ip ||
+        ($identity_id !== $session['identity_id'] &&
         $identity_id !== null)) {
-        // invalid session, clear cookie only
-        payswarm_clear_session_cookie();
         $session = false;
       }
+      else {
+        // check expiration
+        $now = time();
+        $expires = isset($session['expires']) ? $session['expires'] : $now;
+        if($expires <= $now) {
+          $session = $return_expired ? $expires : false;
+        }
+      }
+    }
+
+    if($session === false || is_numeric($session)) {
+      // invalid session, clear cookie only (not server session)
+      payswarm_clear_session_cookie();
     }
   }
 
@@ -126,9 +146,8 @@ function payswarm_clear_session() {
 function payswarm_clear_session_cookie() {
   if(!headers_sent()) {
     global $_SERVER;
-    $expires = time() - 3600;
-    setcookie('payswarm-session', '', $expires, '/', $_SERVER['HTTP_HOST']);
-    setcookie('payswarm-timeout', '', $expires, '/', $_SERVER['HTTP_HOST']);
+    $past = time() - 3600;
+    setcookie('payswarm-session', '', $past, '/');
 
     // clear authority host URL cookie as well
     payswarm_clear_authority_host_cookie();
@@ -145,9 +164,7 @@ function payswarm_clear_session_cookie() {
  */
 function payswarm_set_authority_host_cookie($host) {
   global $_SERVER;
-  $timeout = time() + 3600;
-  setcookie(
-    'payswarm-authority-host', $host, $timeout, '/', $_SERVER['HTTP_HOST']);
+  setcookie('payswarm-authority-host', $host, 0, '/');
 }
 
 /**
@@ -181,9 +198,8 @@ function payswarm_get_authority_host_cookie() {
 function payswarm_clear_authority_host_cookie() {
   if(!headers_sent()) {
     global $_SERVER;
-    $expires = time() - 3600;
-    setcookie('payswarm-authority-host', '',
-      $expires, '/', $_SERVER['HTTP_HOST']);
+    $past = time() - 3600;
+    setcookie('payswarm-authority-host', '', $past, '/');
   }
 }
 

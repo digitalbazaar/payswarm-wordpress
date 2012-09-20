@@ -24,20 +24,27 @@ class PaySwarmSessionWidget extends WP_Widget {
    */
   function widget($args, $instance) {
     extract($args);
-    echo $before_widget;
 
-    $session = payswarm_get_session();
-    if($session && $session['identity_id'] !== null) {
+    $session = payswarm_get_session(null, $return_expired=true);
+    $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
+    if(is_array($session) && $session['identity_id'] !== null) {
       $url = plugins_url() . '/payswarm/payswarm-logout.php?redirect=' .
         urlencode($_SERVER['REQUEST_URI']);
-      $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
-      echo "<span class=\"payswarm-session\" title=\"Logged into PaySwarm as '{$session['identity_id']}'\"><img src=\"$pslogo_url\" />Logged into PaySwarm <span class=\"right\">(<a href=\"$url\">Logout</a>)</span></span>";
+      echo $before_widget;
+      echo "<span class=\"payswarm-session\" title=\"Logged into PaySwarm as '{$session['identity_id']}'\"><img src=\"$pslogo_url\" /> Logged into PaySwarm <span class=\"right\">(<a href=\"$url\">Logout</a>)</span></span>";
+      echo $after_widget;
+    }
+    // session expired
+    else if(is_numeric($session)) {
+      echo $before_widget;
+      echo "<span class=\"payswarm-session\"><img src=\"$pslogo_url\" /> You've been logged out</span>";
+      echo $after_widget;
     }/*
     else {
-      echo "<span class=\"payswarm-session\">Not logged into PaySwarm</span>";
+      echo $before_widget;
+      echo "<span class=\"payswarm-session\"><img src=\"$pslogo_url\" /> Not logged into PaySwarm</span>";
+      echo $after_widget;
     }*/
-
-    echo $after_widget;
   }
 
   /**
