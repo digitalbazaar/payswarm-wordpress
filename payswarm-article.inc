@@ -264,8 +264,16 @@ function payswarm_get_post_info($post_id) {
       $listing = json_decode($listing);
     }
 
+    // if listing payees do not contain payee groups, force update
+    foreach($listing->payee as $payee) {
+      if(!property_exists($payee, 'payeeGroup')) {
+        $update = true;
+        break;
+      }
+    }
+
     // if listing is not valid, force update
-    $update = !payswarm_is_listing_valid($listing);
+    $update = $update || !payswarm_is_listing_valid($listing);
     if(!$update) {
       // get listing hash
       $listing_hash = get_post_meta($post_id, '_payswarm_listing_hash', true);
@@ -357,8 +365,8 @@ function payswarm_update_post_info($post_id) {
       (object)array(
         'id' => $post_url . '#listing-payee',
         'type' => 'com:Payee',
-        'payeePosition' => 0,
         'destination' => get_option('payswarm_financial_account'),
+        'payeeGroup' => 'vendor',
         'payeeRate' => get_post_meta($post_id, '_payswarm_price', true),
         'payeeRateType' => 'com:FlatAmount',
         'comment' => "Payment for $post_title by $post_author."
@@ -370,11 +378,7 @@ function payswarm_update_post_info($post_id) {
         'accountOwnerType' => 'ps:Authority',
         'maximumPayeeRate' => get_post_meta(
           $post_id, '_payswarm_authority_rate', true),
-        'payeeRateContext' => array(
-          'com:Inclusive',
-          'com:Tax',
-          'com:TaxExempt'),
-        'payeeRateType' => 'com:Percentage'
+        'payeeRateType' => 'com:PercentInclusive'
       )
     ),
     'asset' => $asset->id,

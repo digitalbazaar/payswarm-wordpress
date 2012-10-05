@@ -31,7 +31,7 @@ $vars['output'] = <<<RDFA
         <abbr property="com:payeeRate" title="{$vars['payee']->payeeRate}"
           content="{$vars['payee']->payeeRate}">{$vars['payee_rate']}
         </abbr>
-      </span>
+        </span>
       <span class="view-more"
         onclick="javascript:toggleAssetInformation($post_id);">
         {$vars['text_view_offer_details']}
@@ -79,10 +79,7 @@ $vars['output'] = <<<RDFA
       <span rel="com:payeeRule">
         <span typeof="com:PayeeRule">
           <span rel="com:accountOwnerType" resource="ps:Authority"></span>
-          <span rel="com:payeeRateType" resource="com:Percentage"></span>
-          <span rel="com:payeeRateContext" resource="com:Inclusive"></span>
-          <span rel="com:payeeRateContext" resource="com:Tax"></span>
-          <span rel="com:payeeRateContext" resource="com:TaxExempt"></span>
+          <span rel="com:payeeRateType" resource="com:PercentInclusive"></span>
           <span property="com:maximumPayeeRate"
             content="{$vars['payee_rule']->maximumPayeeRate}"></span>
         </span>
@@ -103,7 +100,7 @@ $vars['output'] = <<<RDFA
     </span>
     <span about="{$vars['payee']->id}"
       typeof="{$vars['payee']->type}">
-      <span property="com:payeePosition" datatype="xsd:integer" content="0">
+      <span property="com:payeeGroup" content="{$vars['payee']->payeeGroup}">
       </span>
       <a rel="com:payeeRateType" href="http://purl.org/commerce#FlatAmount">
         Flat-rate payment</a> will be deposited into

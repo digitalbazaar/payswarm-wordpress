@@ -268,20 +268,21 @@ function payswarm_create_default_jsonld_context() {
     'minimumAmount' => 'com:minimumAmount',
     'payee' =>
       (object)array(
-         '@id' => 'com:payee', '@type' => '@id', '@container' => '@set'),
+        '@id' => 'com:payee', '@type' => '@id', '@container' => '@set'),
     'payeeRule' =>
       (object)array(
-         '@id' => 'com:payeeRule', '@type' => '@id', '@container' => '@set'),
+        '@id' => 'com:payeeRule', '@type' => '@id', '@container' => '@set'),
     'payeeLimitation' =>
       (object)array('@id' => 'com:payeeLimitation', '@type' => '@id'),
-    // FIXME: be more strict with nonNegativeInteger?
-    'payeePosition' =>
-      (object)array('@id' => 'com:payeePosition', '@type' => 'xsd:integer'),
     'payeeRate' => 'com:payeeRate',
-    'payeeRateContext' =>
-      (object)array('@id' => 'com:payeeRateContext', '@type' => '@id'),
     'payeeRateType' =>
       (object)array('@id' => 'com:payeeRateType', '@type' => '@id'),
+    'payeeGroup' =>
+      (object)array('@id' => 'com:payeeGroup', '@container' => '@set'),
+    'payeeApplyGroup' =>
+      (object)array('@id' => 'com:payeeApplyGroup', '@container' => '@set'),
+    'payeeExemptGroup' =>
+      (object)array('@id' => 'com:payeeExemptGroup', '@container' => '@set'),
     'paymentGateway' => 'com:paymentGateway',
     'paymentMethod' =>
       (object)array('@id' => 'com:paymentMethod', '@type' => '@id'),
