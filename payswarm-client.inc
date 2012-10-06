@@ -577,7 +577,7 @@ function payswarm_check_nonce($nonce) {
 function payswarm_hash($obj) {
   // SHA-1 hash JSON
   $options = array('format' => 'application/nquads');
-  return sha1(jsonld_normalize($obj, $options));
+  return hash('sha256', jsonld_normalize($obj, $options));
 }
 
 /**
@@ -595,7 +595,7 @@ function payswarm_sign($obj, $date=null, $nonce='') {
 
   if(!$date) {
     $date = date_format(
-      date_create("now", new DateTimeZone('UTC')), DateTime::W3C);
+      date_create('now', new DateTimeZone('UTC')), DateTime::W3C);
   }
 
   // get private key pem and public key ID
@@ -605,7 +605,7 @@ function payswarm_sign($obj, $date=null, $nonce='') {
   // generate base64-encoded signature
   $options = array('format' => 'application/nquads');
   $nquads = jsonld_normalize($obj, $options);
-  openssl_sign($nonce . $date . $nquads, $signature, $pem, OPENSSL_ALGO_SHA1);
+  payswarm_raw_sign($nonce . $date . $nquads, $signature, $pem);
   $signature = base64_encode($signature);
 
   // add signature to object
@@ -697,7 +697,7 @@ function payswarm_verify($obj) {
   $sig = base64_decode($sprop->signatureValue);
 
   // verify the signature
-  $rc = openssl_verify($data, $sig, $pem, OPENSSL_ALGO_SHA1);
+  $rc = payswarm_raw_verify($data, $sig, $pem);
   if($rc === 1) {
     $rval = true;
   }
@@ -726,7 +726,7 @@ function payswarm_decrypt($encrypted) {
   global $payswarm_hooks;
 
   if(!property_exists($encrypted, 'cipherAlgorithm') ||
-    $encrypted->cipherAlgorithm !== 'rsa-aes-128-cbc') {
+    $encrypted->cipherAlgorithm !== 'rsa-sha256-aes-128-cbc') {
     $algorithm = $encrypted->cipherAlgorithm;
     throw new Exception('PaySwarm Security Exception: ' .
       'Unknown encryption algorithm "' . $algorithm . '"');
@@ -1149,5 +1149,78 @@ function payswarm_default_post_jsonld($url, $data) {
 /** Default GET/POST JSON-LD hooks. */
 payswarm_add_hook('get_jsonld', 'jsonld_resolve_url');
 payswarm_add_hook('post_jsonld', 'payswarm_default_post_jsonld');
+
+/**
+ * A compatibility wrapper for producing a digital signature.
+ *
+ * @param string $data the data to sign.
+ * @param string $signature the signature variable to be set.
+ * @param string $pem the private key in PEM format.
+ *
+ * @return boolean true on success, false on failure.
+ */
+function payswarm_raw_sign($data, &$signature, $pem) {
+  if(defined('OPENSSL_ALGO_SHA256')) {
+    return openssl_sign($data, $signature, $pem, OPENSSL_ALGO_SHA256);
+  }
+
+  // load private key from PEM
+  $pkey = openssl_pkey_get_private($pem);
+  if($pkey === false) {
+    throw new Exception('PaySwarm Security Exception: ' .
+      'Failed to load the private key.');
+  }
+
+  // manually do pkcs1 v1.5 encoding (DigestInfo)
+  $hash = hash('sha256', $data);
+  $digestInfo = pack('H*', '3031300d060960864801650304020105000420' . $hash);
+
+  $rval = openssl_private_encrypt(
+    $digestInfo, $signature, $pkey, OPENSSL_PKCS1_PADDING);
+
+  // free private key resource
+  openssl_pkey_free($pkey);
+
+  return $rval;
+}
+
+/**
+ * A compatibility wrapper for verifying a digital signature.
+ *
+ * @param string $data the data to verify.
+ * @param string $signature the signature to verify.
+ * @param string $pem the public key in PEM format.
+ *
+ * @return int 1 if verified, 0 if incorrect, -1 on error.
+ */
+function payswarm_raw_verify($data, $signature, $pem) {
+  if(defined('OPENSSL_ALGO_SHA256')) {
+    return openssl_verify($data, $signature, $pem, OPENSSL_ALGO_SHA256);
+  }
+
+  // load public key from PEM
+  $pkey = openssl_pkey_get_public($pem);
+  if($pkey === false) {
+    throw new Exception('PaySwarm Security Exception: ' .
+        'Failed to load the public key.');
+  }
+
+  // decrypt encrypted digest info
+  $rval = openssl_public_decrypt(
+    $signature, $decrypted, $pkey, OPENSSL_PKCS1_PADDING);
+  if(!$rval) {
+    return 0;
+  }
+
+  // free public key resource
+  openssl_pkey_free($pkey);
+
+  // manually do pkcs1 v1.5 encoding (DigestInfo) for comparison
+  $hash = hash('sha256', $data);
+  $digestInfo = pack('H*', '3031300d060960864801650304020105000420' . $hash);
+
+  // compare decrypted digest info to constructed one
+  return ($decrypted === $digestInfo) ? 1 : 0;
+}
 
 /* end of file, omit ?> */
