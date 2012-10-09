@@ -246,9 +246,10 @@ function payswarm_create_default_jsonld_context() {
     // credit card
     'cardBrand' => (object)array('@id' => 'ccard:brand', '@type' => '@id'),
     'cardCvm' => 'ccard:cvm',
-    // FIXME: use xsd mo/yr types?
-    'cardExpMonth' => 'ccard:expMonth',
-    'cardExpYear' => 'ccard:expYear',
+    'cardExpMonth' => (object)array(
+      '@id' => 'ccard:expMonth', '@type' => 'xsd:integer'),
+    'cardExpYear' => (object)array(
+      '@id' => 'ccard:expYear', '@type' => 'xsd:integer'),
     'cardNumber' => 'ccard:number',
 
     // commerce
