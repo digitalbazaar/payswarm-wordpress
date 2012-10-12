@@ -312,6 +312,7 @@ function payswarm_create_default_jsonld_context() {
     'assetProvider' =>
       (object)array('@id' => 'ps:assetProvider', '@type' => '@id'),
     'authority' => (object)array('@id' => 'ps:authority', '@type' => '@id'),
+    'contract' => (object)array('@id' => 'ps:contract', '@type' => '@id'),
     'identityHash' => 'ps:identityHash',
     // FIXME: move?
     'ipv4Address' => 'ps:ipv4Address',
@@ -1046,16 +1047,22 @@ function payswarm_get_receipt($msg) {
     throw new Exception('PaySwarm Purchase Exception: ' .
       $receipt->errorMessage);
   }
-  // FIXME: use ps:Receipt
-  else if(!payswarm_jsonld_has_type($receipt, 'ps:Contract')) {
+  else if(!payswarm_jsonld_has_type($receipt, 'ps:Receipt')) {
     throw new Exception('PaySwarm Purchase Exception: ' .
       'Invalid purchase response from PaySwarm Authority.');
   }
 
+  // validate receipt
+  if(!property_exists($receipt, 'contract') or !is_object($receipt->contract)) {
+    throw new Exception('PaySwarm Purchase Exception: ' .
+      'Unknown Receipt format.');
+  }
+
   // validate contract
-  if(!property_exists($receipt, 'assetAcquirer') or
-    !property_exists($receipt, 'asset') or
-    !property_exists($receipt, 'license')) {
+  $contract = $receipt->contract;
+  if(!property_exists($contract, 'assetAcquirer') or
+    !property_exists($contract, 'asset') or
+    !property_exists($contract, 'license')) {
     throw new Exception('PaySwarm Purchase Exception: ' .
       'Unknown Contract format.');
   }
