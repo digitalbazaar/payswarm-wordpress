@@ -78,7 +78,7 @@ $vars['output'] = <<<RDFA
     <span about="{$vars['listing']->id}">
       <span rel="com:payeeRule">
         <span typeof="com:PayeeRule">
-          <span rel="com:accountOwnerType" resource="ps:Authority"></span>
+          <span property="com:payeeGroupPrefix" content="authority"></span>
           <span rel="com:payeeRateType" resource="com:PercentInclusive"></span>
           <span property="com:maximumPayeeRate"
             content="{$vars['payee_rule']->maximumPayeeRate}"></span>

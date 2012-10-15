@@ -376,7 +376,7 @@ function payswarm_update_post_info($post_id) {
     'payeeRule' => array(
       (object)array(
         'type' => 'com:PayeeRule',
-        'accountOwnerType' => 'ps:Authority',
+        'payeeGroupPrefix' => array('authority'),
         'maximumPayeeRate' => get_post_meta(
           $post_id, '_payswarm_authority_rate', true),
         'payeeRateType' => 'com:PercentInclusive'

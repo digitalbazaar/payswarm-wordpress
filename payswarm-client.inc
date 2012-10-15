@@ -254,8 +254,6 @@ function payswarm_create_default_jsonld_context() {
 
     // commerce
     'account' => (object)array('@id' => 'com:account', '@type' => '@id'),
-    'accountOwnerType' =>
-      (object)array('@id' => 'com:accountOwnerType', '@type' => '@id'),
     'amount' => 'com:amount',
     'balance' => 'com:balance',
     'currency' => 'com:currency',
@@ -284,6 +282,8 @@ function payswarm_create_default_jsonld_context() {
       (object)array('@id' => 'com:payeeApplyGroup', '@container' => '@set'),
     'payeeExemptGroup' =>
       (object)array('@id' => 'com:payeeExemptGroup', '@container' => '@set'),
+    'payeeGroupPrefix' =>
+      (object)array('@id' => 'com:payeeGroupPrefix', '@container' => '@set'),
     'paymentGateway' => 'com:paymentGateway',
     'paymentMethod' =>
       (object)array('@id' => 'com:paymentMethod', '@type' => '@id'),
