@@ -276,6 +276,8 @@ function payswarm_create_default_jsonld_context() {
     'payeeRate' => 'com:payeeRate',
     'payeeRateType' =>
       (object)array('@id' => 'com:payeeRateType', '@type' => '@id'),
+    'payeeApplyType' =>
+      (object)array('@id' => 'com:payeeApplyType', '@type' => '@id'),
     'payeeGroup' =>
       (object)array('@id' => 'com:payeeGroup', '@container' => '@set'),
     'payeeApplyGroup' =>

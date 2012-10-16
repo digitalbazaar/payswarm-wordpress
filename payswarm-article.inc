@@ -370,6 +370,7 @@ function payswarm_update_post_info($post_id) {
         'payeeGroup' => 'vendor',
         'payeeRate' => get_post_meta($post_id, '_payswarm_price', true),
         'payeeRateType' => 'com:FlatAmount',
+        'payeeApplyType' => 'com:Exclusive',
         'comment' => "Payment for $post_title by $post_author."
       )
     ),
@@ -379,7 +380,8 @@ function payswarm_update_post_info($post_id) {
         'payeeGroupPrefix' => array('authority'),
         'maximumPayeeRate' => get_post_meta(
           $post_id, '_payswarm_authority_rate', true),
-        'payeeRateType' => 'com:PercentInclusive'
+        'payeeRateType' => 'com:Percent',
+        'payeeApplyType' => 'com:Inclusive'
       )
     ),
     'asset' => $asset->id,

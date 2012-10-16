@@ -79,7 +79,8 @@ $vars['output'] = <<<RDFA
       <span rel="com:payeeRule">
         <span typeof="com:PayeeRule">
           <span property="com:payeeGroupPrefix" content="authority"></span>
-          <span rel="com:payeeRateType" resource="com:PercentInclusive"></span>
+          <span rel="com:payeeRateType" resource="com:Percent"></span>
+          <span rel="com:payeeApplyType" resource="com:Inclusive"></span>
           <span property="com:maximumPayeeRate"
             content="{$vars['payee_rule']->maximumPayeeRate}"></span>
         </span>
@@ -101,6 +102,8 @@ $vars['output'] = <<<RDFA
     <span about="{$vars['payee']->id}"
       typeof="{$vars['payee']->type}">
       <span property="com:payeeGroup" content="{$vars['payee']->payeeGroup}">
+      </span>
+      <span rel="com:payeeApplyType" resource="com:Exclusive">
       </span>
       <a rel="com:payeeRateType" href="http://purl.org/commerce#FlatAmount">
         Flat-rate payment</a> will be deposited into
