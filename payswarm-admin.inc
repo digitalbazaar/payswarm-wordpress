@@ -50,6 +50,7 @@ function payswarm_get_options() {
     'default_price' => '0.05',
     'default_license_id' => 'http://purl.org/payswarm/licenses/blogging',
     'default_license_hash' =>
+      'urn:sha256:' .
       '068663468cfa0c2559c3e7cbaf685077ac4b8271978a64f77c74d502829f7472',
     'default_authority_rate' => '10.0'
   ));

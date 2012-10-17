@@ -581,7 +581,7 @@ function payswarm_check_nonce($nonce) {
 function payswarm_hash($obj) {
   // SHA-1 hash JSON
   $options = array('format' => 'application/nquads');
-  return hash('sha256', jsonld_normalize($obj, $options));
+  return 'urn:sha256:' . hash('sha256', jsonld_normalize($obj, $options));
 }
 
 /**
