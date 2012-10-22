@@ -268,24 +268,26 @@ function payswarm_create_default_jsonld_context() {
     'payee' =>
       (object)array(
         '@id' => 'com:payee', '@type' => '@id', '@container' => '@set'),
-    'payeeRule' =>
-      (object)array(
-        '@id' => 'com:payeeRule', '@type' => '@id', '@container' => '@set'),
+    'payeeApplyAfter' =>
+      (object)array('@id' => 'com:payeeApplyAfter', '@container' => '@set'),
+    'payeeApplyGroup' =>
+      (object)array('@id' => 'com:payeeApplyGroup', '@container' => '@set'),
+    'payeeApplyType' =>
+      (object)array('@id' => 'com:payeeApplyType', '@type' => '@id'),
+    'payeeExemptGroup' =>
+      (object)array('@id' => 'com:payeeExemptGroup', '@container' => '@set'),
+    'payeeGroup' =>
+      (object)array('@id' => 'com:payeeGroup', '@container' => '@set'),
+    'payeeGroupPrefix' =>
+      (object)array('@id' => 'com:payeeGroupPrefix', '@container' => '@set'),
     'payeeLimitation' =>
       (object)array('@id' => 'com:payeeLimitation', '@type' => '@id'),
     'payeeRate' => 'com:payeeRate',
     'payeeRateType' =>
       (object)array('@id' => 'com:payeeRateType', '@type' => '@id'),
-    'payeeApplyType' =>
-      (object)array('@id' => 'com:payeeApplyType', '@type' => '@id'),
-    'payeeGroup' =>
-      (object)array('@id' => 'com:payeeGroup', '@container' => '@set'),
-    'payeeApplyGroup' =>
-      (object)array('@id' => 'com:payeeApplyGroup', '@container' => '@set'),
-    'payeeExemptGroup' =>
-      (object)array('@id' => 'com:payeeExemptGroup', '@container' => '@set'),
-    'payeeGroupPrefix' =>
-      (object)array('@id' => 'com:payeeGroupPrefix', '@container' => '@set'),
+    'payeeRule' =>
+      (object)array(
+        '@id' => 'com:payeeRule', '@type' => '@id', '@container' => '@set'),
     'paymentGateway' => 'com:paymentGateway',
     'paymentMethod' =>
       (object)array('@id' => 'com:paymentMethod', '@type' => '@id'),
