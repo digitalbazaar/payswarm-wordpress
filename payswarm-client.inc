@@ -684,6 +684,12 @@ function payswarm_verify($obj) {
   $key = payswarm_get_public_key($sprop->creator);
   $pem = $key->publicKeyPem;
 
+  // ensure key has not been revoked
+  if(property_exists($key, 'revoked')) {
+    throw new Exception('PaySwarm Security Exception: ' .
+      'The message was signed with a key that has been revoked.');
+  }
+
   // verify key owner
   $trusted = call_user_func(
     $payswarm_hooks['is_trusted_authority'], $key->owner);
