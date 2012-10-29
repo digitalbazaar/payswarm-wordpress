@@ -131,6 +131,9 @@ Authorities.
 // hook API
 $payswarm_hooks = array();
 
+// set jsonld resolver
+jsonld_set_url_resolver('payswarm_jsonld_resolve');
+
 /**
  * Adds a hook. To add a hook, pass the name of the hook (eg: create_nonce) and
  * the user-defined function name to be called. Hooks are permitted to throw
@@ -499,7 +502,7 @@ function payswarm_jsonld_resolve($url) {
     return (object)array(
       '@context' => payswarm_create_default_jsonld_context());
   }
-  return payswarm_get_jsonld($url, true);
+  return jsonld_resolve_url($url);
 }
 
 /**
@@ -1165,7 +1168,7 @@ function payswarm_default_post_jsonld($url, $data) {
 }
 
 /** Default GET/POST JSON-LD hooks. */
-payswarm_add_hook('get_jsonld', 'jsonld_resolve_url');
+payswarm_add_hook('get_jsonld', 'payswarm_jsonld_resolve');
 payswarm_add_hook('post_jsonld', 'payswarm_default_post_jsonld');
 
 /**
@@ -1220,7 +1223,7 @@ function payswarm_raw_verify($data, $signature, $pem) {
   $pkey = openssl_pkey_get_public($pem);
   if($pkey === false) {
     throw new Exception('PaySwarm Security Exception: ' .
-        'Failed to load the public key.');
+      'Failed to load the public key.');
   }
 
   // decrypt encrypted digest info
