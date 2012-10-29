@@ -502,7 +502,7 @@ function payswarm_jsonld_resolve($url) {
     return (object)array(
       '@context' => payswarm_create_default_jsonld_context());
   }
-  return jsonld_resolve_url($url);
+  return payswarm_get_jsonld($url, true);
 }
 
 /**
@@ -1168,7 +1168,7 @@ function payswarm_default_post_jsonld($url, $data) {
 }
 
 /** Default GET/POST JSON-LD hooks. */
-payswarm_add_hook('get_jsonld', 'payswarm_jsonld_resolve');
+payswarm_add_hook('get_jsonld', 'jsonld_default_resolve_url');
 payswarm_add_hook('post_jsonld', 'payswarm_default_post_jsonld');
 
 /**
