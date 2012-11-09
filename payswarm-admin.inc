@@ -139,7 +139,7 @@ function payswarm_setup_register_page() {
  */
 function payswarm_init_registration() {
   // do nonce security check (dies on failure)
-  $valid_nonce = wp_verify_nonce(
+  $valid_nonce = isset($_POST['_wpnonce']) && wp_verify_nonce(
     $_POST['_wpnonce'], 'payswarm_register-options');
   if(!$valid_nonce) {
     wp_die(__('Access denied.'));
@@ -275,7 +275,7 @@ function payswarm_render_register_page() {
   // output warnings
   if(isset($_GET['error'])) {
     $host = get_option('payswarm_authority_host');
-    $url = "https://$host/payswarm-v1-config";
+    $url = "https://$host/.well-known/payswarm";
     if($_GET['error'] === 'config') {
       payswarm_admin_warning(
         'There was an error fetching the PaySwarm Authority ' .

@@ -829,7 +829,7 @@ function payswarm_decode_authority_message($json_message) {
  */
 function payswarm_get_authority_config($host) {
   // get config
-  $url = "https://$host/payswarm-v1-config";
+  $url = "https://$host/.well-known/payswarm";
   $config = payswarm_get_jsonld($url, true);
 
   // TODO: validate config
