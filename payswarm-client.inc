@@ -128,6 +128,9 @@ Authorities.
 
 */
 
+class PaySwarmAsymmetricCipherException extends Exception {
+};
+
 // hook API
 $payswarm_hooks = array();
 
@@ -762,7 +765,8 @@ function payswarm_decrypt($encrypted) {
   if(openssl_private_decrypt(
     $encryption_key, $skey, $pkey, OPENSSL_PKCS1_OAEP_PADDING) === false) {
     if(openssl_private_decrypt($encryption_key, $skey, $pkey) === false) {
-      throw new Exception('PaySwarm Security Exception: ' .
+      throw new PaySwarmAsymmetricCipherException(
+        'PaySwarm Security Exception: ' .
         'Failed to decrypt the encryption key.');
     }
   }

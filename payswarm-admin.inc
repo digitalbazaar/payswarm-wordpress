@@ -195,7 +195,12 @@ function payswarm_complete_registration($response) {
     payswarm_trigger_listing_resign();
 
     // close popup and show admin page
-    $url = admin_url() . 'plugins.php?page=payswarm';
+    $url = admin_url() . 'plugins.php?page=payswarm&complete=true';
+    payswarm_close_register_popup($url);
+  }
+  catch(PaySwarmAsymmetricCipherException $e) {
+    // close the popup and report decryption error
+    $url = admin_url() . 'plugins.php?page=payswarm&error=decryption';
     payswarm_close_register_popup($url);
   }
   catch(Exception $e) {
@@ -238,6 +243,8 @@ function payswarm_admin_warning($warning) {
   <div id='payswarm-admin-warning' class='updated fade'>
     <p>
       <?php _e($warning); ?>
+    </p>
+    <p>
       You still need to
       <a href="plugins.php?page=payswarm">configure PaySwarm</a>.
     </p>
@@ -282,13 +289,36 @@ function payswarm_render_register_page() {
         'Configuration (' . htmlentities($url) . '). ' .
         'This may have happened because the ' .
         'PaySwarm Authority configuration URL specified was incorrect ' .
-        'or because the PaySwarm Authority you specified is not responding.');
+        'or because the PaySwarm Authority you specified is not ' .
+        'responding.');
     }
     else if($_GET['error'] === 'authority') {
       payswarm_admin_warning(
         'The PaySwarm Authority reported an error during registration. ' .
         'Please try again.');
     }
+    else if($_GET['error'] === 'decryption') {
+      payswarm_admin_warning(
+        'The response from the PaySwarm Authority could not be decrypted. ' .
+        'If this website is not protected by SSL-encryption, ' .
+        'then there may be a serious security problem. If this site does ' .
+        'not use "https" in the URL bar or does not appear to be a secure ' .
+        'site in your browser, then please please log into your PaySwarm ' .
+        'Authority\'s website and disable any "Access Keys" or "Public Keys" ' .
+        'associated with this website before re-attempting registration. ' .
+        'If this problem persists, please contact your PaySwarm Authority ' .
+        'for assistance.');
+    }
+  }
+  else if($_GET['complete'] === 'true') {
+    $register_url = PAYSWARM_PLUGIN_URL . 'payswarm-register.php';
+    ?>
+    <div id='payswarm-admin-warning' class='updated fade'>
+      <p>
+        Registration successful. Please proceed to the <a href="options-general.php?page=payswarm">PaySwarm Options</a> page.
+      </p>
+    </div>
+    <?php
   }
 }
 
