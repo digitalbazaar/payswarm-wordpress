@@ -310,7 +310,7 @@ function payswarm_render_register_page() {
         'for assistance.');
     }
   }
-  else if($_GET['complete'] === 'true') {
+  else if(isset($_GET['complete']) && $_GET['complete'] === 'true') {
     $register_url = PAYSWARM_PLUGIN_URL . 'payswarm-register.php';
     ?>
     <div id='payswarm-admin-warning' class='updated fade'>
