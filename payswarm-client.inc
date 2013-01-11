@@ -261,6 +261,8 @@ function payswarm_create_default_jsonld_context() {
     // commerce
     'account' => (object)array('@id' => 'com:account', '@type' => '@id'),
     'amount' => 'com:amount',
+    'authorized' =>
+      (object)array('@id' => 'com:authorized', '@type' => 'xsd:dateTime'),
     'balance' => 'com:balance',
     'currency' => 'com:currency',
     'destination' =>
