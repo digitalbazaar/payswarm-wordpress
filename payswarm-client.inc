@@ -165,8 +165,8 @@ class PaySwarmAsymmetricCipherException extends Exception {
 // hook API
 $payswarm_hooks = array();
 
-// set jsonld resolver
-jsonld_set_url_resolver('payswarm_jsonld_resolve');
+// set jsonld url client
+jsonld_set_url_client('payswarm_jsonld_url_client');
 
 /**
  * Adds a hook. To add a hook, pass the name of the hook (eg: create_nonce) and
@@ -526,13 +526,13 @@ function payswarm_get_cached_jsonld($id) {
 }
 
 /**
- * Resolves a JSON-LD context URL, returning the context.
+ * Retrieves a JSON-LD context URL, returning the context.
  *
  * @param string $url the URL for the JSON-LD context.
  *
  * @return stdClass the JSON-LD context.
  */
-function payswarm_jsonld_resolve($url) {
+function payswarm_jsonld_url_client($url) {
   // FIXME: hack until http://purl.org/payswarm/v1 is ready
   if($url === 'http://purl.org/payswarm/v1') {
     return (object)array(
@@ -1205,7 +1205,7 @@ function payswarm_default_post_jsonld($url, $data) {
 }
 
 /** Default GET/POST JSON-LD hooks. */
-payswarm_add_hook('get_jsonld', 'jsonld_default_resolve_url');
+payswarm_add_hook('get_jsonld', 'jsonld_default_get_url');
 payswarm_add_hook('post_jsonld', 'payswarm_default_post_jsonld');
 
 /**
