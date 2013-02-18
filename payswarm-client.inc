@@ -538,7 +538,18 @@ function payswarm_jsonld_load_context($url) {
     return (object)array(
       '@context' => payswarm_create_default_jsonld_context());
   }
-  return payswarm_get_jsonld($url, true);
+
+  // use cache if available
+  $rval = payswarm_get_cached_jsonld($url);
+  if($rval === false) {
+    // do secure retrieval of URL
+    $rval = jsonld_default_get_secure_url($url);
+    if($cache) {
+      payswarm_cache_jsonld($url, $rval);
+    }
+  }
+
+  return $rval;
 }
 
 /**
