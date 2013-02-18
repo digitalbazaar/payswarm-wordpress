@@ -165,8 +165,8 @@ class PaySwarmAsymmetricCipherException extends Exception {
 // hook API
 $payswarm_hooks = array();
 
-// set jsonld url client
-jsonld_set_url_client('payswarm_jsonld_url_client');
+// set jsonld context loader
+jsonld_set_context_loader('payswarm_jsonld_load_context');
 
 /**
  * Adds a hook. To add a hook, pass the name of the hook (eg: create_nonce) and
@@ -532,7 +532,7 @@ function payswarm_get_cached_jsonld($id) {
  *
  * @return stdClass the JSON-LD context.
  */
-function payswarm_jsonld_url_client($url) {
+function payswarm_jsonld_load_context($url) {
   // FIXME: hack until http://purl.org/payswarm/v1 is ready
   if($url === 'http://purl.org/payswarm/v1') {
     return (object)array(
