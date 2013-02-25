@@ -4,6 +4,7 @@ require_once('payswarm-wp-hooks.inc');
 require_once('payswarm-database.inc');
 require_once('payswarm-session.inc');
 require_once('payswarm-admin.inc');
+require_once('jsonld.php');
 
 /**
  * Includes all CSS and script files that are needed by the
@@ -326,7 +327,7 @@ function payswarm_update_post_info($post_id) {
   $asset = (object)array(
     '@context' => payswarm_create_default_jsonld_context(),
     'id' => $post_url . '#asset',
-    'type' => array('ps:Asset', 'pto:WebPage'),
+    'type' => array('Asset', 'pto:WebPage'),
     'creator' => (object)array('fullName' => $post_author),
     'title' => $post_title,
     'assetProvider' => get_option('payswarm_vendor_id'),
@@ -361,27 +362,27 @@ function payswarm_update_post_info($post_id) {
   $listing = (object)array(
     '@context' => payswarm_create_default_jsonld_context(),
     'id' => $post_url . '#listing',
-    'type' => array('ps:Listing', 'gr:Offering'),
+    'type' => array('Listing', 'gr:Offering'),
     'payee' => array(
       (object)array(
         'id' => $post_url . '#listing-payee',
-        'type' => 'com:Payee',
+        'type' => 'Payee',
         'destination' => get_option('payswarm_financial_account'),
         'payeeGroup' => 'vendor',
         'payeeRate' => get_post_meta($post_id, '_payswarm_price', true),
-        'payeeRateType' => 'com:FlatAmount',
-        'payeeApplyType' => 'com:Exclusive',
+        'payeeRateType' => 'FlatAmount',
+        'payeeApplyType' => 'ApplyExclusively',
         'comment' => "Payment for $post_title by $post_author."
       )
     ),
     'payeeRule' => array(
       (object)array(
-        'type' => 'com:PayeeRule',
+        'type' => 'PayeeRule',
         'payeeGroupPrefix' => array('authority'),
         'maximumPayeeRate' => get_post_meta(
           $post_id, '_payswarm_authority_rate', true),
-        'payeeRateType' => 'com:Percent',
-        'payeeApplyType' => 'com:Inclusive'
+        'payeeRateType' => 'Percentage',
+        'payeeApplyType' => 'ApplyInclusively'
       )
     ),
     'asset' => $asset->id,
@@ -438,23 +439,94 @@ function payswarm_get_post_info_rdfa($post_id) {
     $button_text = 'Buy';
   }
 
+  // compact using only prefixes
+  $ctx = (object)array(
+    '@context' => (object)array(
+      'ccard' => 'http://purl.org/commerce/creditcard#',
+      'com' => 'http://purl.org/commerce#',
+      'dc' => 'http://purl.org/dc/terms/',
+      'foaf' => 'http://xmlns.com/foaf/0.1/',
+      'gr' => 'http://purl.org/goodrelations/v1#',
+      'pto' => 'http://www.productontology.org/id/',
+      'ps' => 'http://purl.org/payswarm#',
+      'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+      'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#',
+      'sec' => 'http://purl.org/security#',
+      'vcard' => 'http://www.w3.org/2006/vcard/ns#',
+      'xsd' => 'http://www.w3.org/2001/XMLSchema#'));
+  $options = array('compactArrays' => false);
+  $fp = fopen('/tmp/php.log', 'a');
+  $listing = jsonld_compact($info['listing'], $ctx, $options)->{'@graph'}[0];
+  $asset = jsonld_compact($info['asset'], $ctx, $options)->{'@graph'}[0];
+
+  $prefixes = array();
+  foreach($ctx->{'@context'} as $prefix => $iri) {
+    $prefixes[] = "xmlns:$prefix=\"$iri\"";
+  }
+
+  // convenience method for getting RDFa values from JSON-LD data
+  $rdfa_getter = function($data) use (&$rdfa_getter) {
+    return function() use ($data) {
+      // use arguments as path into data
+      $rval = $data;
+      $args = func_get_args();
+      foreach($args as $arg) {
+        // default to first item in array
+        if(is_array($rval) && is_string($arg)) {
+          $rval = $rval[0];
+        }
+
+        if(is_array($rval)) {
+          if($arg === '@type') {
+            $rval = join(' ', $rval);
+          }
+          else {
+            $rval = $rval[$arg];
+          }
+        }
+        else {
+          $rval = $rval->{$arg};
+        }
+      }
+
+      // default to first item in array
+      if(is_array($rval)) {
+        $rval = $rval[0];
+      }
+
+      // default to returning @value or @id for objects
+      if(is_object($rval)) {
+        if(property_exists($rval, '@value')) {
+          $rval = $rval->{'@value'};
+        }
+        else if(property_exists($rval, '@id')) {
+          $rval = $rval->{'@id'};
+        }
+      }
+
+      // escape for html
+      if(!is_object($rval)) {
+        $rval = htmlentities($rval);
+      }
+
+      return $rval;
+    };
+  };
+
   // set vars for template
-  $payee = $info['listing']->payee[0];
-  $payee_rule = $info['listing']->payeeRule[0];
+  $payee = $listing->{'com:payee'}[0];
+  $payee_getter = $rdfa_getter($payee);
+  $payee_rule = $listing->{'com:payeeRule'}[0];
   $vars = array(
-    'asset' => $info['asset'],
-    'listing' => $info['listing'],
+    'prefixes' => implode(' ', $prefixes),
+    'asset' => $rdfa_getter($asset),
+    'listing' => $rdfa_getter($listing),
     'listing_hash' => $info['listing_hash'],
-    'asset_types' => join(' ', $info['asset']->type),
-    'listing_types' => join(' ', $info['listing']->type),
     'access_url' => $access_url,
     'pslogo_url' => $pslogo_url,
-    'payee' => $payee,
-    'payee_rate' => sprintf('%1.02f', $payee->payeeRate),
-    'payee_comment' => htmlentities($payee->comment),
-    'payee_rule' => $payee_rule,
-    'post_title' => htmlentities($info['asset']->title),
-    'post_author' => htmlentities($info['asset']->creator->fullName),
+    'payee' => $payee_getter,
+    'payee_rate' => sprintf('%1.02f', $payee_getter('com:payeeRate')),
+    'payee_rule' => $rdfa_getter($payee_rule),
     'text_access' => __($button_text),
     'text_view_full_article' => __('View the full article for'),
     'text_view_offer_details' => __('View offer details'),

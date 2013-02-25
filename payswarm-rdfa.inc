@@ -4,32 +4,24 @@
 // $vars is provided externally
 $vars['output'] = <<<RDFA
 <div
-  xmlns:com="http://purl.org/commerce#"
-  xmlns:dc="http://purl.org/dc/terms/"
-  xmlns:vcard="http://www.w3.org/2006/vcard/ns#"
-  xmlns:gr="http://purl.org/goodrelations/v1#"
-  xmlns:pto="http://www.productontology.org/id/"
-  xmlns:ps="http://purl.org/payswarm#"
-  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
-  xmlns:sec="http://purl.org/security#"
-  xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
-  about="{$vars['asset']->id}"
-  typeof="{$vars['asset_types']}"
+  {$vars['prefixes']}
+  about="{$vars['asset']('@id')}"
+  typeof="{$vars['asset']('@type')}"
   class="asset-info">
-  <div about="{$vars['listing']->id}" typeof="{$vars['listing_types']}">
+  <div about="{$vars['listing']('@id')}" typeof="{$vars['listing']('@type')}">
     <form action="{$vars['access_url']}" method="post"
       onsubmit="javascript:showAuthorityPopup(this);">
       <button class="purchase-button">
         <img alt="{$vars['text_access']}" src="{$vars['pslogo_url']}" />
         {$vars['text_access']}
       </button>
-      <span rel="ps:asset" resource="{$vars['asset']->id}">
+      <span rel="ps:asset" resource="{$vars['asset']('@id')}">
         {$vars['text_view_full_article']}
       </span>
-      <span rel="com:payee" resource="{$vars['payee']->id}">
+      <span rel="com:payee" resource="{$vars['payee']('@id')}">
         <span>$</span>
-        <abbr property="com:payeeRate" title="{$vars['payee']->payeeRate}"
-          content="{$vars['payee']->payeeRate}">{$vars['payee_rate']}
+        <abbr property="com:payeeRate" title="{$vars['payee']('com:payeeRate')}"
+          content="{$vars['payee']('com:payeeRate')}">{$vars['payee_rate']}
         </abbr>
         </span>
       <span class="view-more"
@@ -39,79 +31,81 @@ $vars['output'] = <<<RDFA
     </form>
   </div>
   <div id="payswarm-asset-info-$post_id" class="hidden">
-    <a rel="ps:assetContent" href="{$vars['asset']->assetContent}"
-      property="dc:title">{$vars['post_title']}</a> by
+    <a rel="ps:assetContent" href="{$vars['asset']('ps:assetContent')}"
+      property="dc:title">{$vars['asset']('dc:title')}</a> by
     <span rel="dc:creator">
-      <span property="vcard:fn">{$vars['post_author']}</span>
+      <span property="vcard:fn">{$vars['asset']('dc:creator', 'vcard:fn')}</span>
     </span>.
     Offered by
     <a rel="ps:assetProvider"
-      href="{$vars['asset']->assetProvider}">us</a>.
-    <span about="{$vars['listing']->id}">The offer to get access to this
+      href="{$vars['asset']('ps:assetProvider')}">us</a>.
+    <span about="{$vars['listing']('@id')}">The offer to get access to this
       <span property="ps:assetHash"
-        content="{$vars['listing']->assetHash}">post</span>
-      under <a rel="ps:license" href="{$vars['listing']->license}"
+        content="{$vars['listing']('ps:assetHash')}">post</span>
+      under <a rel="ps:license" href="{$vars['listing']('ps:license')}"
         property="ps:licenseHash"
-        content="{$vars['listing']->licenseHash}">this license</a>
+        content="{$vars['listing']('ps:licenseHash')}">this license</a>
       is valid from <abbr property="ps:validFrom"
-        title="{$vars['listing']->validFrom}"
-        content="{$vars['listing']->validFrom}"
-        datatype="xsd:dateTime">today</abbr>
+        title="{$vars['listing']('ps:validFrom')}"
+        content="{$vars['listing']('ps:validFrom')}"
+        datatype="{$vars['listing']('ps:validFrom', '@type')}">today</abbr>
       until <abbr property="ps:validUntil"
-         title="{$vars['listing']->validUntil}"
-         content="{$vars['listing']->validUntil}"
-         datatype="xsd:dateTime">tomorrow</abbr>.
+         title="{$vars['listing']('ps:validUntil')}"
+         content="{$vars['listing']('ps:validUntil')}"
+         datatype="{$vars['listing']('ps:validUntil', '@type')}">tomorrow</abbr>.
     </span>
     <span rel="sec:signature">
-      <span typeof="{$vars['asset']->signature->type}">
-        This <a href="{$vars['asset']->id}">asset</a> was
+      <span typeof="{$vars['asset']('sec:signature', '@type')}">
+        This <a href="{$vars['asset']('@id')}">asset</a> was
         <abbr property="sec:signatureValue"
-          content="{$vars['asset']->signature->signatureValue}"
-          title="{$vars['asset']->signature->signatureValue}">
+          content="{$vars['asset']('sec:signature', 'sec:signatureValue')}"
+          title="{$vars['asset']('sec:signature', 'sec:signatureValue')}">
           digitally signed</abbr>
         using <a rel="dc:creator"
-          href="{$vars['asset']->signature->creator}">
+          href="{$vars['asset']('sec:signature', 'dc:creator')}">
           this key</a>
-        at <span property="dc:created" datatype="xsd:dateTime">{$vars['asset']->signature->created}</span>.
+        at <span property="dc:created"
+          datatype="{$vars['asset']('sec:signature', 'dc:created', '@type')}">{$vars['asset']('sec:signature', 'dc:created')}</span>.
       </span>
     </span>
-    <span about="{$vars['listing']->id}">
+    <span about="{$vars['listing']('@id')}">
       <span rel="com:payeeRule">
-        <span typeof="com:PayeeRule">
-          <span property="com:payeeGroupPrefix" content="authority"></span>
-          <span rel="com:payeeRateType" resource="com:Percent"></span>
-          <span rel="com:payeeApplyType" resource="com:Inclusive"></span>
+        <span typeof="{$vars['payee_rule']('@type')}">
+          <span property="com:payeeGroupPrefix" content="{$vars['payee_rule']('com:payeeGroupPrefix')}"></span>
+          <span rel="com:payeeRateType" resource="{$vars['payee_rule']('com:payeeRateType')}"></span>
+          <span rel="com:payeeApplyType" resource="{$vars['payee_rule']('com:payeeApplyType')}"></span>
           <span property="com:maximumPayeeRate"
-            content="{$vars['payee_rule']->maximumPayeeRate}"></span>
+            content="{$vars['payee_rule']('com:maximumPayeeRate')}"></span>
         </span>
       </span>
       <span rel="sec:signature">
-        <span typeof="{$vars['listing']->signature->type}">
-          This <a href="{$vars['listing']->id}">listing</a> was
+        <span typeof="{$vars['listing']('sec:signature', '@type')}">
+          This <a href="{$vars['listing']('@id')}">listing</a> was
           <abbr property="sec:signatureValue"
-            content="{$vars['listing']->signature->signatureValue}"
-            title="{$vars['listing']->signature->signatureValue}">
+            content="{$vars['listing']('sec:signature', 'sec:signatureValue')}"
+            title="{$vars['listing']('sec:signature', 'sec:signatureValue')}">
             digitally signed</abbr>
           using <a rel="dc:creator"
-            href="{$vars['listing']->signature->creator}">
+            href="{$vars['listing']('sec:signature', 'dc:creator')}">
             this key</a>
-          at <span property="dc:created" datatype="xsd:dateTime">{$vars['listing']->signature->created}</span>.
+          at <span property="dc:created"
+            datatype="{$vars['listing']('sec:signature', 'dc:created', '@type')}">{$vars['listing']('sec:signature', 'dc:created')}</span>.
         </span>
       </span>
     </span>
-    <span about="{$vars['payee']->id}"
-      typeof="{$vars['payee']->type}">
-      <span property="com:payeeGroup" content="{$vars['payee']->payeeGroup}">
+    <span about="{$vars['payee']('@id')}"
+      typeof="{$vars['payee']('@type')}">
+      <span property="com:payeeGroup" content="{$vars['payee']('com:payeeGroup')}">
       </span>
-      <span rel="com:payeeApplyType" resource="com:Exclusive">
+      <span rel="com:payeeApplyType" resource="{$vars['payee']('com:payeeApplyType')}">
       </span>
-      <a rel="com:payeeRateType" href="http://purl.org/commerce#FlatAmount">
+      <a rel="com:payeeRateType" href="{$vars['payee']('com:payeeRateType')}">
         Flat-rate payment</a> will be deposited into
       <a rel="com:destination"
-        href="{$vars['payee']->destination}">this account</a>.
+        href="{$vars['payee']('com:destination')}">this account</a>.
       The memo field for the payment will read:
         &quot;
-        <span property="rdfs:comment">{$vars['payee']->comment}</span>
+        <span property="rdfs:comment">{$vars['payee']('rdfs:comment')}</span>
         &quot;
     </span>
   </div>
