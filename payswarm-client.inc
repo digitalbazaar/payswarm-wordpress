@@ -304,7 +304,7 @@ function payswarm_create_default_jsonld_context() {
     'authorized' => (object)array(
       '@id' => 'com:authorized', '@type' => 'xsd:dateTime'),
     'balance' => 'com:balance',
-    'currency' => 'com:currency',
+    'currency' => (object)array('@id' => 'com:currency', '@type' => '@vocab'),
     'destination' => (object)array(
       '@id' => 'com:destination', '@type' => '@id'),
     'maximumAmount' => 'com:maximumAmount',
@@ -357,6 +357,9 @@ function payswarm_create_default_jsonld_context() {
     'Transaction' => 'com:Transaction',
     'Transfer' => 'com:Transfer',
     'Withdrawal' => 'com:Withdrawal',
+
+    // currencies
+    'usd' => 'https://w3id.org/currency/usd',
 
     // error
     // FIXME

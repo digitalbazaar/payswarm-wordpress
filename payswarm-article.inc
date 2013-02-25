@@ -368,6 +368,7 @@ function payswarm_update_post_info($post_id) {
         'id' => $post_url . '#listing-payee',
         'type' => 'Payee',
         'destination' => get_option('payswarm_financial_account'),
+        'currency' => 'usd',
         'payeeGroup' => 'vendor',
         'payeeRate' => get_post_meta($post_id, '_payswarm_price', true),
         'payeeRateType' => 'FlatAmount',
