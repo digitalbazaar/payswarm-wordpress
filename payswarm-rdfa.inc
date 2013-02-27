@@ -20,6 +20,8 @@ $vars['output'] = <<<RDFA
       </span>
       <span rel="com:payee" resource="{$vars['payee']('@id')}">
         <span>$</span>
+        <span rel="com:currency"
+          resource="{$vars['payee']('com:currency')}"></span>
         <abbr property="com:payeeRate" title="{$vars['payee']('com:payeeRate')}"
           content="{$vars['payee']('com:payeeRate')}">{$vars['payee_rate']}
         </abbr>
