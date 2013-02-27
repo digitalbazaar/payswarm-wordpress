@@ -490,6 +490,7 @@ function payswarm_get_post_info_rdfa($post_id) {
       // use arguments as path into data
       $rval = $data;
       $args = func_get_args();
+      $last_arg = null;
       foreach($args as $arg) {
         // default to first item in array
         if(is_array($rval) && is_string($arg)) {
@@ -497,21 +498,24 @@ function payswarm_get_post_info_rdfa($post_id) {
         }
 
         if(is_array($rval)) {
-          if($arg === '@type') {
-            $rval = join(' ', $rval);
-          }
-          else {
-            $rval = $rval[$arg];
-          }
+          $rval = $rval[$arg];
         }
         else {
           $rval = $rval->{$arg};
         }
+
+        $last_arg = $arg;
       }
 
-      // default to first item in array
       if(is_array($rval)) {
-        $rval = $rval[0];
+        // join types
+        if($last_arg === '@type') {
+          $rval = join(' ', $rval);
+        }
+        // default to first item in array
+        else {
+          $rval = $rval[0];
+        }
       }
 
       // default to returning @value or @id for objects
