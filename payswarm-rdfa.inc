@@ -101,8 +101,8 @@ $vars['output'] = <<<RDFA
       </span>
       <span rel="com:payeeApplyType" resource="{$vars['payee']('com:payeeApplyType')}">
       </span>
-      <a rel="com:payeeRateType" href="{$vars['payee']('com:payeeRateType')}">
-        Flat-rate payment</a> will be deposited into
+      <span rel="com:payeeRateType" resource="{$vars['payee']('com:payeeRateType')}">
+        Flat-rate payment</span> will be deposited into
       <a rel="com:destination"
         href="{$vars['payee']('com:destination')}">this account</a>.
       The memo field for the payment will read:
