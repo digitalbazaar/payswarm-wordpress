@@ -241,16 +241,16 @@ function payswarm_create_default_jsonld_context() {
     'type' => '@type',
 
     // prefixes
-    'ccard' => 'http://purl.org/commerce/creditcard#',
-    'com' => 'http://purl.org/commerce#',
+    'ccard' => 'https://w3id.org/commerce/creditcard#',
+    'com' => 'https://w3id.org/commerce#',
     'dc' => 'http://purl.org/dc/terms/',
     'foaf' => 'http://xmlns.com/foaf/0.1/',
     'gr' => 'http://purl.org/goodrelations/v1#',
     'pto' => 'http://www.productontology.org/id/',
-    'ps' => 'http://purl.org/payswarm#',
+    'ps' => 'https://w3id.org/payswarm#',
     'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
     'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#',
-    'sec' => 'http://purl.org/security#',
+    'sec' => 'https://w3id.org/security#',
     'vcard' => 'http://www.w3.org/2006/vcard/ns#',
     'xsd' => 'http://www.w3.org/2001/XMLSchema#',
 
@@ -570,8 +570,8 @@ function payswarm_get_cached_jsonld($id) {
  * @return stdClass the JSON-LD context.
  */
 function payswarm_jsonld_load_context($url) {
-  // FIXME: hack until http://purl.org/payswarm/v1 is ready
-  if($url === 'http://purl.org/payswarm/v1') {
+  // FIXME: hack until https://w3id.org/payswarm/v1 is ready
+  if($url === 'https://w3id.org/payswarm/v1') {
     return (object)array(
       '@context' => payswarm_create_default_jsonld_context());
   }

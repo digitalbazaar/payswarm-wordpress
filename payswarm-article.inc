@@ -462,20 +462,19 @@ function payswarm_get_post_info_rdfa($post_id) {
   // compact using only prefixes
   $ctx = (object)array(
     '@context' => (object)array(
-      'ccard' => 'http://purl.org/commerce/creditcard#',
-      'com' => 'http://purl.org/commerce#',
+      'ccard' => 'https://w3id.org/commerce/creditcard#',
+      'com' => 'https://w3id.org/commerce#',
       'dc' => 'http://purl.org/dc/terms/',
       'foaf' => 'http://xmlns.com/foaf/0.1/',
       'gr' => 'http://purl.org/goodrelations/v1#',
       'pto' => 'http://www.productontology.org/id/',
-      'ps' => 'http://purl.org/payswarm#',
+      'ps' => 'https://w3id.org/payswarm#',
       'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
       'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#',
-      'sec' => 'http://purl.org/security#',
+      'sec' => 'https://w3id.org/security#',
       'vcard' => 'http://www.w3.org/2006/vcard/ns#',
       'xsd' => 'http://www.w3.org/2001/XMLSchema#'));
   $options = array('compactArrays' => false);
-  $fp = fopen('/tmp/php.log', 'a');
   $listing = jsonld_compact($info['listing'], $ctx, $options)->{'@graph'}[0];
   $asset = jsonld_compact($info['asset'], $ctx, $options)->{'@graph'}[0];
 
