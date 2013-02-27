@@ -48,10 +48,10 @@ function payswarm_get_options() {
   // get default payswarm options
   return get_option('payswarm_options', array(
     'default_price' => '0.05',
-    'default_license_id' => 'http://purl.org/payswarm/licenses/blogging',
+    'default_license_id' => 'https://w3id.org/payswarm/licenses/blogging',
     'default_license_hash' =>
       'urn:sha256:' .
-      '068663468cfa0c2559c3e7cbaf685077ac4b8271978a64f77c74d502829f7472',
+      'd9dcfb7b3ba057df52b99f777747e8fe0fc598a3bb364e3d3eb529f90d58e1b9',
     'default_authority_rate' => '10.0'
   ));
 }
@@ -517,7 +517,7 @@ function payswarm_validate_options($input) {
   // validate default license
   try {
     $authority_host = get_option('payswarm_authority_host');
-    $license_id = $options['default_license_id'];
+    $license_id = $input['default_license_id'];
     if(wp_kses_bad_protocol($license_id, array('http', 'https')) !==
       $license_id) {
       throw new Exception('Invalid license ID.');
