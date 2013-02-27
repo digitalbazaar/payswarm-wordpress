@@ -39,15 +39,34 @@ function payswarm_init_purchase() {
     payswarm_set_authority_host_cookie($host);
   }
 
-  // get purchase url
-  $info = payswarm_get_post_info($post_id);
-  $callback = plugins_url() . '/payswarm/payswarm-access.php?p=' . $post_id;
-  $url = payswarm_get_purchase_url(
-    $host, $info['listing']->id, $info['listing_hash'], $callback);
+  try {
+    // get purchase url
+    $info = payswarm_get_post_info($post_id);
+    $callback = plugins_url() . '/payswarm/payswarm-access.php?p=' . $post_id;
+    $url = @payswarm_get_purchase_url(
+      $host, $info['listing']->id, $info['listing_hash'], $callback);
 
-  // redirect to the PaySwarm Authority payment URL
-  header('HTTP/1.1 303 See Other');
-  header("Location: $url");
+    // redirect to the PaySwarm Authority payment URL
+    header('HTTP/1.1 303 See Other');
+    header("Location: $url");
+  }
+  catch(Exception $e) {
+    // output simple error page
+    ?>
+    <!DOCTYPE html>
+    <html>
+      <body>
+        <h3>Connection Error</h3>
+        <p>
+          An error occurred while trying to contact your PaySwarm Authority
+          (<a href="https://<?php echo $host; ?>"><?php echo $host ?></a>).
+          Please try again or contact your PaySwarm Authority's customer
+          support.
+        </p>
+      </body>
+    </html>
+    <?php
+  }
 }
 
 /**
