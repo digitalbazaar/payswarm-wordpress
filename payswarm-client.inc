@@ -359,7 +359,8 @@ function payswarm_create_default_jsonld_context() {
     'Withdrawal' => 'com:Withdrawal',
 
     // currencies
-    'usd' => 'https://w3id.org/currency/usd',
+    'USD' => 'https://w3id.org/currency/USD',
+    'XTS' => 'https://w3id.org/currency/XTS', // test currency
 
     // error
     // FIXME
