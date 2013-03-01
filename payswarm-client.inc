@@ -360,7 +360,6 @@ function payswarm_create_default_jsonld_context() {
 
     // currencies
     'USD' => 'https://w3id.org/currency/USD',
-    'XTS' => 'https://w3id.org/currency/XTS', // test currency
 
     // error
     // FIXME
