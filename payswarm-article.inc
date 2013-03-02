@@ -350,7 +350,9 @@ function payswarm_update_post_info($post_id) {
     'creator' => (object)array('fullName' => $post_author),
     'title' => $post_title,
     'assetProvider' => get_option('payswarm_vendor_id'),
-    'assetContent' => $post_url
+    'assetContent' => $post_url,
+    // only allow a specific vendor to sell this asset
+    'vendor' => get_option('payswarm_vendor_id')
   );
 
   // sign asset
@@ -382,6 +384,7 @@ function payswarm_update_post_info($post_id) {
     '@context' => payswarm_create_default_jsonld_context(),
     'id' => $post_url . '#listing',
     'type' => array('Listing', 'gr:Offering'),
+    'vendor' => get_option('payswarm_vendor_id'),
     'payee' => array(
       (object)array(
         'id' => $post_url . '#listing-payee',

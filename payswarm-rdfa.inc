@@ -38,9 +38,12 @@ $vars['output'] = <<<RDFA
     <span rel="dc:creator">
       <span property="vcard:fn">{$vars['asset']('dc:creator', 'vcard:fn')}</span>
     </span>.
-    Offered by
+    Written by
     <a rel="ps:assetProvider"
       href="{$vars['asset']('ps:assetProvider')}">us</a>.
+    Offered by
+    <a rel="com:vendor"
+      href="{$vars['asset']('com:vendor')}">us</a>.
     <span about="{$vars['listing']('@id')}">The offer to get access to this
       <span property="ps:assetHash"
         content="{$vars['listing']('ps:assetHash')}">post</span>
@@ -71,6 +74,7 @@ $vars['output'] = <<<RDFA
       </span>
     </span>
     <span about="{$vars['listing']('@id')}">
+      <span rel="com:vendor" resource="{$vars['listing']('com:vendor')}"></span>
       <span rel="com:payeeRule">
         <span typeof="{$vars['payee_rule']('@type')}">
           <span property="com:payeeGroupPrefix" content="{$vars['payee_rule']('com:payeeGroupPrefix')}"></span>
