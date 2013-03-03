@@ -351,8 +351,10 @@ function payswarm_update_post_info($post_id) {
     'title' => $post_title,
     'assetProvider' => get_option('payswarm_vendor_id'),
     'assetContent' => $post_url,
-    // only allow a specific vendor to sell this asset
-    'vendor' => get_option('payswarm_vendor_id')
+    'listingRestrictions' => (object)array(
+      // only allow a specific vendor to sell this asset
+      'vendor' => get_option('payswarm_vendor_id')
+    )
   );
 
   // sign asset

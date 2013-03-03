@@ -42,8 +42,10 @@ $vars['output'] = <<<RDFA
     <a rel="ps:assetProvider"
       href="{$vars['asset']('ps:assetProvider')}">us</a>.
     Offered by
-    <a rel="com:vendor"
-      href="{$vars['asset']('com:vendor')}">us</a>.
+    <span rel="ps:listingRestrictions">
+      <a rel="com:vendor"
+        href="{$vars['asset']('ps:listingRestrictions', 'com:vendor')}">us</a>.
+    </span>
     <span about="{$vars['listing']('@id')}">The offer to get access to this
       <span property="ps:assetHash"
         content="{$vars['listing']('ps:assetHash')}">post</span>

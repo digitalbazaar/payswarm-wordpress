@@ -359,7 +359,7 @@ function payswarm_create_default_jsonld_context() {
     'Withdrawal' => 'com:Withdrawal',
 
     // currencies
-    'USD' => 'https://w3id.org/currency/USD',
+    'USD' => 'https://w3id.org/currencies/USD',
 
     // error
     // FIXME
@@ -387,6 +387,8 @@ function payswarm_create_default_jsonld_context() {
       '@id' => 'ps:licenseTerms', '@type' => '@id'),
     'listing' => (object)array('@id' => 'ps:listing', '@type' => '@id'),
     'listingHash' => 'ps:listingHash',
+    'listingRestrictions' => (object)array(
+      '@id' => 'ps:listingRestrictions', '@type' => '@id'),
     // FIXME: move?
     'owner' => (object)array('@id' => 'ps:owner', '@type' => '@id'),
     'preferences' => (object)array(
