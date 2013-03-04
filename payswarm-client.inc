@@ -389,8 +389,6 @@ function payswarm_create_default_jsonld_context() {
     'listingHash' => 'ps:listingHash',
     'listingRestrictions' => (object)array(
       '@id' => 'ps:listingRestrictions', '@type' => '@id'),
-    // FIXME: move?
-    'owner' => (object)array('@id' => 'ps:owner', '@type' => '@id'),
     'preferences' => (object)array(
       '@id' => 'ps:preferences', '@type' => '@vocab'),
     'validFrom' => (object)array(
@@ -421,6 +419,7 @@ function payswarm_create_default_jsonld_context() {
     'initializationVector' => 'sec:initializationVector',
     'nonce' => 'sec:nonce',
     'normalizationAlgorithm' => 'sec:normalizationAlgorithm',
+    'owner' => (object)array('@id' => 'sec:owner', '@type' => '@id'),
     'password' => 'sec:password',
     'privateKey' => (object)array('@id' => 'sec:privateKey', '@type' => '@id'),
     'privateKeyPem' => 'sec:privateKeyPem',
@@ -428,7 +427,8 @@ function payswarm_create_default_jsonld_context() {
     'publicKeyPem' => 'sec:publicKeyPem',
     'publicKeyService' => (object)array(
       '@id' => 'sec:publicKeyService', '@type' => '@id'),
-    'revoked' => (object)array('@id' => 'sec:revoked', '@type' => '@id'),
+    'revoked' => (object)array(
+      '@id' => 'sec:revoked', '@type' => 'xsd:dateTime'),
     'signature' => 'sec:signature',
     'signatureAlgorithm' => 'sec:signatureAlgorithm',
     'signatureValue' => 'sec:signatureValue',
