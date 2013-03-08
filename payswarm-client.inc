@@ -265,13 +265,13 @@ function payswarm_create_default_jsonld_context() {
     'description' => 'dc:description',
     'email' => 'foaf:mbox',
     'fullName' => 'vcard:fn',
-    'website' => (object)array('@id' => 'foaf:homepage', '@type' => '@id'),
     'label' => 'rdfs:label',
     'locality' => 'vcard:locality',
     'postalCode' => 'vcard:postal-code',
     'region' => 'vcard:region',
     'streetAddress' => 'vcard:street-address',
     'title' => 'dc:title',
+    'website' => (object)array('@id' => 'foaf:homepage', '@type' => '@id'),
     'Address' => 'vcard:Address',
 
     // bank
