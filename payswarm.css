@@ -68,6 +68,10 @@
 
 .purchase-button:hover {
   background-color: #3a0;
+  border: 1px solid #390;
+  -webkit-box-shadow: 0 0 4px #3c0;
+  -moz-box-shadow: 0 0 4px #3c0;
+  box-shadow: 0 0 4px #3c0;
 }
 
 .purchase-button img {
