@@ -31,7 +31,21 @@ class PaySwarmSessionWidget extends WP_Widget {
       $url = plugins_url() . '/payswarm/payswarm-logout.php?redirect=' .
         urlencode($_SERVER['REQUEST_URI']);
       echo $before_widget;
-      echo "<span class=\"payswarm-session\" title=\"Logged into PaySwarm as '{$session['identity_id']}'\"><img src=\"$pslogo_url\" /> Logged into PaySwarm <span class=\"right\">(<a href=\"$url\">Logout</a>)</span></span>";
+      ?>
+      <span class="payswarm-session"
+        title="Logged into PaySwarm as '<?php echo $session['identity_id']; ?>'">
+        <img src="<?php echo $pslogo_url; ?>" />
+          Logged into PaySwarm
+        <span class="payswarm-menu">
+          <span class="payswarm-menu-item">
+            <a href="<?php echo $session['identity_id']; ?>">My Identity</a>
+          </span>
+          <span class="payswarm-menu-item">
+            <a href="<?php echo $url; ?>">Logout</a>
+          </span>
+        </span>
+      </span>
+      <?php
       echo $after_widget;
     }
     // session expired
