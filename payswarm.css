@@ -107,7 +107,8 @@
 }
 
 .payswarm-menu-item a {
-  color: #fff;
+  display: block;
+  color: #fff;  
 }
 
 .payswarm-menu-item a:hover {
