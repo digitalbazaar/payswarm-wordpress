@@ -458,7 +458,7 @@ function payswarm_get_post_info_rdfa($post_id) {
 
   $session = payswarm_get_session();
   if($session === false || $session['identity_id'] === null) {
-    $button_text = 'Login';
+    $button_text = 'Access';
   }
   else {
     $button_text = 'Buy';
