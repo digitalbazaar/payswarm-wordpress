@@ -440,7 +440,7 @@ function payswarm_render_options_section() {
  */
 function payswarm_render_default_price($options) {
   ?>
-  <input type="text" size="8" name="payswarm_options[default_price]"
+  <input type="text" size="20" name="payswarm_options[default_price]"
     value="<?php echo $options['default_price']; ?>" /> USD
   <p>This is the default price that will be used for any content
     in a post that you specify must be paid for.</p>
@@ -479,7 +479,7 @@ function payswarm_render_default_license_id($options) {
  */
 function payswarm_render_default_authority_rate($options) {
   ?>
-  <input type="text" size="8" name="payswarm_options[default_authority_rate]"
+  <input type="text" size="20" name="payswarm_options[default_authority_rate]"
     value="<?php echo $options['default_authority_rate']; ?>" />
   <p>This is the percentage of the price paid by your customers
     for content that you permit a PaySwarm Authority to collect in
@@ -504,7 +504,7 @@ function payswarm_validate_options($input) {
   // validate default price
   if(payswarm_is_decimal($input['default_price']) &&
     floatval($input['default_price']) >= 0) {
-    $options['default_price'] = sprintf('%0.7f', $input['default_price']);
+    $options['default_price'] = sprintf('%0.10f', $input['default_price']);
   }
   else {
     add_settings_error(
@@ -541,7 +541,7 @@ function payswarm_validate_options($input) {
     floatval($input['default_authority_rate']) >= 0 &&
     floatval($input['default_authority_rate']) <= 100) {
     $options['default_authority_rate'] = sprintf(
-      '%0.7f', $input['default_authority_rate']);
+      '%0.10f', $input['default_authority_rate']);
   }
   else {
     add_settings_error(
@@ -563,7 +563,7 @@ function payswarm_validate_options($input) {
  *
  * @return true if the format is valid, false if not.
  */
-function payswarm_is_decimal($input, $format='%0.7f') {
+function payswarm_is_decimal($input, $format='%0.10f') {
   return sprintf($format, $input) == $input;
 }
 
