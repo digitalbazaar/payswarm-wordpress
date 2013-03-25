@@ -14,9 +14,9 @@ jsonld.php:
 
 package: jsonld.php
 	@(test -d .git || echo "ERROR: No git repository found, package building will fail.")
-	mkdir -p ${PACKAGE}
-	cp -a --parents $(shell git ls-files) jsonld.php ${PACKAGE}
-	rm ${PACKAGE}/Makefile
-	zip -q -r ${PACKAGE}.zip ${PACKAGE}
-	rm -rf ${PACKAGE}
+	mkdir -p payswarm
+	cp -a --parents $(shell git ls-files) jsonld.php payswarm
+	rm payswarm/Makefile payswarm/.gitignore
+	zip -q -r ${PACKAGE}.zip payswarm
+	rm -rf payswarm
 
