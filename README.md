@@ -34,7 +34,7 @@ divider between the unpaid and paid content in the article, like so:
 
 ```html
 This is unpaid content
-<!-- payswarm -->
+<!--payswarm-->
 This is paid content
 ```
 
