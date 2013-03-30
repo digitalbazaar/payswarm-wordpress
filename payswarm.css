@@ -5,6 +5,10 @@
   text-align: right;
 }
 
+.payswarm-center {
+  text-align: center;
+}
+
 .money {
   color: #666;
 }

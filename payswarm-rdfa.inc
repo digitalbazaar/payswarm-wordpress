@@ -12,11 +12,11 @@ $vars['output'] = <<<RDFA
     <form action="{$vars['access_url']}" method="post"
       onsubmit="javascript:showAuthorityPopup(this);">
       <button class="purchase-button">
-        <img alt="{$vars['text_access']}" src="{$vars['pslogo_url']}" />
-        {$vars['text_access']}
+        <img alt="{$vars['text_button']}" src="{$vars['pslogo_url']}" />
+        {$vars['text_button']}
       </button>
       <span rel="ps:asset" resource="{$vars['asset']('@id')}">
-        {$vars['text_view_full_article']}
+        {$vars['text_access']}
       </span>
       <span rel="com:payee" resource="{$vars['payee']('@id')}">
         <span>$</span>

@@ -436,6 +436,34 @@ function payswarm_update_post_info($post_id) {
 }
 
 /**
+ * Gets the HTML for an Access button.
+ *
+ * @param integer $post_id the ID of the post that is being expressed.
+ * @param string $access_text the text to display next to the access button.
+ */
+function payswarm_get_access_button_html(
+  $post_id, $access_text='View the full article for') {
+  // if a price is available, add RDFa and access button
+  $amount = get_post_meta($post_id, '_payswarm_price', true);
+  if($amount !== '') {
+    return '<div class="purchase section">' .
+      '<div class="money row">' .
+      payswarm_get_post_info_rdfa($post_id, $access_text) .
+      '</div></div>';
+  }
+
+  // no purchase price available
+  // tell the visitor that the article cannot be purchased
+  $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
+  return '<div class="purchase section">' .
+    '<div class="money payswarm-center">' .
+    '<span class="label">' .
+    __('The author has not set the price for the paid content of this post.') .
+    '</span>' .
+    '</div></div>';
+}
+
+/**
  * Generates the PaySwarm post information HTML+RDFa markup, which can be
  * inserted into parts of the WordPress site.
  *
@@ -443,11 +471,12 @@ function payswarm_update_post_info($post_id) {
  * @since 1.0
  *
  * @param integer $post_id the ID of the post that is being expressed.
+ * @param string $access_text the text to display next to the access button.
  *
  * @return string the HTML markup, surrounded by a DIV element, that contains
  *         the necessary RDFa markup to express the PaySwarm information.
  */
-function payswarm_get_post_info_rdfa($post_id) {
+function payswarm_get_post_info_rdfa($post_id, $access_text) {
   // get payswarm post info
   $info = payswarm_get_post_info($post_id);
 
@@ -555,8 +584,8 @@ function payswarm_get_post_info_rdfa($post_id) {
     'payee' => $payee_getter,
     'payee_rate' => sprintf('%1.02f', $payee_getter('com:payeeRate')),
     'payee_rule' => $rdfa_getter($payee_rule),
-    'text_access' => __($button_text),
-    'text_view_full_article' => __('View the full article for'),
+    'text_button' => __($button_text),
+    'text_access' => __($access_text),
     'text_view_offer_details' => __('View offer details'),
     'output' => ''
   );
@@ -594,109 +623,121 @@ function payswarm_filter_paid_content($content) {
   // ensure default prices are set
   payswarm_set_price_defaults($post_id);
 
-  // FIXME: include these tags in the regex below to optimize ... or maybe
-  // store different post versions as metadata on article save and load
-  // that here (pick a way to reduce dynamic loading overhead)
+  // tags
+  $begin_paid_tag = 'BEGIN_PAYSWARM_PAID_CONTENT';
+  $end_paid_tag = 'END_PAYSWARM_PAID_CONTENT';
+  $begin_unpaid_tag = 'BEGIN_PAYSWARM_UNPAID_ONLY_CONTENT';
+  $end_unpaid_tag = 'END_PAYSWARM_UNPAID_ONLY_CONTENT';
 
-  // remove any spurious paragraph and break tags
-  $content = str_replace(
-    '<p><!--payswarm--></p>',
-    '<!--payswarm-->', $content);
-  $content = str_replace(
-    '<p><!--payswarm--><br />',
-    '<!--payswarm-->', $content);
-  $content = str_replace(
-    '<p><!--payswarm-alternate--></p>',
-    '<!--payswarm-alternate-->', $content);
-  $content = str_replace(
-    '<p><!--payswarm-alternate--><br />',
-    '<!--payswarm-alternate-->', $content);
+  // tag regexes
+  $begin_ws = '(?:(?:\\s*?<(?:(?:p)|(?:br\\/))>)|(?:\\s+|^))';
+  $end_ws = '(?:\\s*?<(?:(?:\\/p)|(?:br\\s*?\\/))>)?';
+  $begin_paid = "(?:$begin_ws($begin_paid_tag)$end_ws)";
+  $end_paid = "(?:$begin_ws($end_paid_tag)$end_ws)";
+  $begin_unpaid = "(?:$begin_ws($begin_unpaid_tag)$end_ws)";
+  $end_unpaid = "(?:$begin_ws($end_unpaid_tag)$end_ws)";
+  $deprecated_paid = '(<!--\\s*payswarm\\s*-->)';
+  $begin_paid = "(?:$deprecated_paid|$begin_paid)";
+  $end_paid = "(?:$deprecated_paid|$end_paid)";
+  $paid = "{$begin_paid}(.*?)(?:{$end_paid}|{$begin_unpaid}|$)";
+  $unpaid = "{$begin_unpaid}(.*?)(?:{$end_unpaid}|{$begin_paid}|$)";
 
-  // if the article has not been purchased and there is for-pay content
-  if(!$purchased && preg_match('/<!--payswarm-->.+/ms', $content)) {
-    // remove all for-pay content
-    $processed_content = payswarm_filter_content($content, true);
+  // full capture pattern (match eols with '.' with '/s' modifier)
+  $pattern = "/(?:{$paid})|(?:{$unpaid})/s";
 
-    // if a price is available, add purchase UI
-    $amount = get_post_meta($post_id, '_payswarm_price', true);
-    if($amount !== '') {
-      $processed_content .=
-        '<div class="purchase section">' .
-        '<div class="money row">' .
-        payswarm_get_post_info_rdfa($post_id) .
-        '</div></div>';
+  // split content into sections
+  $sections = array();
+  $offset = 0;
+  do {
+    $result = preg_match(
+      $pattern, $content, $matches, PREG_OFFSET_CAPTURE, $offset);
+
+    if(!$result) {
+      $type = 'free';
+      $section = substr($content, $offset);
+      $offset = strlen($content);
     }
-    // no purchase price available
     else {
-      // tell the visitor that the article cannot be purchased
-      $pslogo_url = PAYSWARM_PLUGIN_URL . 'images/payswarm-20.png';
-      $processed_content .=
-        '<div class="purchase section">' .
-        '<div class="money row">' .
-        '<span class="label">' .
-          __('The author has not set the price for the paid content.') .
-        '</span><button class="purchase-button">' .
-        '<img alt="' . __('Cannot Purchase') .'" src="' . $pslogo_url .
-        '" />' . __('Cannot Purchase') . '</button>' .
-        '</div></div>';
+      // 1 <!-- payswarm -->
+      // 2 BEGIN_PAYSWARM_PAID_CONTENT
+      // 3 paid content
+      // 4 <!-- payswarm -->
+      // 5 END_PAYSWARM_PAID_CONTENT
+      // 6 BEGIN_PAYSWARM_UNPAID_ONLY_CONTENT paid terminator
+      // 7 BEGIN_PAYSWARM_UNPAID_ONLY_CONTENT
+      // 8 unpaid content
+      // 9 END_PAYSWARM_UNPAID_ONLY_CONTENT
+
+      // paid content found
+      if(isset($matches[3]) && $matches[3][1] !== -1) {
+        $type = 'paid';
+        $index = 3;
+      }
+      // unpaid content found
+      else if(isset($matches[8]) && $matches[8][1] !== -1) {
+        $type = 'unpaid';
+        $index = 8;
+      }
+
+      if($offset !== $matches[0][1]) {
+        // add 'free' section before match
+        $sections[] = array(
+          'type' => 'free',
+          'content' => substr($content, $offset, $matches[0][1] - $offset));
+      }
+
+      $section = $matches[$index][0];
+
+      // an end-tag was provided
+      if((isset($matches[4]) && $matches[4][1] !== -1) ||
+        (isset($matches[5]) && $matches[5][1] !== -1) ||
+        (isset($matches[9]) && $matches[9][1] !== -1)) {
+        // skip entire match
+        $offset = $matches[0][1] + strlen($matches[0][0]);
+      }
+      else {
+        // skip content only
+        $offset = $matches[$index][1] + strlen($section);
+      }
+    }
+
+    $sections[] = array('type' => $type, 'content' => $section);
+  }
+  while($offset < strlen($content));
+
+  // generate processed content from sections
+  $processed_content = '';
+  $paid_content = false;
+  foreach($sections as $section) {
+    if($section['type'] === 'paid') {
+      $paid_content = true;
+    }
+    if($section['type'] === 'free' ||
+      ($section['type'] === 'paid' && $purchased) ||
+      ($section['type'] === 'unpaid' && !$purchased)) {
+      $processed_content .= $section['content'];
     }
   }
-  // article has been purchased or there is no for-pay content
-  else {
-    // remove alternate content that only displays when visitor hasn't paid
-    $processed_content = payswarm_filter_content($content, false);
+
+  // inject all access buttons
+  $access_button = "/{$begin_ws}PAYSWARM_ACCESS_BUTTON(?: ([\\w!?.\\s]*))?{$end_ws}/s";
+  $access_button_html = payswarm_get_access_button_html($post_id, '');
+
+  $create_button = function($matches) use ($post_id) {
+    $access_text = isset($matches[1]) ? $matches[1] : '';
+    return payswarm_get_access_button_html($post_id, $access_text);
+  };
+
+  $processed_content = preg_replace_callback(
+    $access_button, $create_button, $processed_content, -1, $count);
+
+  // append access button by default if none were provided via markup
+  // and the article has not been purchased and has paid content
+  if($count === 0 && !$purchased && $paid_content) {
+    $processed_content .= payswarm_get_access_button_html($post_id);
   }
 
   return $processed_content;
-}
-
-/**
- * A helper function called from payswarm_filter_paid_content that removes
- * either paid or alternate text from an article (based on a flag).
- *
- * @package payswarm
- * @since 1.0
- *
- * @param string $content the article content to filter.
- * @param string $paid true to filter out paid content, false to filter out
- *          alternate text.
- *
- * @return string the filtered article.
- */
-function payswarm_filter_content($content, $paid) {
-  $rval = '';
-
-  // setup start and end tags for filtering
-  $start = $paid ? '<!--payswarm-->' : '<!--payswarm-alternate-->';
-  $start_len = strlen($start);
-  $end = $paid ? '<!--payswarm-alternate-->' : '<!--payswarm-->';
-
-  $pos = 0;
-  do {
-    // find start of content to remove
-    $tmp = strpos($content, $start, $pos);
-
-    // nothing to filter, add all content
-    if($tmp === false) {
-      $rval .= substr($content, $pos);
-    }
-    // filter out content
-    else {
-      // add all content up to start of content to filter out
-       $rval .= substr($content, $pos, ($tmp - $pos));
-
-       // find end of content to filter out
-       $tmp = strpos($content, $end, $tmp + $start_len);
-    }
-    $pos = $tmp;
-  }
-  while($pos !== false);
-
-  // remove special tags from content
-  $rval = str_replace('<!--payswarm-->', '', $rval);
-  $rval = str_replace('<!--payswarm-alternate-->', '', $rval);
-
-  return $rval;
 }
 
 /**
