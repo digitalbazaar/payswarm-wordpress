@@ -78,7 +78,7 @@ an access button with some default text will appear at the end of the post.
 The price of the post, the license that is granted upon purchase, 
 and other post-specific values can be changed on a per-post basis.
 
-Pre-requisites
+Prerequisites
 --------------
 
 Before you install this plugin, you will need the following software:
@@ -111,17 +111,22 @@ following steps:
 5. Click the "Add Identity" button.
 6. Enter the name of your WordPress website (e.g. "Good Food").
 7. Select "Vendor" for the type of Identity.
-8. Enter the address for your website (e.g. "http://foo.bar.com/").
-8. Enter a short description of your website (e.g. "Good Food strives to discover and share delicous recipes.").
-9. Enter the name of your new WordPress website Financial Account (e.g. "Blogging Revenue").
-10. Select "Public" for the type of Account Visibility.
-11. Click the "Add" button.
-12. Enter the name of your Access Key Label (e.g. "Good Food Vendor Key 2012-09-25")
-13. Click the "Register" button.
-14. If there are no errors when you get back to the WordPress plugin page, registration was successful.
-15. Go to the PaySwarm Plugin Settings page (select Settings -> PaySwarm).
-16. Set the default price for posts (e.g. "0.05")
-17. Click the "Save Changes" button.
+8. Enter the address for your website (e.g. "http://foo.bar.com").
+9. Enter a short description of your website (e.g. "Good Food strives to discover and share delicous recipes.").
+10. Enter the name of your new WordPress website Financial Account (e.g. "Blogging Revenue").
+11. Select "Public" for the type of Account Visibility.
+12. Click the "Add" button.
+13. Enter the name of your Access Key Label (e.g. "Good Food Vendor Key 2012-09-25")
+14. Click the "Register" button.
+15. If there are no errors when you get back to the WordPress plugin page, registration was successful.
+16. Go to the PaySwarm Plugin Settings page (select Settings -> PaySwarm).
+17. Set the default price for posts (e.g. "0.05")
+18. Click the "Save Changes" button.
+19. The PaySwarm Session widget should be automatically installed. To ensure
+  that is installed and appears where you want it to, select Appearance -> Widgets
+  and look for the "PaySwarm Session" widget. Drag and drop it to where you'd
+  like it to appear. This widget will display to your customers when they are
+  logged into their PaySwarm provider and are browsing your website.
 
 Getting the Source Code
 -----------------------
