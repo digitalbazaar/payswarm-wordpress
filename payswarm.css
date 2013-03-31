@@ -119,6 +119,10 @@
   text-decoration: none;
 }
 
+.payswarm-purchase-ui {
+  display: inline-block;
+}
+
 .purchase, .manage {
   margin: 20px 0;
   padding: 10px;

@@ -11,25 +11,27 @@ $vars['output'] = <<<RDFA
   <div about="{$vars['listing']('@id')}" typeof="{$vars['listing']('@type')}">
     <form action="{$vars['access_url']}" method="post"
       onsubmit="javascript:showAuthorityPopup(this);">
-      <button class="purchase-button">
-        <img alt="{$vars['text_button']}" src="{$vars['pslogo_url']}" />
-        {$vars['text_button']}
-      </button>
-      <span rel="ps:asset" resource="{$vars['asset']('@id')}">
-        {$vars['text_access']}
-      </span>
-      <span rel="com:payee" resource="{$vars['payee']('@id')}">
-        <span>$</span>
-        <span rel="com:currency"
-          resource="{$vars['payee']('com:currency')}"></span>
-        <abbr property="com:payeeRate" title="{$vars['payee']('com:payeeRate')}"
-          content="{$vars['payee']('com:payeeRate')}">{$vars['payee_rate']}
-        </abbr>
+      <div class=".payswarm-purchase-ui">
+        <button class="purchase-button">
+          <img alt="{$vars['text_button']}" src="{$vars['pslogo_url']}" />
+          {$vars['text_button']}
+        </button>
+        <span rel="ps:asset" resource="{$vars['asset']('@id')}">
+          {$vars['text_access']}
         </span>
-      <span class="view-more"
-        onclick="javascript:toggleAssetInformation($post_id);">
-        {$vars['text_view_offer_details']}
-      </span>
+        <span rel="com:payee" resource="{$vars['payee']('@id')}">
+          <span>$</span>
+          <span rel="com:currency"
+            resource="{$vars['payee']('com:currency')}"></span>
+          <abbr property="com:payeeRate" title="{$vars['payee']('com:payeeRate')}"
+            content="{$vars['payee']('com:payeeRate')}">{$vars['payee_rate']}
+          </abbr>
+          </span>
+        <span class="view-more"
+          onclick="javascript:toggleAssetInformation($post_id);">
+          {$vars['text_view_offer_details']}
+        </span>
+      </div>
     </form>
   </div>
   <div id="payswarm-asset-info-$post_id" class="hidden">
