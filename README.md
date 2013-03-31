@@ -65,7 +65,7 @@ will be shown beside the access button:
 ```html
 This is free content; anyone can see it.
 
-PAYSWARM_ACCESS_BUTTON Fund my coffee addiction to create more posts like this.
+PAYSWARM_ACCESS_BUTTON Fund my coffee addiction so I can post more!
 
 BEGIN_PAYSWARM_PAID_CONTENT
 This is paid content; only people who have paid can see it.
