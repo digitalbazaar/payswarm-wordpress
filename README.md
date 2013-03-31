@@ -29,19 +29,53 @@ This is a [WordPress][] plugin that implements a PaySwarm client. This plugin
 can be installed in a normal WordPress 3.x site, allowing page authors to
 charge a small fee for selected articles that they write.
 
-Once the plugin is installed, the author of a post needs to insert a single
-divider between the unpaid and paid content in the article, like so:
+Once the plugin is installed, the author of a post has a few options when
+marking up the pieces of the article that must be paid for, what do display
+for articles that haven't been paid for, and where to place the button
+that initiates the payment process.
+
+A typical article will look like this:
 
 ```html
-This is unpaid content
-<!--payswarm-->
-This is paid content
+This is unpaid content, anyone can see it.
+
+BEGIN_PAYSWARM_PAID_CONTENT
+
+This is paid content, only people that have paid can see it.
 ```
 
-A reader will not be able to see the paid content portion until they have
-purchased the article. The price of the article, the license that is granted
-upon purchase, and other article-specific values can be changed on a 
-per-article basis.
+An author can also provide text that will only be shown for people that
+haven't paid for the article:
+
+```html
+This is unpaid content, anyone can see it.
+
+BEGIN_PAYSWARM_UNPAID_ONLY_CONTENT
+This is unpaid-only content, it will be hidden once the article
+has been paid for.
+END_PAYSWARM_UNPAID_ONLY_CONTENT
+
+BEGIN_PAYSWARM_PAID_CONTENT
+This is paid content, only people that have paid can see it.
+END_PAYSWARM_PAID_CONTENT
+```
+
+The author can also decide where they want to place the button
+that initiates the purchase as well as a short piece of text that
+will be shown beside the access button:
+
+```html
+This is unpaid content, anyone can see it.
+
+PAYSWARM_ACCESS_BUTTON Fund my coffee addiction to create more articles like this.
+
+BEGIN_PAYSWARM_PAID_CONTENT
+This is paid content, only people that have paid can see it.
+END_PAYSWARM_PAID_CONTENT
+```
+
+The price of the article, the license that is granted upon purchase, 
+and other article-specific values can be changed on a per-article basis.
 
 Pre-requisites
 --------------
