@@ -73,7 +73,7 @@ END_PAYSWARM_PAID_CONTENT
 ```
 
 If no access button markup is specified but paid content markup is, then
-an access button with some default text will appear at the end of the post.
+the access button will appear, with some default text, at the end of the post.
 
 The price of the post, the license that is granted upon purchase, 
 and other post-specific values can be changed on a per-post basis.

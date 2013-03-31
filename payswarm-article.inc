@@ -728,8 +728,10 @@ function payswarm_filter_paid_content($content) {
     return payswarm_get_access_button_html($post_id, $access_text);
   };
 
+  // FIXME: temporarily limit access buttons to 1 until RDFa duplication
+  // bug is fixed
   $processed_content = preg_replace_callback(
-    $access_button, $create_button, $processed_content, -1, $count);
+    $access_button, $create_button, $processed_content, 1, $count);
 
   // append access button by default if none were provided via markup
   // and the article has not been purchased and has paid content
