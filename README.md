@@ -4,58 +4,57 @@ PaySwarm Plugin for WordPress
 Introduction
 ------------
 
-[PaySwarm][] enables people that create digital content such as blog posts,
+[PaySwarm][] enables people who create digital content such as blog posts,
 music, film, episodic content, photos, virtual goods, and documents to
 distribute their creations through their website and receive payment directly
 from their fans and customers. If you have a passion for creating things on the
-Web, or would like to support people doing great things - PaySwarm is for you.
+Web or would like to support people doing great things - PaySwarm is for you.
 
 The platform is an open, patent and royalty-free web standard that enables Web
 browsers and Web devices to perform Universal Web Payment. PaySwarm fixes the
 problems with rewarding people on the web - it reduces and nearly eliminates
-transactional friction. It ensures that the people that you want to support are
+transactional friction. It ensures that the people who you want to support are
 automatically rewarded for their hard work.
 
-We need Web-native payment technology that is designed to work with how the Web
-works. This technology can be integrated directly into WordPress-based 
-websites with support for Drupal and other content management systems in 
-the works. It has a simple, well-defined API, like Twitter, that allows for 
-universal payment on the web.
+This technology can be integrated directly into WordPress-based websites with
+support for Drupal and other content management systems in the works. It has a
+simple, well-defined API, like Twitter, that allows for universal payment on
+the web.
 
 WordPress Plugin
 ----------------
 
 This is a [WordPress][] plugin that implements a PaySwarm client. This plugin
 can be installed in a normal WordPress 3.x site, allowing page authors to
-charge a small fee for selected articles that they write.
+charge a small fee for selected posts that they write.
 
-Once the plugin is installed, the author of a post has a few options when
-marking up the pieces of the article that must be paid for, what do display
-for articles that haven't been paid for, and where to place the button
-that initiates the payment process.
+Once the plugin is installed, the author of a post has a few options that
+they can use to markup the post. They can indicate the pieces of the post
+that must be paid for, what to display for posts that haven't been paid for,
+and where to place the button that initiates the payment process.
 
-A typical article will look like this:
+A typical post will look like this:
 
 ```html
-This is unpaid content, anyone can see it.
+This is free content; anyone can see it.
 
 BEGIN_PAYSWARM_PAID_CONTENT
 
-This is paid content, only people that have paid can see it.
+This is paid content; only people who have paid can see it.
 ```
 
-An author can also provide text that will only be shown for people that
-haven't paid for the article:
+An author can also provide text that will only be shown for people who
+haven't paid for the post:
 
 ```html
-This is unpaid content, anyone can see it.
+This is free content; anyone can see it.
 
 BEGIN_PAYSWARM_UNPAID_ONLY_CONTENT
-This is unpaid-only content, it will be hidden once the article has been paid for.
+This is unpaid-only content; it will be hidden once the post has been paid for.
 END_PAYSWARM_UNPAID_ONLY_CONTENT
 
 BEGIN_PAYSWARM_PAID_CONTENT
-This is paid content, only people that have paid can see it.
+This is paid content; only people who have paid can see it.
 END_PAYSWARM_PAID_CONTENT
 ```
 
@@ -64,17 +63,20 @@ that initiates the purchase as well as a short piece of text that
 will be shown beside the access button:
 
 ```html
-This is unpaid content, anyone can see it.
+This is free content; anyone can see it.
 
-PAYSWARM_ACCESS_BUTTON Fund my coffee addiction to create more articles like this.
+PAYSWARM_ACCESS_BUTTON Fund my coffee addiction to create more posts like this.
 
 BEGIN_PAYSWARM_PAID_CONTENT
-This is paid content, only people that have paid can see it.
+This is paid content; only people who have paid can see it.
 END_PAYSWARM_PAID_CONTENT
 ```
 
-The price of the article, the license that is granted upon purchase, 
-and other article-specific values can be changed on a per-article basis.
+If no access button markup is specified but paid content markup is, then
+an access button with some default text will appear at the end of the post.
+
+The price of the post, the license that is granted upon purchase, 
+and other post-specific values can be changed on a per-post basis.
 
 Pre-requisites
 --------------
@@ -118,7 +120,7 @@ following steps:
 13. Click the "Register" button.
 14. If there are no errors when you get back to the WordPress plugin page, registration was successful.
 15. Go to the PaySwarm Plugin Settings page (select Settings -> PaySwarm).
-16. Set the default price for articles (e.g. "0.05")
+16. Set the default price for posts (e.g. "0.05")
 17. Click the "Save Changes" button.
 
 Getting the Source Code
