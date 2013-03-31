@@ -173,9 +173,8 @@
 
 .purchase-button img {
   padding: 0px 4px;
-  margin: -2px 0 0 0;
-  height: 16px;
-  vertical-align: middle;
+  height: 1em;
+  vertical-align: text-bottom;
 }
 
 .asset-info {
