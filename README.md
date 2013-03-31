@@ -51,8 +51,7 @@ haven't paid for the article:
 This is unpaid content, anyone can see it.
 
 BEGIN_PAYSWARM_UNPAID_ONLY_CONTENT
-This is unpaid-only content, it will be hidden once the article
-has been paid for.
+This is unpaid-only content, it will be hidden once the article has been paid for.
 END_PAYSWARM_UNPAID_ONLY_CONTENT
 
 BEGIN_PAYSWARM_PAID_CONTENT
