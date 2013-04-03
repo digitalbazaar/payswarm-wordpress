@@ -87,8 +87,10 @@ PAYSWARM_ACCESS_BUTTON Donate
 
 ```
 
-The price of the post, the license that is granted upon purchase, 
-and other post-specific values can be changed on a per-post basis.
+The price of the post, the license that is granted upon purchase, and other
+post-specific values can be changed on a per-post basis. Future versions of
+the plugin may allow authors to let their readers set their own donation
+amounts for articles.
 
 Prerequisites
 --------------
