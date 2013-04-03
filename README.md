@@ -75,9 +75,6 @@ END_PAYSWARM_PAID_CONTENT
 If no access button markup is specified but paid content markup is, then
 the access button will appear, with some default text, at the end of the post.
 
-The price of the post, the license that is granted upon purchase, 
-and other post-specific values can be changed on a per-post basis.
-
 If you want to add a donation button to your post but keep all of the
 content available for free, just add a PAYSWARM_ACCESS_BUTTON and no
 other special payswarm tags:
@@ -89,6 +86,9 @@ keep creating more great content!
 PAYSWARM_ACCESS_BUTTON Donate
 
 ```
+
+The price of the post, the license that is granted upon purchase, 
+and other post-specific values can be changed on a per-post basis.
 
 Prerequisites
 --------------
