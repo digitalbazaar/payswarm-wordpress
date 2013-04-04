@@ -77,7 +77,7 @@ the access button will appear, with some default text, at the end of the post.
 
 If you want to add a donation button to your post but keep all of the
 content available for free, just add a PAYSWARM_ACCESS_BUTTON and no
-other special payswarm tags:
+other special PaySwarm tags:
 
 ```html
 This is free content; anyone can see it. However, please donate so I can
