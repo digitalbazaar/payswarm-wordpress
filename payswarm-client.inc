@@ -227,6 +227,18 @@ function payswarm_add_hook($hook, $func) {
 }
 
 /**
+ * Gets the default payswarm JSON-LD context URL.
+ *
+ * @package payswarm
+ * @since 1.0
+ *
+ * @return string the default payswarm JSON-LD context URL.
+ */
+function payswarm_get_default_jsonld_context_url() {
+  return 'https://w3id.org/payswarm/v1';
+}
+
+/**
  * Creates a default payswarm JSON-LD context.
  *
  * @package payswarm
@@ -732,7 +744,7 @@ function payswarm_verify($obj) {
 
   // frame message to retrieve signature
   $frame = (object)array(
-    '@context' => payswarm_create_default_jsonld_context(),
+    '@context' => payswarm_get_default_jsonld_context_url(),
     'signature' => (object)array(
       'created' => new stdClass(),
       'creator' => new stdClass(),
@@ -939,7 +951,7 @@ function payswarm_authority_cache_license($host, $id) {
 
   // sign message
   $msg = new stdClass();
-  $msg->{'@context'} = payswarm_create_default_jsonld_context();
+  $msg->{'@context'} = payswarm_get_default_jsonld_context_url();
   $msg->license = $id;
   payswarm_sign($msg);
 
