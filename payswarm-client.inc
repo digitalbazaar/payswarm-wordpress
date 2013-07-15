@@ -1,6 +1,11 @@
 <?php
 
 /*
+PHP implementation of the PaySwarm client API.
+Version: 0.1.0
+
+@author Dave Longley
+
 New BSD License (3-clause)
 Copyright (c) 2010-2013, Digital Bazaar, Inc.
 All rights reserved.
@@ -165,8 +170,8 @@ class PaySwarmAsymmetricCipherException extends Exception {
 // hook API
 $payswarm_hooks = array();
 
-// set jsonld context loader
-jsonld_set_context_loader('payswarm_jsonld_load_context');
+// set jsonld document loader
+jsonld_set_document_loader('payswarm_jsonld_load_document');
 
 /**
  * Adds a hook. To add a hook, pass the name of the hook (eg: create_nonce) and
@@ -577,24 +582,27 @@ function payswarm_get_cached_jsonld($id) {
 }
 
 /**
- * Retrieves a JSON-LD context URL, returning the context.
+ * Retrieves a JSON-LD document URL, returning the remote document.
  *
- * @param string $url the URL for the JSON-LD context.
+ * @param string $url the URL for the JSON-LD document.
  *
- * @return stdClass the JSON-LD context.
+ * @return stdClass the JSON-LD RemoteDocument object.
  */
-function payswarm_jsonld_load_context($url) {
+function payswarm_jsonld_load_document($url) {
   // FIXME: hack until https://w3id.org/payswarm/v1 is ready
   if($url === 'https://w3id.org/payswarm/v1') {
     return (object)array(
-      '@context' => payswarm_create_default_jsonld_context());
+      'contextUrl' => null,
+      'documentUrl' => $url,
+      'document' => (object)array(
+        '@context' => payswarm_create_default_jsonld_context()));
   }
 
   // use cache if available
   $rval = payswarm_get_cached_jsonld($url);
   if($rval === false) {
     // do secure retrieval of URL
-    $rval = jsonld_default_get_secure_url($url);
+    $rval = jsonld_default_secure_document_loader($url);
     if($cache) {
       payswarm_cache_jsonld($url, $rval);
     }
@@ -1241,6 +1249,34 @@ function payswarm_is_listing_valid($listing) {
 }
 
 /**
+ * Default GET JSON-LD hook.
+ *
+ * @param string $url the URL to to retrieve.
+ *
+ * @return string the retrieved JSON-LD.
+ */
+function payswarm_default_get_url($url) {
+  $opts = array(
+    'http' => array(
+      'method' => 'GET',
+      'header' =>
+      "Accept: application/ld+json\r\n" .
+      "User-Agent: PaySwarm PHP Client/1.0\r\n"),
+    'https' => array(
+      'verify_peer' => true,
+      'method' => 'GET',
+      'header' =>
+      "Accept: application/ld+json\r\n" .
+      "User-Agent: PaySwarm PHP Client/1.0\r\n"));
+  $stream = stream_context_create($opts);
+  $result = @file_get_contents($url, false, $stream);
+  if($result === false) {
+    throw new Exception("Could not GET url: '$url'");
+  }
+  return $result;
+}
+
+/**
  * Default POST JSON-LD hook.
  *
  * @param string $url the URL.
@@ -1251,7 +1287,7 @@ function payswarm_is_listing_valid($listing) {
 function payswarm_default_post_jsonld($url, $data) {
   $opts = array('http' =>
     array(
-      'method' => "POST",
+      'method' => 'POST',
       'header' =>
         "Accept: application/ld+json\r\n" .
         "Content-Type: application/ld+json\r\n" .
