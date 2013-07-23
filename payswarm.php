@@ -58,4 +58,11 @@ add_action('admin_enqueue_scripts', 'payswarm_enqueue_scripts');
 // add filters for text that the PaySwarm plugin will modify
 add_filter('the_content', 'payswarm_filter_paid_content');
 
+// remove filters that alter wordpress capitalization
+// (this can interfere with digital signatures)
+// See: http://justintadlock.com/archives/2010/07/08/lowercase-p-dangit
+remove_filter('the_title', 'capital_P_dangit', 11);
+remove_filter('the_content', 'capital_P_dangit', 11);
+remove_filter('comment_text', 'capital_P_dangit', 31);
+
 /* end of file, omit ?> */
