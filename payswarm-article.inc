@@ -360,7 +360,7 @@ function payswarm_update_post_info($post_id) {
   // sign asset
   payswarm_sign($asset, array(
     'key' => payswarm_wp_get_private_key(),
-    'keyId' => payswarm_wp_get_public_key_id
+    'keyId' => payswarm_wp_get_public_key_id()
   ));
 
   // generate new listing validity period at start of the day
@@ -424,7 +424,7 @@ function payswarm_update_post_info($post_id) {
   // sign listing
   payswarm_sign($listing, array(
     'key' => payswarm_wp_get_private_key(),
-    'keyId' => payswarm_wp_get_public_key_id
+    'keyId' => payswarm_wp_get_public_key_id()
   ));
 
 
@@ -506,14 +506,14 @@ function payswarm_get_post_info_rdfa($post_id, $access_text) {
       'ccard' => 'https://w3id.org/commerce/creditcard#',
       'com' => 'https://w3id.org/commerce#',
       'dc' => 'http://purl.org/dc/terms/',
-      'foaf' => 'http://xmlns.com/foaf/0.1/',
       'gr' => 'http://purl.org/goodrelations/v1#',
+      'identity' => 'https://w3id.org/identity#',
       'pto' => 'http://www.productontology.org/id/',
       'ps' => 'https://w3id.org/payswarm#',
       'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
       'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#',
+      'schema' => 'http://schema.org/',
       'sec' => 'https://w3id.org/security#',
-      'vcard' => 'http://www.w3.org/2006/vcard/ns#',
       'xsd' => 'http://www.w3.org/2001/XMLSchema#'));
   $options = array('compactArrays' => false);
   $listing = jsonld_compact($info['listing'], $ctx, $options)->{'@graph'}[0];

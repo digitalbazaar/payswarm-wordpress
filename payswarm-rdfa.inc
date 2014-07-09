@@ -39,7 +39,7 @@ $vars['output'] = <<<RDFA
     <a rel="ps:assetContent" href="{$vars['asset']('ps:assetContent')}"
       property="dc:title">{$vars['asset']('dc:title')}</a> by
     <span rel="dc:creator">
-      <span property="vcard:fn">{$vars['asset']('dc:creator', 'vcard:fn')}</span>
+      <span property="schema:name">{$vars['asset']('dc:creator', 'schema:name')}</span>
     </span>.
     Written by
     <a rel="ps:assetProvider"

@@ -253,7 +253,7 @@ function payswarm_get_default_jsonld_context_url() {
  * @return stdClass the default payswarm JSON-LD context.
  */
 function payswarm_create_default_jsonld_context() {
-  $ctx = file_get_contents('./payswarm-context.jsonld');
+  $ctx = file_get_contents(__DIR__ . '/payswarm-context.jsonld');
   return jsonld_decode($ctx);
 }
 
