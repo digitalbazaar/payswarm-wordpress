@@ -347,7 +347,7 @@ function payswarm_update_post_info($post_id) {
     '@context' => payswarm_create_default_jsonld_context(),
     'id' => $post_url . '#asset',
     'type' => array('Asset', 'pto:WebPage'),
-    'creator' => (object)array('fullName' => $post_author),
+    'creator' => (object)array('name' => $post_author),
     'title' => $post_title,
     'assetProvider' => get_option('payswarm_vendor_id'),
     'assetContent' => $post_url,
@@ -358,7 +358,10 @@ function payswarm_update_post_info($post_id) {
   );
 
   // sign asset
-  payswarm_sign($asset);
+  payswarm_sign($asset, array(
+    'key' => payswarm_wp_get_private_key(),
+    'keyId' => payswarm_wp_get_public_key_id
+  ));
 
   // generate new listing validity period at start of the day
   $date = date_create('now', new DateTimeZone('UTC'));
@@ -419,7 +422,11 @@ function payswarm_update_post_info($post_id) {
   );
 
   // sign listing
-  payswarm_sign($listing);
+  payswarm_sign($listing, array(
+    'key' => payswarm_wp_get_private_key(),
+    'keyId' => payswarm_wp_get_public_key_id
+  ));
+
 
   // hash listing
   $listing_hash = payswarm_hash($listing);

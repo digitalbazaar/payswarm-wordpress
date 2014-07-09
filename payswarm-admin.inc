@@ -198,7 +198,7 @@ function payswarm_complete_registration($response) {
     $url = admin_url() . 'plugins.php?page=payswarm&complete=true';
     payswarm_close_register_popup($url);
   }
-  catch(PaySwarmAsymmetricCipherException $e) {
+  catch(BedrockAsymmetricCipherException $e) {
     // close the popup and report decryption error
     $url = admin_url() . 'plugins.php?page=payswarm&error=decryption';
     payswarm_close_register_popup($url);

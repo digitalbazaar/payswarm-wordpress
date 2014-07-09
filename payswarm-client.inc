@@ -2,7 +2,7 @@
 
 /*
 PHP implementation of the PaySwarm client API.
-Version: 0.1.0
+Version: 0.1.1
 
 @author Dave Longley
 
@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 require_once('jsonld.php');
+require_once('bedrock.php');
 
 /*
 
@@ -164,8 +165,8 @@ Authorities.
 
 */
 
-class PaySwarmAsymmetricCipherException extends Exception {
-};
+// TODO: deprecate hooks everywhere, pass params instead, use bedrock API
+// directly
 
 // hook API
 $payswarm_hooks = array();
@@ -188,12 +189,6 @@ jsonld_set_document_loader('payswarm_jsonld_load_document');
  * check_nonce($nonce): Checks a nonce previously created by create_nonce and
  *   removes it from storage. Returns true if the nonce is valid, false if not.
  *
- * get_jsonld($url): Returns the JSON-encoded body of an HTTP GET where
- *   the expected content-type is 'application/ld+json'.
- *
- * post_jsonld($url, $data): HTTP POSTs the given JSON-LD data to the given
- *   URL and returns the response body.
- *
  * Required storage hooks:
  *
  * get_public_key(): Returns the vendor's public key in PEM format.
@@ -212,12 +207,18 @@ jsonld_set_document_loader('payswarm_jsonld_load_document');
  * store_trusted_authority($id): Stores the ID (IRI) of a trusted
  *   PaySwarm Authority.
  *
- * Optional cache hooks:
+ * Optional hooks:
  *
- * cache_jsonld($id, $obj, $secs): Caches a JSON-LD object. The ID (IRI) for
+ * get_jsonld($url): Returns the JSON-encoded body of an HTTP GET where
+ *   the expected content-type is 'application/ld+json'.
+ *
+ * post_jsonld($url, $data): HTTP POSTs the given JSON-LD data to the given
+ *   URL and returns the response body.
+ *
+ * cache_jsonld($url, $obj, $secs): Caches a JSON-LD object. The url (ID) for
  *   the object is given and the maxmimum number of seconds to cache.
  *
- * get_cached_jsonld($id): Gets a JSON-LD object from cache. Returns the
+ * get_cached_jsonld($url): Gets a JSON-LD object from cache. Returns the
  *   object or false.
  *
  * @package payswarm
@@ -252,276 +253,33 @@ function payswarm_get_default_jsonld_context_url() {
  * @return stdClass the default payswarm JSON-LD context.
  */
 function payswarm_create_default_jsonld_context() {
-  return (object)array(
-    // aliases
-    'id' => '@id',
-    'type' => '@type',
-
-    // prefixes
-    'ccard' => 'https://w3id.org/commerce/creditcard#',
-    'com' => 'https://w3id.org/commerce#',
-    'dc' => 'http://purl.org/dc/terms/',
-    'foaf' => 'http://xmlns.com/foaf/0.1/',
-    'gr' => 'http://purl.org/goodrelations/v1#',
-    'pto' => 'http://www.productontology.org/id/',
-    'ps' => 'https://w3id.org/payswarm#',
-    'rdf' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
-    'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#',
-    'sec' => 'https://w3id.org/security#',
-    'vcard' => 'http://www.w3.org/2006/vcard/ns#',
-    'xsd' => 'http://www.w3.org/2001/XMLSchema#',
-
-    // general
-    'address' => (object)array('@id' => 'vcard:adr', '@type' => '@id'),
-    'comment' => 'rdfs:comment',
-    'countryName' => 'vcard:country-name',
-    'created' => (object)array(
-      '@id' => 'dc:created', '@type' => 'xsd:dateTime'),
-    'creator' => (object)array('@id' => 'dc:creator', '@type' => '@id'),
-    'depiction' => (object)array('@id' => 'foaf:depiction', '@type' => '@id'),
-    'description' => 'dc:description',
-    'email' => 'foaf:mbox',
-    'fullName' => 'vcard:fn',
-    'label' => 'rdfs:label',
-    'locality' => 'vcard:locality',
-    'postalCode' => 'vcard:postal-code',
-    'region' => 'vcard:region',
-    'streetAddress' => 'vcard:street-address',
-    'title' => 'dc:title',
-    'website' => (object)array('@id' => 'foaf:homepage', '@type' => '@id'),
-    'Address' => 'vcard:Address',
-
-    // bank
-    'bankAccount' => 'bank:account',
-    'bankAccountType' => (object)array(
-      '@id' => 'bank:accountType', '@type' => '@vocab'),
-    'bankRoutingNumber' => 'bank:routing',
-    'BankAccount' => 'bank:BankAccount',
-    'Checking' => 'bank:Checking',
-    'Savings' => 'bank:Savings',
-
-    // credit card
-    'cardBrand' => (object)array('@id' => 'ccard:brand', '@type' => '@vocab'),
-    'cardCvm' => 'ccard:cvm',
-    'cardExpMonth' => (object)array(
-      '@id' => 'ccard:expMonth', '@type' => 'xsd:integer'),
-    'cardExpYear' => (object)array(
-      '@id' => 'ccard:expYear', '@type' => 'xsd:integer'),
-    'cardNumber' => 'ccard:number',
-    'AmericanExpress' => 'ccard:AmericanExpress',
-    'ChinaUnionPay' => 'ccard:ChinaUnionPay',
-    'CreditCard' => 'ccard:CreditCard',
-    'Discover' => 'ccard:Discover',
-    'Visa' => 'ccard:Visa',
-    'MasterCard' => 'ccard:MasterCard',
-
-    // commerce
-    'account' => (object)array('@id' => 'com:account', '@type' => '@id'),
-    'amount' => 'com:amount',
-    'authorized' => (object)array(
-      '@id' => 'com:authorized', '@type' => 'xsd:dateTime'),
-    'balance' => 'com:balance',
-    'currency' => (object)array('@id' => 'com:currency', '@type' => '@vocab'),
-    'destination' => (object)array(
-      '@id' => 'com:destination', '@type' => '@id'),
-    'maximumAmount' => 'com:maximumAmount',
-    'maximumPayeeRate' => 'com:maximumPayeeRate',
-    'minimumAmount' => 'com:minimumAmount',
-    'payee' => (object)array(
-      '@id' => 'com:payee', '@type' => '@id', '@container' => '@set'),
-    'payeeApplyAfter' => (object)array(
-      '@id' => 'com:payeeApplyAfter', '@container' => '@set'),
-    'payeeApplyGroup' => (object)array(
-      '@id' => 'com:payeeApplyGroup', '@container' => '@set'),
-    'payeeApplyType' => (object)array(
-      '@id' => 'com:payeeApplyType', '@type' => '@vocab'),
-    'payeeExemptGroup' => (object)array(
-      '@id' => 'com:payeeExemptGroup', '@container' => '@set'),
-    'payeeGroup' => (object)array(
-      '@id' => 'com:payeeGroup', '@container' => '@set'),
-    'payeeGroupPrefix' => (object)array(
-      '@id' => 'com:payeeGroupPrefix', '@container' => '@set'),
-    'payeeLimitation' => (object)array(
-      '@id' => 'com:payeeLimitation', '@type' => '@vocab'),
-    'payeeRate' => 'com:payeeRate',
-    'payeeRateType' => (object)array(
-      '@id' => 'com:payeeRateType', '@type' => '@vocab'),
-    'payeeRule' => (object)array(
-      '@id' => 'com:payeeRule', '@type' => '@id', '@container' => '@set'),
-    'paymentGateway' => 'com:paymentGateway',
-    'paymentMethod' => (object)array(
-      '@id' => 'com:paymentMethod', '@type' => '@vocab'),
-    'paymentToken' => 'com:paymentToken',
-    'referenceId' => 'com:referenceId',
-    'settled' => (object)array(
-      '@id' => 'com:settled', '@type' => 'xsd:dateTime'),
-    'source' => (object)array('@id' => 'com:source', '@type' => '@id'),
-    'transfer' => (object)array(
-      '@id' => 'com:transfer', '@type' => '@id', '@container' => '@set'),
-    'vendor' => (object)array('@id' => 'com:vendor', '@type' => '@id'),
-    'voided' => (object)array('@id' => 'com:voided', '@type' => 'xsd:dateTime'),
-    'ApplyExclusively' => 'com:ApplyExclusively',
-    'ApplyInclusively' => 'com:ApplyInclusively',
-    'FinancialAccount' => 'com:Account',
-    'FlatAmount' => 'com:FlatAmount',
-    'Deposit' => 'com:Deposit',
-    'NoAdditionalPayeesLimitation' => 'com:NoAdditionalPayeesLimitation',
-    'Payee' => 'com:Payee',
-    'PayeeRule' => 'com:PayeeRule',
-    'PayeeScheme' => 'com:PayeeScheme',
-    'PaymentToken' => 'com:PaymentToken',
-    'Percentage' => 'com:Percentage',
-    'Transaction' => 'com:Transaction',
-    'Transfer' => 'com:Transfer',
-    'Withdrawal' => 'com:Withdrawal',
-
-    // currencies
-    'USD' => 'https://w3id.org/currencies/USD',
-
-    // error
-    // FIXME
-    // 'errorMessage' => 'err:message'
-
-    // payswarm
-    'asset' =>(object)array('@id' => 'ps:asset', '@type' => '@id'),
-    'assetAcquirer' => (object)array(
-      '@id' => 'ps:assetAcquirer', '@type' => '@id'),
-    // FIXME: support inline content
-    'assetContent' => (object)array(
-      '@id' => 'ps:assetContent', '@type' => '@id'),
-    'assetHash' => 'ps:assetHash',
-    'assetProvider' => (object)array(
-      '@id' => 'ps:assetProvider', '@type' => '@id'),
-    'authority' => (object)array('@id' => 'ps:authority', '@type' => '@id'),
-    'contract' => (object)array('@id' => 'ps:contract', '@type' => '@id'),
-    'identityHash' => 'ps:identityHash',
-    // FIXME: move?
-    'ipv4Address' => 'ps:ipv4Address',
-    'license' => (object)array('@id' => 'ps:license', '@type' => '@id'),
-    'licenseHash' => 'ps:licenseHash',
-    'licenseTemplate' => 'ps:licenseTemplate',
-    'licenseTerms' => (object)array(
-      '@id' => 'ps:licenseTerms', '@type' => '@id'),
-    'listing' => (object)array('@id' => 'ps:listing', '@type' => '@id'),
-    'listingHash' => 'ps:listingHash',
-    'listingRestrictions' => (object)array(
-      '@id' => 'ps:listingRestrictions', '@type' => '@id'),
-    'preferences' => (object)array(
-      '@id' => 'ps:preferences', '@type' => '@vocab'),
-    'validFrom' => (object)array(
-      '@id' => 'ps:validFrom', '@type' => 'xsd:dateTime'),
-    'validUntil' => (object)array(
-      '@id' => 'ps:validUntil', '@type' => 'xsd:dateTime'),
-    'Asset' => 'ps:Asset',
-    'Budget' => 'ps:Budget',
-    'Contract' => 'ps:Contract',
-    'License' => 'ps:License',
-    'Listing' => 'ps:Listing',
-    'PersonalIdentity' => 'ps:PersonalIdentity',
-    'IdentityPreferences' => 'ps:IdentityPreferences',
-    'Profile' => 'ps:Profile',
-    'PurchaseRequest' => 'ps:PurchaseRequest',
-    'PreAuthorization' => 'ps:PreAuthorization',
-    'Receipt' => 'ps:Receipt',
-    'VendorIdentity' => 'ps:VendorIdentity',
-
-    // security
-    'cipherAlgorithm' => 'sec:cipherAlgorithm',
-    'cipherData' => 'sec:cipherData',
-    'cipherKey' => 'sec:cipherKey',
-    'digestAlgorithm' => 'sec:digestAlgorithm',
-    'digestValue' => 'sec:digestValue',
-    'expiration' => (object)array(
-      '@id' => 'sec:expiration', '@type' => 'xsd:dateTime'),
-    'initializationVector' => 'sec:initializationVector',
-    'nonce' => 'sec:nonce',
-    'normalizationAlgorithm' => 'sec:normalizationAlgorithm',
-    'owner' => (object)array('@id' => 'sec:owner', '@type' => '@id'),
-    'password' => 'sec:password',
-    'privateKey' => (object)array('@id' => 'sec:privateKey', '@type' => '@id'),
-    'privateKeyPem' => 'sec:privateKeyPem',
-    'publicKey' => (object)array('@id' => 'sec:publicKey', '@type' => '@id'),
-    'publicKeyPem' => 'sec:publicKeyPem',
-    'publicKeyService' => (object)array(
-      '@id' => 'sec:publicKeyService', '@type' => '@id'),
-    'revoked' => (object)array(
-      '@id' => 'sec:revoked', '@type' => 'xsd:dateTime'),
-    'signature' => 'sec:signature',
-    'signatureAlgorithm' => 'sec:signatureAlgorithm',
-    'signatureValue' => 'sec:signatureValue',
-    'EncryptedMessage' => 'sec:EncryptedMessage',
-    'CryptographicKey' => 'sec:Key',
-    'GraphSignature2012' => 'sec:GraphSignature2012'
-  );
-}
-
-/**
- * JSON-encodes (with unescaped slashes) the given stdClass or array.
- *
- * @package payswarm
- * @since 1.0
- *
- * @param string $input the native PHP stdClass or array which will be
- *          converted to JSON by json_encode().
- *
- * @return the encoded JSON data.
- */
-function payswarm_jsonld_encode($input) {
-  // newer PHP has a flag to avoid escaped '/'
-  if(defined('JSON_UNESCAPED_SLASHES')) {
-     $json = json_encode($input, JSON_UNESCAPED_SLASHES);
-  }
-  else {
-     // use a simple string replacement of '\/' to '/'.
-     $json = str_replace('\\/', '/', json_encode($input));
-  }
-
-  return $json;
-}
-
-/**
- * Decodes a serialized JSON-LD object.
- *
- * @package payswarm
- * @since 1.0
- *
- * @param string $input the JSON-LD input.
- *
- * @return mixed the resolved JSON-LD object, null on error.
- */
-function payswarm_jsonld_decode($input) {
-  // JSON-decode
-  return json_decode($input);
+  $ctx = file_get_contents('./payswarm-context.jsonld');
+  return jsonld_decode($ctx);
 }
 
 /**
  * Retrieves a JSON-LD object over HTTP.
  *
  * @param string $url the URL to HTTP GET.
- * @param boolean $cache true to cache the response.
+ * @param assoc $options the options to use.
+ *          [cache] a cache interface to use.
+ *          [get_jsonld($url, $options)] an alternate get function.
+ *          See bedrock_http_request for HTTP options.
  *
  * @return stdClass the JSON-LD object.
  */
-function payswarm_get_jsonld($url, $cache) {
+function payswarm_get_jsonld($url, $options=array()) {
   global $payswarm_hooks;
+  global $payswarm_jsonld_cache;
 
-  // use cache if available
-  $rval = payswarm_get_cached_jsonld($url);
-  if($rval === false) {
-    // retrieve response
-    $rval = call_user_func($payswarm_hooks['get_jsonld'], $url);
-    $rval = payswarm_jsonld_decode($rval);
-    if($rval === null) {
-      throw new Exception("Invalid response from '$url': Malformed JSON.");
-    }
-
-    // cache response
-    if($cache) {
-      payswarm_cache_jsonld($url, $rval);
-    }
+  if(!isset($options['cache'])) {
+    $options['cache'] = $payswarm_jsonld_cache;
+  }
+  if(!isset($options['get_jsonld']) && isset($payswarm_hooks['get_jsonld'])) {
+    $options['get_jsonld'] = $payswarm_hooks['get_jsonld'];
   }
 
-  return $rval;
+  return bedrock_get_jsonld($url, $options);
 }
 
 /**
@@ -529,56 +287,19 @@ function payswarm_get_jsonld($url, $cache) {
  *
  * @param string $url the URL to HTTP POST to.
  * @param stdClass $obj the JSON-LD object.
+ * @param assoc $options the options to use.
+ *          See bedrock_http_request for HTTP options.
  *
  * @return stdClass the JSON-LD response.
  */
-function payswarm_post_jsonld($url, $obj) {
+function payswarm_post_jsonld($url, $obj, $options=array()) {
   global $payswarm_hooks;
 
-  try {
-    $data = payswarm_jsonld_encode($obj);
-    $rval = call_user_func($payswarm_hooks['post_jsonld'], $data, $url);
-  }
-  catch(Exception $e) {
-    throw new Exception('PaySwarm Exception: ' .
-      "Error while trying to POST to '$url': " . $e->getMessage());
+  if(!isset($options['post_jsonld']) && isset($payswarm_hooks['post_jsonld'])) {
+    $options['post_jsonld'] = $payswarm_hooks['post_jsonld'];
   }
 
-  // decode response
-  $rval = payswarm_jsonld_decode($rval);
-  if($rval === null) {
-    throw new Exception("Invalid response from '$url': Malformed JSON.");
-  }
-  return $rval;
-}
-
-/**
- * Caches a JSON-LD object if a cache is available.
- *
- * @param string $id the ID of the JSON-LD object.
- * @param stdClass $obj the JSON-LD object to cache.
- */
-function payswarm_cache_jsonld($id, $obj) {
-  global $payswarm_hooks;
-  if(isset($payswarm_hooks['cache_jsonld'])) {
-    call_user_func($payswarm_hooks['cache_jsonld'], $id, $obj, 60*5);
-  }
-}
-
-/**
- * Gets a cached JSON-LD object if available.
- *
- * @param string $id the ID of the JSON-LD object.
- *
- * @return stdClass the cached JSON-LD object or false.
- */
-function payswarm_get_cached_jsonld($id) {
-  global $payswarm_hooks;
-  $rval = false;
-  if(isset($payswarm_hooks['get_cached_jsonld'])) {
-    $rval = call_user_func($payswarm_hooks['get_cached_jsonld'], $id);
-  }
-  return $rval;
+  return bedrock_post_jsonld($url, $obj, $options);
 }
 
 /**
@@ -589,6 +310,8 @@ function payswarm_get_cached_jsonld($id) {
  * @return stdClass the JSON-LD RemoteDocument object.
  */
 function payswarm_jsonld_load_document($url) {
+  global $payswarm_jsonld_cache;
+
   // FIXME: hack until https://w3id.org/payswarm/v1 is ready
   if($url === 'https://w3id.org/payswarm/v1') {
     return (object)array(
@@ -599,62 +322,16 @@ function payswarm_jsonld_load_document($url) {
   }
 
   // use cache if available
-  $rval = payswarm_get_cached_jsonld($url);
+  $rval = $payswarm_jsonld_cache->get($url);
   if($rval === false) {
     // do secure retrieval of URL
     $rval = jsonld_default_secure_document_loader($url);
     if($cache) {
-      payswarm_cache_jsonld($url, $rval);
+      $payswarm_jsonld_cache->set($url, $rval);
     }
   }
 
   return $rval;
-}
-
-/**
- * Check if a JSON-LD object has a specific type.
- *
- * @package payswarm
- * @since 1.0
- *
- * @param stdClass $obj the JSON-LD object.
- * @param string $type the type to check for.
- *
- * @return true if type found, false if not.
- */
-function payswarm_jsonld_has_type($obj, $type) {
-  $rval = false;
-
-  if(property_exists($obj, 'type')) {
-    $types = is_array($obj->type) ? $obj->type : array($obj->type);
-    $length = count($types);
-    for($t = 0; $t < $length && !$rval; ++$t) {
-      $rval = ($types[$t] == $type);
-    }
-  }
-
-  return $rval;
-}
-
-/**
- * Gets a remote public key.
- *
- * @param string $id the ID for the public key.
- *
- * @return stdClass the public key.
- */
-function payswarm_get_public_key($id) {
-  // retrieve public key
-  $key = payswarm_get_jsonld($id, false);
-  if(!property_exists($key, 'publicKeyPem')) {
-    throw new Exception('PaySwarm Security Exception: ' .
-      'Could not get public key. Unknown format.');
-  }
-
-  // cache public key
-  payswarm_cache_jsonld($id, $key);
-
-  return $key;
 }
 
 /**
@@ -671,10 +348,11 @@ function payswarm_create_nonce() {
  * Checks the nonce from a secure message.
  *
  * @param string $nonce the nonce.
+ * @param assoc $options the options to use.
  *
  * @return true if the nonce is valid, false if not.
  */
-function payswarm_check_nonce($nonce) {
+function payswarm_check_nonce($nonce, $options) {
   global $payswarm_hooks;
   return call_user_func($payswarm_hooks['check_nonce'], $nonce);
 }
@@ -690,238 +368,101 @@ function payswarm_check_nonce($nonce) {
  * @return the SHA-1 hash of the encoded JSON data.
  */
 function payswarm_hash($obj) {
-  // SHA-1 hash JSON
-  $options = array('format' => 'application/nquads');
-  return 'urn:sha256:' . hash('sha256', jsonld_normalize($obj, $options));
+  return bedrock_hash($obj);
 }
 
 /**
  * Signs a JSON-LD object, adding a signature field to it. If a signature
  * date is not provided then the current date will be used.
  *
- * @package payswarm
- * @since 1.0
- *
  * @param stdClass $obj the JSON-LD object to sign.
- * @param string $date the ISO8601-formatted signature creation date (optional).
+ * @param assoc $options the options to use.
+ *          key the private key in PEM format.
+ *          keyId the ID of the public key associated with the private key.
+ *          [date] the ISO8601-formatted signature creation date.
+ *          [domain] a domain to restrict the signature to.
+ *          [nonce] a nonce to use.
  */
-function payswarm_sign($obj, $date=null, $nonce='') {
-  global $payswarm_hooks;
-
-  if(!$date) {
-    $date = date_format(
-      date_create('now', new DateTimeZone('UTC')), DateTime::W3C);
-  }
-
-  // get private key pem and public key ID
-  $pem = call_user_func($payswarm_hooks['get_private_key']);
-  $public_key_id = call_user_func($payswarm_hooks['get_public_key_id']);
-
-  // generate base64-encoded signature
-  $options = array('format' => 'application/nquads');
-  $nquads = jsonld_normalize($obj, $options);
-  payswarm_raw_sign($nonce . $date . $nquads, $signature, $pem);
-  $signature = base64_encode($signature);
-
-  // add signature to object
-  $obj->signature = (object)array(
-    'type' => 'GraphSignature2012',
-    'created' => $date,
-    'creator' => $public_key_id,
-    'signatureValue' => $signature
-  );
-  // add optional nonce
-  if($nonce) {
-    $obj->signature->nonce = $nonce;
-  }
+function payswarm_sign($obj, $options) {
+  return bedrock_sign($obj, $options);
 }
 
 /**
  * Verifies a JSON-LD digitally signed object.
  *
- * @package payswarm
- * @since 1.0
- *
  * @param stdClass $obj the JSON-LD object to verify.
+ * @param assoc $options the options to use.
+ *          [check_nonce($nonce, $options)] a function to call to check to see
+ *            if the nonce (null if none) used to sign the message is valid.
+ *          [check_domain($domain, $options)] a function to call to check to
+ *            see if the domain used (null if none) is valid.
+ *          [check_key($key, $options)] a function to call to check to see if
+ *            the key used to sign the message is trusted.
+ *          [check_key_owner($owner, $key, $options)] a function to call to
+ *            check to see if the key's owner is trusted.
+ *          See bedrock_http_request for HTTP options.
  *
  * @return true if verified, false if not (exception thrown).
  */
-function payswarm_verify($obj) {
+function payswarm_verify($obj, $options=array()) {
+  global $payswarm_jsonld_cache;
+
+  // set defaults
+  if(!isset($options['cache'])) {
+    $options['cache'] = $payswarm_jsonld_cache;
+  }
+  if(!isset($options['check_nonce'])) {
+    $options['check_nonce'] = 'payswarm_check_nonce';
+  }
+  if(!isset($options['check_key_owner'])) {
+    $options['check_key_owner'] = 'payswarm_check_key_owner';
+  }
+
+  return bedrock_verify($obj, $options);
+}
+
+/**
+ * Ensures a key owner is a trusted authority.
+ *
+ * @param string $owner the ID of the key owner.
+ * @param stdClass $key the public key.
+ *
+ * @return true if the owner is trusted, false if not.
+ */
+function payswarm_check_key_owner($owner, $key) {
   global $payswarm_hooks;
-  $rval = false;
-
-  // frame message to retrieve signature
-  $frame = (object)array(
-    '@context' => payswarm_get_default_jsonld_context_url(),
-    'signature' => (object)array(
-      'created' => new stdClass(),
-      'creator' => new stdClass(),
-      'signatureValue' => new stdClass(),
-      'nonce' => new stdClass()
-    )
-  );
-  $obj = jsonld_frame($obj, $frame);
-  if(count($obj->{'@graph'}) === 0 ||
-    $obj->{'@graph'}[0]->signature === null) {
-    throw new Exception('PaySwarm Security Exception: ' .
-      'The message is not digitally signed.');
-  }
-
-  // save signature property and remove from object
-  $result = $obj->{'@graph'}[0];
-  $sprop = $result->signature;
-  unset($result->signature);
-
-  // check the message nonce
-  if(property_exists($sprop, 'nonce')) {
-    $valid_nonce = payswarm_check_nonce($sprop->nonce);
-    if(!$valid_nonce) {
-      throw new Exception('PaySwarm Security Exception: ' .
-        'The message nonce is invalid.');
-    }
-  }
-
-  // ensure signature timestamp is +/- 15 minutes
-  $now = time();
-  $time = date_create($sprop->created)->getTimestamp();
-  if($time < ($now - 15*60) || $time > ($now + 15*60)) {
-    throw new Exception('PaySwarm Security Exception: ' .
-      'The message digital signature timestamp is out of range.');
-  }
-
-  // fetch the public key for the signature
-  $key = payswarm_get_public_key($sprop->creator);
-  $pem = $key->publicKeyPem;
-
-  // ensure key has not been revoked
-  if(property_exists($key, 'revoked')) {
-    throw new Exception('PaySwarm Security Exception: ' .
-      'The message was signed with a key that has been revoked.');
-  }
-
-  // verify key owner
-  $trusted = call_user_func(
-    $payswarm_hooks['is_trusted_authority'], $key->owner);
+  $trusted = call_user_func($payswarm_hooks['is_trusted_authority'], $owner);
   if(!$trusted) {
     throw new Exception('PaySwarm Security Exception: ' .
-      'The message is not signed by a trusted public key.');
+      'The public key owner is not a trusted.');
   }
-
-  // normalize and serialize the object
-  $options = array('format' => 'application/nquads');
-  $nquads = jsonld_normalize($obj, $options);
-
-  // get the data to hash
-  $data = $sprop->nonce . $sprop->created . $nquads;
-
-  // decode the signature value
-  $sig = base64_decode($sprop->signatureValue);
-
-  // verify the signature
-  $rc = payswarm_raw_verify($data, $sig, $pem);
-  if($rc === 1) {
-    $rval = true;
-  }
-  else if($rc === -1) {
-    // throw exception, error while trying to verify
-    throw new Exception('PaySwarm Security Exception: ' .
-      'Low-level API error: ' . openssl_error_string());
-  }
-  else {
-    throw new Exception('PaySwarm Security Exception: ' .
-      'The digital signature on the message is invalid.');
-  }
-
-  return $rval;
 }
 
 /**
- * Decrypts an encrypted JSON-LD object.
+ * Decrypts a JSON-encoded, encrypted, digitally-signed JSON-LD message
+ * from a PaySwarm Authority.
  *
- * @param stdClass $encrypted the message to decrypt.
- * @param string $pem the PEM-encoded private key to decrypt the message.
+ * @param string $encrypted the message to decrypt.
+ * @param string $key the PEM-encoded private key to decrypt the message.
+ * @param assoc $options see bedrock_verify for verification options.
  *
- * @return stdClass the decrypted JSON-LD object.
+ * @return stdClass the decrypted JSON-LD object (exception thrown on error).
  */
-function payswarm_decrypt($encrypted) {
-  global $payswarm_hooks;
+function payswarm_decrypt_authority_message($encrypted) {
+  global $payswarm_jsonld_cache;
 
-  if(!property_exists($encrypted, 'cipherAlgorithm') ||
-    $encrypted->cipherAlgorithm !== 'rsa-sha256-aes-128-cbc') {
-    $algorithm = $encrypted->cipherAlgorithm;
-    throw new Exception('PaySwarm Security Exception: ' .
-      'Unknown encryption algorithm "' . $algorithm . '"');
+  // set defaults
+  if(!isset($options['cache'])) {
+    $options['cache'] = $payswarm_jsonld_cache;
+  }
+  if(!isset($options['check_nonce'])) {
+    $options['check_nonce'] = 'payswarm_check_nonce';
+  }
+  if(!isset($options['check_key_owner'])) {
+    $options['check_key_owner'] = 'payswarm_check_key_owner';
   }
 
-  // get private key pem
-  $pem = call_user_func($payswarm_hooks['get_private_key']);
-
-  // load private key from PEM
-  $pkey = openssl_pkey_get_private($pem);
-  if($pkey === false) {
-    throw new Exception('PaySwarm Security Exception: ' .
-      'Failed to load the private key.');
-  }
-
-  // decrypt symmetric key (be lenient with padding)
-  $encryption_key = base64_decode($encrypted->cipherKey);
-  if(openssl_private_decrypt(
-    $encryption_key, $skey, $pkey, OPENSSL_PKCS1_OAEP_PADDING) === false) {
-    if(openssl_private_decrypt($encryption_key, $skey, $pkey) === false) {
-      throw new PaySwarmAsymmetricCipherException(
-        'PaySwarm Security Exception: ' .
-        'Failed to decrypt the encryption key.');
-    }
-  }
-
-  // decrypt IV
-  $enc_iv = base64_decode($encrypted->initializationVector);
-  if(openssl_private_decrypt(
-    $enc_iv, $iv, $pkey, OPENSSL_PKCS1_OAEP_PADDING) === false) {
-    if(openssl_private_decrypt($enc_iv, $iv, $pkey) === false) {
-      throw new Exception('PaySwarm Security Exception: ' .
-        'Failed to decrypt the initialization vector (IV).');
-    }
-  }
-
-  // free private key resource
-  openssl_pkey_free($pkey);
-
-  // decrypt data
-  $data = openssl_decrypt($encrypted->cipherData, 'aes128', $skey, false, $iv);
-  if($data === false) {
-    throw new Exception('PaySwarm Security Exception: ' .
-      'Failed to decrypt the encrypted message due to an incorrect ' .
-      'symmetric key or an invalid initialization vector (IV).');
-  }
-
-  // decode JSON message
-  return payswarm_jsonld_decode($data);
-}
-
-/**
- * Decodes a JSON-encoded, encrypted, digitally-signed message from a
- * PaySwarm Authority.
- *
- * @package payswarm
- * @since 1.0
- *
- * @param string $json_message the json-encoded message to verify.
- *
- * @return the JSON-LD decoded message (exception thrown on error).
- */
-function payswarm_decode_authority_message($json_message) {
-  // convert message from json
-  $msg = payswarm_jsonld_decode($json_message);
-  if($msg === NULL) {
-    throw new Exception('PaySwarm Security Exception: ' .
-      'The message contains malformed JSON.');
-  }
-
-  // decrypt and verify message
-  $rval = payswarm_decrypt($msg);
-  payswarm_verify($rval);
-  return $rval;
+  return bedrock_decrypt_secure_message($encrypted, $options);
 }
 
 /**
@@ -935,13 +476,16 @@ function payswarm_decode_authority_message($json_message) {
  * @return stdClass the PaySwarm Authority config.
  */
 function payswarm_get_authority_config($host) {
-  // get config
-  $url = "https://$host/.well-known/payswarm";
-  $config = payswarm_get_jsonld($url, true);
-
-  // TODO: validate config
-
-  return $config;
+  global $payswarm_hooks;
+  global $payswarm_jsonld_cache;
+  $options = array(
+    'service' => 'payswarm',
+    'cache' => $payswarm_jsonld_cache
+  );
+  if(isset($payswarm_hooks['get_jsonld'])) {
+    $options['get_jsonld'] = $payswarm_hooks['get_jsonld'];
+  }
+  return bedrock_get_endpoint_config($host, $options);
 }
 
 /**
@@ -953,6 +497,8 @@ function payswarm_get_authority_config($host) {
  * @return stdClass the license.
  */
 function payswarm_authority_cache_license($host, $id) {
+  global $payswarm_hooks;
+
   // get license service
   $config = payswarm_get_authority_config($host);
   $url = $config->licenseService;
@@ -961,7 +507,10 @@ function payswarm_authority_cache_license($host, $id) {
   $msg = new stdClass();
   $msg->{'@context'} = payswarm_get_default_jsonld_context_url();
   $msg->license = $id;
-  payswarm_sign($msg);
+  payswarm_sign($msg, array(
+    'key' => call_user_func($payswarm_hooks['get_private_key']),
+    'keyId' => call_user_func($payswarm_hooks['get_public_key_id'])
+  ));
 
   // post message
   $rval = payswarm_post_jsonld($url, $msg);
@@ -971,7 +520,7 @@ function payswarm_authority_cache_license($host, $id) {
     throw new Exception('PaySwarm Exception: ' .
       'Invalid response when caching license.');
   }
-  // FIXME: use JSON-LD exceptions
+  // FIXME: use error/exception vocab
   else if(is_object($rval) && property_exists($rval, 'message')) {
     throw new Exception('PaySwarm Exception: ' .
       'Error while caching license: ' .
@@ -993,22 +542,12 @@ function payswarm_authority_cache_license($host, $id) {
 function payswarm_create_key_pair() {
   global $payswarm_hooks;
 
-  // generate the key pair
-  $config = array('private_key_bits' => 2048);
-  $key_pair = openssl_pkey_new($config);
-
-  // get private key and public key in PEM format
-  openssl_pkey_export($key_pair, $private_key);
-  $public_key = openssl_pkey_get_details($key_pair);
-  $public_key = $public_key['key'];
-
-  // free the key pair
-  openssl_free_key($key_pair);
-
-  // store key pair
-  call_user_func($payswarm_hooks['store_key_pair'], $public_key, $private_key);
-
-  return array('public_key' => $public_key, 'private_key' => $private_key);
+  // create and store key pair
+  $rval = bedrock_create_key_pair();
+  call_user_func(
+    $payswarm_hooks['store_key_pair'],
+    $rval['public_key'], $rval['private_key']);
+  return $rval;
 }
 
 /**
@@ -1065,7 +604,7 @@ function payswarm_get_register_vendor_url(
   }
 
   // add query parameters to the register URL
-  $register_url = payswarm_add_query_vars(
+  $register_url = bedrock_add_query_vars(
     $register_url, array(
     'public-key' => $public_key,
     'registration-callback' => $callback,
@@ -1087,14 +626,14 @@ function payswarm_register_vendor($msg) {
   global $payswarm_hooks;
 
   // decode message
-  $prefs = payswarm_decode_authority_message($msg);
+  $prefs = payswarm_decrypt_authority_message($msg);
 
   // check message type
-  if(payswarm_jsonld_has_type($prefs, 'Error')) {
+  if(bedrock_jsonld_has_type($prefs, 'Error')) {
     throw new Exception('PaySwarm Registration Exception: ' .
       $msg->errorMessage);
   }
-  else if(!payswarm_jsonld_has_type($prefs, 'IdentityPreferences')) {
+  else if(!bedrock_jsonld_has_type($prefs, 'IdentityPreferences')) {
     throw new Exception('PaySwarm Registration Exception: ' .
       'Invalid registration response from PaySwarm Authority.');
   }
@@ -1124,7 +663,7 @@ function payswarm_get_purchase_url(
   $purchase_url = $config->paymentService;
 
   // add query parameters to the purchase URL
-  $purchase_url = payswarm_add_query_vars(
+  $purchase_url = bedrock_add_query_vars(
     $purchase_url, array(
     'listing' => $listing_id,
     'listing-hash' => $listing_hash,
@@ -1160,14 +699,14 @@ function payswarm_purchase($host, $id, $listing_id, $listing_hash) {
  */
 function payswarm_get_receipt($msg) {
   // decode message
-  $receipt = payswarm_decode_authority_message($msg);
+  $receipt = payswarm_decrypt_authority_message($msg);
 
   // check message type
-  if(payswarm_jsonld_has_type($receipt, 'Error')) {
+  if(bedrock_jsonld_has_type($receipt, 'Error')) {
     throw new Exception('PaySwarm Purchase Exception: ' .
       $receipt->errorMessage);
   }
-  else if(!payswarm_jsonld_has_type($receipt, 'Receipt')) {
+  else if(!bedrock_jsonld_has_type($receipt, 'Receipt')) {
     throw new Exception('PaySwarm Purchase Exception: ' .
       'Invalid purchase response from PaySwarm Authority.');
   }
@@ -1191,44 +730,6 @@ function payswarm_get_receipt($msg) {
 }
 
 /**
- * Add query variables to an existing url.
- *
- * @param string $url the url to add the query vars to.
- * @param array $qvars the query variables to add, eg: array('foo' => 'bar').
- *
- * @return string the updated url.
- */
-function payswarm_add_query_vars($url, $qvars) {
-  $parsed = parse_url($url);
-  if(isset($parsed['query'])) {
-    parse_str($parsed['query'], $query);
-    $query = array_merge($query, $qvars);
-  }
-  else {
-    $query = $qvars;
-  }
-  $scheme = isset($parsed['scheme']) ? $parsed['scheme'] . '://' : '';
-  $host = isset($parsed['host']) ? $parsed['host'] : '';
-  $port = isset($parsed['port']) ? ':' . $parsed['port'] : '';
-  $path = isset($parsed['path']) ? $parsed['path'] : '';
-  $query = (count($query) > 0) ? '?' . http_build_query($query) : '';
-  $fragment = isset($parsed['fragment']) ? $parsed['fragment'] : '';
-  return "$scheme$host$port$path$query$fragment";
-}
-
-/**
- * Get query variables from a url.
- *
- * @param string $url the url to add the query vars to.
- *
- * @return array an array of the query vars.
- */
-function payswarm_get_query_vars($url) {
-  parse_str(parse_url($url, PHP_URL_QUERY), $query);
-  return $query;
-}
-
-/**
  * Determines whether or not the given Listing's validity period has passed.
  *
  * @package payswarm
@@ -1248,135 +749,21 @@ function payswarm_is_listing_valid($listing) {
   return ($now >= $valid_from && $now <= $valid_until);
 }
 
-/**
- * Default GET JSON-LD hook.
- *
- * @param string $url the URL to to retrieve.
- *
- * @return string the retrieved JSON-LD.
- */
-function payswarm_default_get_url($url) {
-  $opts = array(
-    'http' => array(
-      'method' => 'GET',
-      'header' =>
-      "Accept: application/ld+json\r\n" .
-      "User-Agent: PaySwarm PHP Client/1.0\r\n"),
-    'https' => array(
-      'verify_peer' => true,
-      'method' => 'GET',
-      'header' =>
-      "Accept: application/ld+json\r\n" .
-      "User-Agent: PaySwarm PHP Client/1.0\r\n"));
-  $stream = stream_context_create($opts);
-  $result = @file_get_contents($url, false, $stream);
-  if($result === false) {
-    throw new Exception("Could not GET url: '$url'");
+// cache for jsonld docs
+$payswarm_jsonld_cache = (object)array(
+  'get' => function($url) {
+    global $payswarm_hooks;
+    if(isset($payswarm_hooks['get_cached_jsonld'])) {
+      return call_user_func($payswarm_hooks['get_cached_jsonld'], $url);
+    }
+    return false;
+  },
+  'set' => function($url, $response) {
+    global $payswarm_hooks;
+    if(isset($payswarm_hooks['cache_jsonld'])) {
+      call_user_func($payswarm_hooks['cache_jsonld'], $id, $obj, 60);
+    }
   }
-  return $result;
-}
-
-/**
- * Default POST JSON-LD hook.
- *
- * @param string $url the URL.
- * @param string $data the JSON-LD data.
- *
- * @return string the retrieved JSON-LD.
- */
-function payswarm_default_post_jsonld($url, $data) {
-  $opts = array('http' =>
-    array(
-      'method' => 'POST',
-      'header' =>
-        "Accept: application/ld+json\r\n" .
-        "Content-Type: application/ld+json\r\n" .
-        "Content-Length: " . strlen($data) . "\r\n" .
-        "User-Agent: PaySwarm PHP Client/1.0\r\n",
-      'content' => $data));
-  $stream = stream_context_create($opts);
-  $result = @file_get_contents($url, false, $stream);
-  if($result === false) {
-    throw new Exception("Could not POST to url: '$url'");
-  }
-  return $result;
-}
-
-/** Default GET/POST JSON-LD hooks. */
-payswarm_add_hook('get_jsonld', 'jsonld_default_get_url');
-payswarm_add_hook('post_jsonld', 'payswarm_default_post_jsonld');
-
-/**
- * A compatibility wrapper for producing a digital signature.
- *
- * @param string $data the data to sign.
- * @param string $signature the signature variable to be set.
- * @param string $pem the private key in PEM format.
- *
- * @return boolean true on success, false on failure.
- */
-function payswarm_raw_sign($data, &$signature, $pem) {
-  if(defined('OPENSSL_ALGO_SHA256')) {
-    return openssl_sign($data, $signature, $pem, OPENSSL_ALGO_SHA256);
-  }
-
-  // load private key from PEM
-  $pkey = openssl_pkey_get_private($pem);
-  if($pkey === false) {
-    throw new Exception('PaySwarm Security Exception: ' .
-      'Failed to load the private key.');
-  }
-
-  // manually do pkcs1 v1.5 encoding (DigestInfo)
-  $hash = hash('sha256', $data);
-  $digestInfo = pack('H*', '3031300d060960864801650304020105000420' . $hash);
-
-  $rval = openssl_private_encrypt(
-    $digestInfo, $signature, $pkey, OPENSSL_PKCS1_PADDING);
-
-  // free private key resource
-  openssl_pkey_free($pkey);
-
-  return $rval;
-}
-
-/**
- * A compatibility wrapper for verifying a digital signature.
- *
- * @param string $data the data to verify.
- * @param string $signature the signature to verify.
- * @param string $pem the public key in PEM format.
- *
- * @return int 1 if verified, 0 if incorrect, -1 on error.
- */
-function payswarm_raw_verify($data, $signature, $pem) {
-  if(defined('OPENSSL_ALGO_SHA256')) {
-    return openssl_verify($data, $signature, $pem, OPENSSL_ALGO_SHA256);
-  }
-
-  // load public key from PEM
-  $pkey = openssl_pkey_get_public($pem);
-  if($pkey === false) {
-    throw new Exception('PaySwarm Security Exception: ' .
-      'Failed to load the public key.');
-  }
-
-  // decrypt encrypted digest info
-  $rval = openssl_public_decrypt(
-    $signature, $decrypted, $pkey, OPENSSL_PKCS1_PADDING);
-  if(!$rval) {
-    return 0;
-  }
-
-  // free public key resource
-  openssl_pkey_free($pkey);
-
-  // manually do pkcs1 v1.5 encoding (DigestInfo) for comparison
-  $hash = hash('sha256', $data);
-  $digestInfo = pack('H*', '3031300d060960864801650304020105000420' . $hash);
-
-  // compare decrypted digest info to constructed one
-  return ($decrypted === $digestInfo) ? 1 : 0;
-}
+);
 
 /* end of file, omit ?> */
