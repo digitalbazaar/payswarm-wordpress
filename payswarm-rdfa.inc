@@ -1,6 +1,7 @@
 <?php
 
 // FIXME: needs internationalization
+// FIXME: output a JSON-LD script tag, remove RDFa once JSON-LD tag supported
 // $vars is provided externally
 $vars['output'] = <<<RDFA
 <div
