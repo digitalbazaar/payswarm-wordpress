@@ -363,6 +363,9 @@ function payswarm_verify($obj, $options=array()) {
   if(!isset($options['check_key_owner'])) {
     $options['check_key_owner'] = 'payswarm_check_key_owner';
   }
+  if(!isset($options['ssl'])) {
+    $options['ssl'] = payswarm_get_default_ssl_options();
+  }
 
   return bedrock_verify($obj, $options);
 }
@@ -407,6 +410,9 @@ function payswarm_decrypt_authority_message($encrypted) {
   if(!isset($options['check_key_owner'])) {
     $options['check_key_owner'] = 'payswarm_check_key_owner';
   }
+  if(!isset($options['ssl'])) {
+    $options['ssl'] = payswarm_get_default_ssl_options();
+  }
 
   return bedrock_decrypt_secure_message($encrypted, $options);
 }
@@ -423,7 +429,8 @@ function payswarm_get_authority_config($host) {
   global $payswarm_jsonld_cache;
   $options = array(
     'service' => 'payswarm',
-    'cache' => $payswarm_jsonld_cache
+    'cache' => $payswarm_jsonld_cache,
+    'ssl' => payswarm_get_default_ssl_options()
   );
   if(isset($payswarm_hooks['get_jsonld'])) {
     $options['get_jsonld'] = $payswarm_hooks['get_jsonld'];
@@ -458,7 +465,7 @@ function payswarm_authority_cache_license($host, $id) {
   ));
 
   // post message
-  $options = array();
+  $options = array('ssl' => payswarm_get_default_ssl_options());
   if(isset($payswarm_hooks['post_jsonld'])) {
     $options['post_jsonld'] = $payswarm_hooks['post_jsonld'];
   }
@@ -684,6 +691,18 @@ function payswarm_is_listing_valid($listing) {
   $valid_from = date_create($listing->validFrom);
   $valid_until = date_create($listing->validUntil);
   return ($now >= $valid_from && $now <= $valid_until);
+}
+
+/**
+ * Returns the default SSL options for HTTP requests.
+ *
+ * @return assoc the default SSL options for HTTP requests.
+ */
+function payswarm_get_default_ssl_options() {
+  return array(
+    'verify_peer' => PAYSWARM_VERIFY_SSL,
+    'allow_self_signed' => !PAYSWARM_VERIFY_SSL
+  );
 }
 
 // cache for jsonld docs
