@@ -1,3 +1,4 @@
-*~
+*.orig
 *.sw[nop]
+*~
 TAGS
