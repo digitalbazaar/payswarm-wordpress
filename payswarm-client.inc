@@ -2,12 +2,12 @@
 
 /*
 PHP implementation of the PaySwarm client API.
-Version: 0.1.1
+Version: 0.2.0
 
 @author Dave Longley
 
 New BSD License (3-clause)
-Copyright (c) 2010-2013, Digital Bazaar, Inc.
+Copyright (c) 2010-2014, Digital Bazaar, Inc.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -53,14 +53,13 @@ INSTRUCTIONS
 
 First, implement all of the required hooks. Various hooks will be triggered
 when making calls to the API. Most of the hooks involve providing the API with
-a custom mechanism for doing HTTP GET/POST and storing/retrieving data from
-a database. It is also highly recommended that the optional cache hooks be
-implemented to prevent excessive network traffic when looking up PaySwarm
-Authority configurations and public keys. To implement a hook, simply write
-a function that takes the appropriate parameters and returns the appropriate
-values. Then pass the hook name and the name of the custom function to
-'payswarm_add_hook'. Look below for the specific hooks that must be
-implemented.
+a custom mechanism for storing/retrieving data from a database. It is also
+highly recommended that the optional cache hooks be implemented to prevent
+excessive network traffic when looking up PaySwarm Authority configurations
+and public keys. To implement a hook, simply write a function that takes the
+appropriate parameters and returns the appropriate values. Then pass the hook
+name and the name of the custom function to 'payswarm_add_hook'. Look below
+for the specific hooks that must be implemented.
 
 Next, use the API to register as a vendor on the PaySwarm Authority of
 choice, sign listings, and accept payments via customers' chosen PaySwarm
@@ -72,8 +71,7 @@ Authorities.
 
   In this version of the API, any customer's PaySwarm Authority that the vendor
   would like to do business with must be manually added. The vendor's chosen
-  PaySwarm Authority will be automatically added during the registration
-  step.
+  PaySwarm Authority will be automatically added during the registration step.
 
 2. Register as a vendor by calling:
 
@@ -118,7 +116,7 @@ Authorities.
   to regenerate signatures when the vendor's public key is changed.
 
   Note: A Listing also contains a License for the Asset. If the application
-  knows the ID (IRI) of the License to use but not the License hash, and it
+  knows the ID (URL) of the License to use but not the License hash, and it
   does not have the necessary parser to obtain the License information from
   its ID, it may use the PaySwarm Authority's license service to cache and
   retrieve the License by its ID. Then payswarm_hash($license) can be called
@@ -221,9 +219,6 @@ jsonld_set_document_loader('payswarm_jsonld_load_document');
  * get_cached_jsonld($url): Gets a JSON-LD object from cache. Returns the
  *   object or false.
  *
- * @package payswarm
- * @since 1.0
- *
  * @param string $hook the name of the hook.
  * @param string $func the name of the function to call.
  */
@@ -235,9 +230,6 @@ function payswarm_add_hook($hook, $func) {
 /**
  * Gets the default payswarm JSON-LD context URL.
  *
- * @package payswarm
- * @since 1.0
- *
  * @return string the default payswarm JSON-LD context URL.
  */
 function payswarm_get_default_jsonld_context_url() {
@@ -247,59 +239,11 @@ function payswarm_get_default_jsonld_context_url() {
 /**
  * Creates a default payswarm JSON-LD context.
  *
- * @package payswarm
- * @since 1.0
- *
  * @return stdClass the default payswarm JSON-LD context.
  */
 function payswarm_create_default_jsonld_context() {
   $ctx = file_get_contents(__DIR__ . '/payswarm-context.jsonld');
   return jsonld_decode($ctx);
-}
-
-/**
- * Retrieves a JSON-LD object over HTTP.
- *
- * @param string $url the URL to HTTP GET.
- * @param assoc $options the options to use.
- *          [cache] a cache interface to use.
- *          [get_jsonld($url, $options)] an alternate get function.
- *          See bedrock_http_request for HTTP options.
- *
- * @return stdClass the JSON-LD object.
- */
-function payswarm_get_jsonld($url, $options=array()) {
-  global $payswarm_hooks;
-  global $payswarm_jsonld_cache;
-
-  if(!isset($options['cache'])) {
-    $options['cache'] = $payswarm_jsonld_cache;
-  }
-  if(!isset($options['get_jsonld']) && isset($payswarm_hooks['get_jsonld'])) {
-    $options['get_jsonld'] = $payswarm_hooks['get_jsonld'];
-  }
-
-  return bedrock_get_jsonld($url, $options);
-}
-
-/**
- * HTTP POSTs a JSON-LD object.
- *
- * @param string $url the URL to HTTP POST to.
- * @param stdClass $obj the JSON-LD object.
- * @param assoc $options the options to use.
- *          See bedrock_http_request for HTTP options.
- *
- * @return stdClass the JSON-LD response.
- */
-function payswarm_post_jsonld($url, $obj, $options=array()) {
-  global $payswarm_hooks;
-
-  if(!isset($options['post_jsonld']) && isset($payswarm_hooks['post_jsonld'])) {
-    $options['post_jsonld'] = $payswarm_hooks['post_jsonld'];
-  }
-
-  return bedrock_post_jsonld($url, $obj, $options);
 }
 
 /**
@@ -359,9 +303,6 @@ function payswarm_check_nonce($nonce, $options) {
 
 /**
  * Generates a hash of the JSON-LD encoded data.
- *
- * @package payswarm
- * @since 1.0
  *
  * @param stdClass $obj the JSON-LD object to hash.
  *
@@ -468,9 +409,6 @@ function payswarm_decrypt_authority_message($encrypted) {
 /**
  * Gets the config for a PaySwarm Authority.
  *
- * @package payswarm
- * @since 1.0
- *
  * @param string $host the PaySwarm Authority host and port.
  *
  * @return stdClass the PaySwarm Authority config.
@@ -503,6 +441,8 @@ function payswarm_authority_cache_license($host, $id) {
   $config = payswarm_get_authority_config($host);
   $url = $config->licenseService;
 
+  // FIXME: use bedrock http-signatures API
+
   // sign message
   $msg = new stdClass();
   $msg->{'@context'} = payswarm_get_default_jsonld_context_url();
@@ -513,7 +453,11 @@ function payswarm_authority_cache_license($host, $id) {
   ));
 
   // post message
-  $rval = payswarm_post_jsonld($url, $msg);
+  $options = array();
+  if(isset($payswarm_hooks['post_jsonld'])) {
+    $options['post_jsonld'] = $payswarm_hooks['post_jsonld'];
+  }
+  $rval = bedrock_post_jsonld($url, $obj, array($options));
 
   // check license
   if(!$rval || !is_object($rval)) {
@@ -533,9 +477,6 @@ function payswarm_authority_cache_license($host, $id) {
 /**
  * Generates a PEM-encoded key pair and stores it by calling the
  * 'store_key_pair' hook.
- *
- * @package payswarm
- * @since 1.0
  *
  * @return array an array with the key pair as 'public_key' and 'private_key'.
  */
@@ -731,9 +672,6 @@ function payswarm_get_receipt($msg) {
 
 /**
  * Determines whether or not the given Listing's validity period has passed.
- *
- * @package payswarm
- * @since 1.0
  *
  * @param stdClass $listing the Listing to check.
  *
