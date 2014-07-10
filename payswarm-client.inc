@@ -698,7 +698,7 @@ class PaySwarmJsonLdCache {
   public function set($url, $obj) {
     global $payswarm_hooks;
     if(isset($payswarm_hooks['cache_jsonld'])) {
-      call_user_func($payswarm_hooks['cache_jsonld'], $id, $obj, 60);
+      call_user_func($payswarm_hooks['cache_jsonld'], $url, $obj, 60);
     }
   }
 }
