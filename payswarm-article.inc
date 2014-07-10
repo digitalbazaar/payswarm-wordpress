@@ -90,7 +90,7 @@ function payswarm_complete_purchase($response) {
     // get post ID from asset URL (strip after hash)
     $post_id = url_to_postid(preg_replace('/#.*/', '', $asset));
     if($post_id === 0) {
-      throw new Exception('PaySwarm Purchase Exception: ' .
+      throw new PaySwarmPurchaseException(
         'The Asset in the Contract could not be matched to a post.');
     }
 
@@ -99,7 +99,7 @@ function payswarm_complete_purchase($response) {
 
     // authorize the post
     if(!payswarm_database_authorize_post($identity_id, $post_id, $license)) {
-      throw new Exception('PaySwarm Purchase Exception: ' .
+      throw new PaySwarmPurchaseException(
         'A record of the purchase could not be written to the database.');
     }
 
