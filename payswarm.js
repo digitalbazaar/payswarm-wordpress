@@ -17,8 +17,7 @@ function toggleAssetInformation(postId) {
   // toggle the hidden CSS state for the attribute
   if(className === 'hidden') {
     assetInfo.setAttribute('class', '');
-  }
-  else {
+  } else {
     assetInfo.setAttribute('class', 'hidden');
   }
 }
@@ -49,8 +48,7 @@ function showAuthorityPopup(form) {
 function closePopup(url) {
   if(window.opener === null) {
     window.location = url;
-  }
-  else {
+  } else {
     window.close();
     window.opener.location = url;
   }

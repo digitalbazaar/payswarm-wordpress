@@ -47,14 +47,12 @@ class PaySwarmSessionWidget extends WP_Widget {
       </span>
       <?php
       echo $after_widget;
-    }
-    // session expired
-    else if(is_numeric($session)) {
+    } else if(is_numeric($session)) {
+      // session expired
       echo $before_widget;
       echo "<span class=\"payswarm-session\"><img src=\"$pslogo_url\" /> You've been logged out</span>";
       echo $after_widget;
-    }/*
-    else {
+    }/* else {
       echo $before_widget;
       echo "<span class=\"payswarm-session\"><img src=\"$pslogo_url\" /> Not logged into PaySwarm</span>";
       echo $after_widget;

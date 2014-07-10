@@ -44,8 +44,7 @@ function payswarm_wp_create_nonce() {
     if(get_transient($key) === false) {
       set_transient($key, $ip, 60*15);
     }
-  }
-  while(get_transient($key) !== $ip);
+  } while(get_transient($key) !== $ip);
 
   return $rval;
 }

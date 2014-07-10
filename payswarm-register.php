@@ -22,8 +22,7 @@ if(!current_user_can('manage_options')) {
 
 if(isset($response)) {
   payswarm_complete_registration($response);
-}
-else {
+} else {
   payswarm_init_registration();
 }
 

@@ -96,8 +96,7 @@ function payswarm_get_session($identity_id = null, $return_expired = false) {
         ($identity_id !== $session['identity_id'] &&
         $identity_id !== null)) {
         $session = false;
-      }
-      else {
+      } else {
         // check expiration
         $now = time();
         $expires = isset($session['expires']) ? $session['expires'] : $now;

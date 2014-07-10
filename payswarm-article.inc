@@ -49,8 +49,7 @@ function payswarm_init_purchase() {
     // redirect to the PaySwarm Authority payment URL
     header('HTTP/1.1 303 See Other');
     header("Location: $url");
-  }
-  catch(Exception $e) {
+  } catch(Exception $e) {
     // output simple error page
     ?>
     <!DOCTYPE html>
@@ -107,8 +106,7 @@ function payswarm_complete_purchase($response) {
     // close popup and show post
     $url = get_permalink($post_id);
     payswarm_close_purchase_popup($url);
-  }
-  catch(Exception $e) {
+  } catch(Exception $e) {
     // close the popup and return to the post
     // FIXME: report the error
     $url = get_permalink($_GET['p']);
@@ -216,9 +214,8 @@ function payswarm_set_price_defaults($post_id) {
     $options = payswarm_get_options();
     $price = $options['default_price'];
     $authority_rate = $options['default_authority_rate'];
-  }
-  // use old values
-  else {
+  } else {
+    // use old values
     $price = $old_price;
     $authority_rate = get_post_meta($post_id, 'payswarm_auth_rate', true);
   }
@@ -302,16 +299,13 @@ function payswarm_get_post_info($post_id) {
   }
 
   if($update) {
-    $rval = payswarm_update_post_info($post_id);
-  }
-  else {
-    $rval = array(
-      'asset' => $asset,
-      'listing' => $listing,
-      'listing_hash' => $listing_hash);
+    return payswarm_update_post_info($post_id);
   }
 
-  return $rval;
+  return array(
+    'asset' => $asset,
+    'listing' => $listing,
+    'listing_hash' => $listing_hash);
 }
 
 /**
@@ -495,8 +489,7 @@ function payswarm_get_post_info_rdfa($post_id, $access_text) {
   $session = payswarm_get_session();
   if($session === false || $session['identity_id'] === null) {
     $button_text = 'Access';
-  }
-  else {
+  } else {
     $button_text = 'Buy';
   }
 
@@ -539,8 +532,7 @@ function payswarm_get_post_info_rdfa($post_id, $access_text) {
 
         if(is_array($rval)) {
           $rval = $rval[$arg];
-        }
-        else {
+        } else {
           $rval = $rval->{$arg};
         }
 
@@ -551,9 +543,8 @@ function payswarm_get_post_info_rdfa($post_id, $access_text) {
         // join types
         if($last_arg === '@type') {
           $rval = join(' ', $rval);
-        }
-        // default to first item in array
-        else {
+        } else {
+          // default to first item in array
           $rval = $rval[0];
         }
       }
@@ -562,8 +553,7 @@ function payswarm_get_post_info_rdfa($post_id, $access_text) {
       if(is_object($rval)) {
         if(property_exists($rval, '@value')) {
           $rval = $rval->{'@value'};
-        }
-        else if(property_exists($rval, '@id')) {
+        } else if(property_exists($rval, '@id')) {
           $rval = $rval->{'@id'};
         }
       }
@@ -663,8 +653,7 @@ function payswarm_filter_paid_content($content) {
       $type = 'free';
       $section = substr($content, $offset);
       $offset = strlen($content);
-    }
-    else {
+    } else {
       // 1 <!-- payswarm -->
       // 2 BEGIN_PAYSWARM_PAID_CONTENT
       // 3 paid content
@@ -679,9 +668,8 @@ function payswarm_filter_paid_content($content) {
       if(isset($matches[3]) && $matches[3][1] !== -1) {
         $type = 'paid';
         $index = 3;
-      }
-      // unpaid content found
-      else if(isset($matches[8]) && $matches[8][1] !== -1) {
+      } else if(isset($matches[8]) && $matches[8][1] !== -1) {
+        // unpaid content found
         $type = 'unpaid';
         $index = 8;
       }
@@ -701,16 +689,14 @@ function payswarm_filter_paid_content($content) {
         (isset($matches[9]) && $matches[9][1] !== -1)) {
         // skip entire match
         $offset = $matches[0][1] + strlen($matches[0][0]);
-      }
-      else {
+      } else {
         // skip content only
         $offset = $matches[$index][1] + strlen($section);
       }
     }
 
     $sections[] = array('type' => $type, 'content' => $section);
-  }
-  while($offset < strlen($content));
+  } while($offset < strlen($content));
 
   // generate processed content from sections
   $processed_content = '';
@@ -888,8 +874,7 @@ function payswarm_save_post_data($post_id) {
         $license = payswarm_authority_cache_license(
           $authority_host, $license_id);
         $hash = payswarm_hash($license);
-      }
-      catch(Exception $e) {
+      } catch(Exception $e) {
         // invalid license, use existing/default
         $use_default_license = get_post_meta(
           $post_id, '_payswarm_use_default_license', true);
@@ -945,17 +930,12 @@ function payswarm_update_post_meta($post_id, $meta_key, $meta_value) {
       $post_id, '_payswarm_license_id', $license_id);
     update_post_meta(
       $post_id, '_payswarm_license_hash', $license_hash);
-  }
-  else {
-    if($meta_key === '_payswarm_price') {
-      if(!is_numeric($meta_value) || floatval($meta_value) < 0) {
-        $options = payswarm_get_options();
+  } else {
+    if(!is_numeric($meta_value) || floatval($meta_value) < 0) {
+      $options = payswarm_get_options();
+      if($meta_key === '_payswarm_price') {
         $meta_value = $options['default_price'];
-      }
-    }
-    else if($meta_key === '_payswarm_authority_rate') {
-      if(!is_numeric($meta_value) || floatval($meta_value) < 0) {
-        $options = payswarm_get_options();
+      } else if($meta_key === '_payswarm_authority_rate') {
         $meta_value = $options['default_authority_rate'];
       }
     }

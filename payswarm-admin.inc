@@ -165,8 +165,7 @@ function payswarm_init_registration() {
      // redirect to the PaySwarm Authority registration URL
      header('HTTP/1.1 303 See Other');
      header("Location: $url");
-  }
-  catch(Exception $e) {
+  } catch(Exception $e) {
     // close the popup and report an error
     $url = admin_url() . 'plugins.php?page=payswarm&error=config';
     payswarm_close_register_popup($url);
@@ -197,13 +196,11 @@ function payswarm_complete_registration($response) {
     // close popup and show admin page
     $url = admin_url() . 'plugins.php?page=payswarm&complete=true';
     payswarm_close_register_popup($url);
-  }
-  catch(BedrockAsymmetricCipherException $e) {
+  } catch(BedrockAsymmetricCipherException $e) {
     // close the popup and report decryption error
     $url = admin_url() . 'plugins.php?page=payswarm&error=decryption';
     payswarm_close_register_popup($url);
-  }
-  catch(Exception $e) {
+  } catch(Exception $e) {
     // close the popup and report an error
     $url = admin_url() . 'plugins.php?page=payswarm&error=authority';
     payswarm_close_register_popup($url);
@@ -291,13 +288,11 @@ function payswarm_render_register_page() {
         'PaySwarm Authority configuration URL specified was incorrect ' .
         'or because the PaySwarm Authority you specified is not ' .
         'responding.');
-    }
-    else if($_GET['error'] === 'authority') {
+    } else if($_GET['error'] === 'authority') {
       payswarm_admin_warning(
         'The PaySwarm Authority reported an error during registration. ' .
         'Please try again.');
-    }
-    else if($_GET['error'] === 'decryption') {
+    } else if($_GET['error'] === 'decryption') {
       payswarm_admin_warning(
         'The response from the PaySwarm Authority could not be decrypted. ' .
         'If this website is not protected by SSL-encryption, ' .
@@ -309,8 +304,7 @@ function payswarm_render_register_page() {
         'If this problem persists, please contact your PaySwarm Authority ' .
         'for assistance.');
     }
-  }
-  else if(isset($_GET['complete']) && $_GET['complete'] === 'true') {
+  } else if(isset($_GET['complete']) && $_GET['complete'] === 'true') {
     $register_url = PAYSWARM_PLUGIN_URL . 'payswarm-register.php';
     ?>
     <div id='payswarm-admin-warning' class='updated fade'>
@@ -505,8 +499,7 @@ function payswarm_validate_options($input) {
   if(payswarm_is_decimal($input['default_price']) &&
     floatval($input['default_price']) >= 0) {
     $options['default_price'] = sprintf('%0.10f', $input['default_price']);
-  }
-  else {
+  } else {
     add_settings_error(
       'payswarm_options',
       'payswarm_default_price_error',
@@ -527,8 +520,7 @@ function payswarm_validate_options($input) {
     $license = payswarm_authority_cache_license($authority_host, $license_id);
     $options['default_license_id'] = $license_id;
     $options['default_license_hash'] = payswarm_hash($license);
-  }
-  catch(Exception $e) {
+  } catch(Exception $e) {
     add_settings_error(
       'payswarm_options',
       'payswarm_default_license_id_error',
@@ -542,8 +534,7 @@ function payswarm_validate_options($input) {
     floatval($input['default_authority_rate']) <= 100) {
     $options['default_authority_rate'] = sprintf(
       '%0.10f', $input['default_authority_rate']);
-  }
-  else {
+  } else {
     add_settings_error(
       'payswarm_options',
       'payswarm_default_authority_rate_error',

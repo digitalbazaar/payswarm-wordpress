@@ -18,8 +18,7 @@ require_once('payswarm-article.inc');
 
 if(isset($response)) {
   payswarm_complete_purchase($response);
-}
-else {
+} else {
   payswarm_init_purchase();
 }
 
