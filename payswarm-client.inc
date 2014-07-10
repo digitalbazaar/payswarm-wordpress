@@ -474,7 +474,7 @@ function payswarm_authority_cache_license($host, $id) {
   if(isset($payswarm_hooks['post_jsonld'])) {
     $options['post_jsonld'] = $payswarm_hooks['post_jsonld'];
   }
-  $rval = bedrock_post_jsonld($url, $obj, array($options));
+  $rval = bedrock_post_jsonld($url, $msg, array($options));
 
   // check license
   if(!$rval || !is_object($rval)) {
