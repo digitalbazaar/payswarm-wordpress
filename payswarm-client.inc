@@ -708,6 +708,7 @@ function payswarm_is_listing_valid($listing) {
 function payswarm_get_default_ssl_options() {
   return array(
     'verify_peer' => PAYSWARM_VERIFY_SSL,
+    'verify_peer_name' => PAYSWARM_VERIFY_SSL,
     'allow_self_signed' => !PAYSWARM_VERIFY_SSL
   );
 }
