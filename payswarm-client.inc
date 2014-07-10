@@ -458,32 +458,49 @@ function payswarm_authority_cache_license($host, $id) {
   $config = payswarm_get_authority_config($host);
   $url = $config->licenseService;
 
-  // FIXME: use bedrock http-signatures API
+  // create message
+  $msg = (object)array(
+    '@context' => payswarm_get_default_jsonld_context_url(),
+    'license' => $id
+  );
 
-  // sign message
-  $msg = new stdClass();
-  $msg->{'@context'} = payswarm_get_default_jsonld_context_url();
-  $msg->license = $id;
-  payswarm_sign($msg, array(
-    'key' => call_user_func($payswarm_hooks['get_private_key']),
-    'keyId' => call_user_func($payswarm_hooks['get_public_key_id'])
-  ));
+  // create request to POST license
+  $request = array(
+    'method' => 'POST',
+    'url' => $url,
+    'headers' => array(
+      'Accept' => 'application/ld+json',
+      'Content-Type' => 'application/ld+json'
+    ),
+    'data' => jsonld_encode($msg)
+  );
 
-  // post message
+  // sign request
+  $request = bedrock_http_request_sign($request, array(
+    'headers' => array('request-line', 'host', 'date'),
+    'keyId' => call_user_func($payswarm_hooks['get_public_key_id']),
+    'key' => call_user_func($payswarm_hooks['get_private_key'])));
+
+  // send request and parse response
   $options = array('ssl' => payswarm_get_default_ssl_options());
-  if(isset($payswarm_hooks['post_jsonld'])) {
-    $options['post_jsonld'] = $payswarm_hooks['post_jsonld'];
+  $response = bedrock_http_request($request, $options);
+  $rval = jsonld_decode($response['data']);
+
+  // check response code
+  if($response['code'] >= 400) {
+    // FIXME: use error/exception vocab
+    $error_message;
+    if(is_object($rval) && property_exists($rval, 'message')) {
+      $error_message = $rval->message . ', ' . $rval->type;
+    } else {
+      $error_message = $response['code'] . ' ' . $response['status'];
+    }
+    throw new PaySwarmException("Error while caching license: $error_message");
   }
-  $rval = bedrock_post_jsonld($url, $msg, array($options));
 
   // check license
   if(!$rval || !is_object($rval)) {
     throw new PaySwarmException('Invalid response when caching license.');
-  }
-  // FIXME: use error/exception vocab
-  else if(is_object($rval) && property_exists($rval, 'message')) {
-    throw new PaySwarmException(
-      'Error while caching license: ' . $rval->message . ', ' . $rval->type);
   }
 
   return $rval;
