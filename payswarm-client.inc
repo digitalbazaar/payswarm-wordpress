@@ -269,6 +269,14 @@ function payswarm_jsonld_load_document($url) {
       'document' => (object)array(
         '@context' => payswarm_create_default_jsonld_context()));
   }
+  // FIXME: hack
+  if($url === 'https://w3id.org/bedrock/v1') {
+    return (object)array(
+      'contextUrl' => null,
+      'documentUrl' => $url,
+      'document' => (object)array(
+        '@context' => bedrock_create_default_jsonld_context()));
+  }
 
   // use cache if available
   $rval = $payswarm_jsonld_cache->get($url);
@@ -373,18 +381,14 @@ function payswarm_verify($obj, $options=array()) {
 /**
  * Ensures a key owner is a trusted authority.
  *
- * @param string $owner the ID of the key owner.
+ * @param stdClass $owner the identity of the key owner.
  * @param stdClass $key the public key.
  *
  * @return true if the owner is trusted, false if not.
  */
 function payswarm_check_key_owner($owner, $key) {
   global $payswarm_hooks;
-  $trusted = call_user_func($payswarm_hooks['is_trusted_authority'], $owner);
-  if(!$trusted) {
-    throw new PaySwarmSecurityException(
-      'The public key owner is not a trusted.');
-  }
+  return call_user_func($payswarm_hooks['is_trusted_authority'], $owner->id);
 }
 
 /**
