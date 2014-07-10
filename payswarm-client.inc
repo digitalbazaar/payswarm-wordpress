@@ -397,7 +397,8 @@ function payswarm_check_key_owner($owner, $key) {
  *
  * @return stdClass the decrypted JSON-LD object (exception thrown on error).
  */
-function payswarm_decrypt_authority_message($encrypted) {
+function payswarm_decrypt_authority_message(
+  $encrypted, $key, $options=array()) {
   global $payswarm_jsonld_cache;
 
   // set defaults
@@ -414,7 +415,7 @@ function payswarm_decrypt_authority_message($encrypted) {
     $options['ssl'] = payswarm_get_default_ssl_options();
   }
 
-  return bedrock_decrypt_secure_message($encrypted, $options);
+  return bedrock_decrypt_secure_message($encrypted, $key, $options);
 }
 
 /**
@@ -576,8 +577,9 @@ function payswarm_get_register_vendor_url(
 function payswarm_register_vendor($msg) {
   global $payswarm_hooks;
 
-  // decode message
-  $prefs = payswarm_decrypt_authority_message($msg);
+  // decrypt message
+  $key = call_user_func($payswarm_hooks['get_private_key']);
+  $prefs = payswarm_decrypt_authority_message($msg, $key);
 
   // check message type
   if(bedrock_jsonld_has_type($prefs, 'Error')) {
@@ -648,8 +650,9 @@ function payswarm_purchase($host, $id, $listing_id, $listing_hash) {
  * @return stdClass the PaySwarm Receipt.
  */
 function payswarm_get_receipt($msg) {
-  // decode message
-  $receipt = payswarm_decrypt_authority_message($msg);
+  // decrypt message
+  $key = call_user_func($payswarm_hooks['get_private_key']);
+  $receipt = payswarm_decrypt_authority_message($msg, $key);
 
   // check message type
   if(bedrock_jsonld_has_type($receipt, 'Error')) {
