@@ -84,7 +84,7 @@ function payswarm_complete_purchase($response) {
     // get contract info
     $contract = $receipt->contract;
     $identity_id = $contract->assetAcquirer;
-    $asset = $contract->asset;
+    $asset = $contract->asset->id;
     $license = $contract->license;
 
     // get post ID from asset URL (strip after hash)

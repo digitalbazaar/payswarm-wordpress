@@ -671,6 +671,8 @@ function payswarm_purchase($host, $id, $listing_id, $listing_hash) {
  * @return stdClass the PaySwarm Receipt.
  */
 function payswarm_get_receipt($msg) {
+  global $payswarm_hooks;
+
   // decrypt message
   $key = call_user_func($payswarm_hooks['get_private_key']);
   $receipt = payswarm_decrypt_authority_message($msg, $key);
