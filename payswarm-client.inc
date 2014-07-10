@@ -687,20 +687,21 @@ function payswarm_is_listing_valid($listing) {
 }
 
 // cache for jsonld docs
-$payswarm_jsonld_cache = (object)array(
-  'get' => function($url) {
+class PaySwarmJsonLdCache {
+  public function get($url) {
     global $payswarm_hooks;
     if(isset($payswarm_hooks['get_cached_jsonld'])) {
       return call_user_func($payswarm_hooks['get_cached_jsonld'], $url);
     }
     return false;
-  },
-  'set' => function($url, $response) {
+  }
+  public function set($url, $obj) {
     global $payswarm_hooks;
     if(isset($payswarm_hooks['cache_jsonld'])) {
       call_user_func($payswarm_hooks['cache_jsonld'], $id, $obj, 60);
     }
   }
-);
+}
+$payswarm_jsonld_cache = new PaySwarmJsonLdCache();
 
 /* end of file, omit ?> */
