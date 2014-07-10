@@ -163,6 +163,11 @@ Authorities.
 
 */
 
+class PaySwarmException extends Exception {};
+class PaySwarmPurchaseException extends PaySwarmException {};
+class PaySwarmRegistrationException extends PaySwarmException {};
+class PaySwarmSecurityException extends PaySwarmException {};
+
 // TODO: deprecate hooks everywhere, pass params instead, use bedrock API
 // directly
 
@@ -374,7 +379,7 @@ function payswarm_check_key_owner($owner, $key) {
   global $payswarm_hooks;
   $trusted = call_user_func($payswarm_hooks['is_trusted_authority'], $owner);
   if(!$trusted) {
-    throw new Exception('PaySwarm Security Exception: ' .
+    throw new PaySwarmSecurityException(
       'The public key owner is not a trusted.');
   }
 }
@@ -461,14 +466,12 @@ function payswarm_authority_cache_license($host, $id) {
 
   // check license
   if(!$rval || !is_object($rval)) {
-    throw new Exception('PaySwarm Exception: ' .
-      'Invalid response when caching license.');
+    throw new PaySwarmException('Invalid response when caching license.');
   }
   // FIXME: use error/exception vocab
   else if(is_object($rval) && property_exists($rval, 'message')) {
-    throw new Exception('PaySwarm Exception: ' .
-      'Error while caching license: ' .
-      $rval->message . ', ' . $rval->type);
+    throw new PaySwarmException(
+      'Error while caching license: ' . $rval->message . ', ' . $rval->type);
   }
 
   return $rval;
@@ -571,11 +574,10 @@ function payswarm_register_vendor($msg) {
 
   // check message type
   if(bedrock_jsonld_has_type($prefs, 'Error')) {
-    throw new Exception('PaySwarm Registration Exception: ' .
-      $msg->errorMessage);
+    throw new PaySwarmRegistrationException($msg->errorMessage);
   }
   else if(!bedrock_jsonld_has_type($prefs, 'IdentityPreferences')) {
-    throw new Exception('PaySwarm Registration Exception: ' .
+    throw new PaySwarmRegistrationException(
       'Invalid registration response from PaySwarm Authority.');
   }
 
@@ -644,18 +646,16 @@ function payswarm_get_receipt($msg) {
 
   // check message type
   if(bedrock_jsonld_has_type($receipt, 'Error')) {
-    throw new Exception('PaySwarm Purchase Exception: ' .
-      $receipt->errorMessage);
+    throw new PaySwarmPurchaseException($receipt->errorMessage);
   }
   else if(!bedrock_jsonld_has_type($receipt, 'Receipt')) {
-    throw new Exception('PaySwarm Purchase Exception: ' .
+    throw new PaySwarmPurchaseException(
       'Invalid purchase response from PaySwarm Authority.');
   }
 
   // validate receipt
   if(!property_exists($receipt, 'contract') or !is_object($receipt->contract)) {
-    throw new Exception('PaySwarm Purchase Exception: ' .
-      'Unknown Receipt format.');
+    throw new PaySwarmPurchaseException('Unknown Receipt format.');
   }
 
   // validate contract
@@ -663,8 +663,7 @@ function payswarm_get_receipt($msg) {
   if(!property_exists($contract, 'assetAcquirer') or
     !property_exists($contract, 'asset') or
     !property_exists($contract, 'license')) {
-    throw new Exception('PaySwarm Purchase Exception: ' .
-      'Unknown Contract format.');
+    throw new PaySwarmPurchaseException('Unknown Contract format.');
   }
 
   return $receipt;
