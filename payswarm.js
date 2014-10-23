@@ -29,7 +29,7 @@ function toggleAssetInformation(postId) {
  * @param form the form that is being submitted.
  */
 function showAuthorityPopup(form) {
-  var width = 700;
+  var width = 800;
   var height = 600;
   window.open('', 'payswarm',
     'left=' + ((screen.width-width)/2) +
